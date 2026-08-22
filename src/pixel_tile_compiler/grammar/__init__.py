@@ -1,0 +1,1 @@
+"""Pixel-art grammar cleanup."""

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pixel-tile-compiler"
+version = "0.1.0"
+description = "Deterministic SRPG map tile pixel-art compiler"
+requires-python = ">=3.10"
+dependencies = [
+  "Pillow>=10",
+  "numpy>=1.24",
+  "opencv-python>=4.8",
+  "scikit-image>=0.21",
+  "pydantic>=2",
+  "typer>=0.9",
+]
+
+[project.optional-dependencies]
+gui = ["PySide6>=6.6"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+pixel-tile = "pixel_tile_compiler.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"

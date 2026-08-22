@@ -1,0 +1,16 @@
+{
+  "model": "Image 2.0",
+  "use_case": "stylized-concept",
+  "asset_type": "source texture for an SRPG map tile compiler E2E test",
+  "size": "1024x1024",
+  "prompt": "A square top-down forest floor asset for a tactical SRPG map tile compiler. Dense but readable woodland ground seen from directly above, broad mossy green ground masses, a few large dark tree-shadow shapes, scattered stones and subtle leaf clusters, clear macro structure, restrained texture density, no characters, no buildings, no paths, no text, no UI, no border, no watermark. Natural soft daylight, coherent green and earthy brown palette, painterly game environment concept art, designed to be reduced algorithmically to a 64x64 pixel-art map tile.",
+  "constraints": [
+    "exactly square composition",
+    "1024x1024 output",
+    "top-down view",
+    "large readable shapes over micro-detail",
+    "no text or watermark",
+    "source image only; final pixel placement must be done by the compiler"
+  ],
+  "negative_prompt": "characters, animals, buildings, roads, rivers, UI, text, logo, watermark, border, isometric perspective, extreme fog, photorealistic close-up"
+}

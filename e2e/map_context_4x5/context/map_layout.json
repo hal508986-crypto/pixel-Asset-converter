@@ -1,0 +1,1425 @@
+{
+  "columns": 4,
+  "context_margin_tiles": 1,
+  "rows": 5,
+  "shared_palette_enabled": true,
+  "source_size": [
+    1024,
+    1280
+  ],
+  "tile_size": 64,
+  "tiles": [
+    {
+      "context_bbox": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 17,
+        "center_dominance_score": 0.123762,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 14,
+        "micro_cluster_count": 14,
+        "periodicity_risk_score": 0.074257,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              114,
+              102,
+              42
+            ]
+          ],
+          "edge_density": 0.05549209975252237,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              101,
+              94,
+              38
+            ]
+          ],
+          "edge_density": 0.0725682429834679,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "x": 0,
+      "y": 0
+    },
+    {
+      "context_bbox": [
+        0,
+        0,
+        768,
+        512
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 23,
+        "center_dominance_score": 0.102902,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 11,
+        "micro_cluster_count": 11,
+        "periodicity_risk_score": 0.061741,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              134,
+              112,
+              51
+            ]
+          ],
+          "edge_density": 0.060169165705497886,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              127,
+              110,
+              46
+            ]
+          ],
+          "edge_density": 0.033885398819722065,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              90,
+              88,
+              35
+            ]
+          ],
+          "edge_density": 0.10178777393310265,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        256,
+        0,
+        512,
+        256
+      ],
+      "x": 1,
+      "y": 0
+    },
+    {
+      "context_bbox": [
+        256,
+        0,
+        1024,
+        512
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 23,
+        "center_dominance_score": 0.091416,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 13,
+        "micro_cluster_count": 13,
+        "periodicity_risk_score": 0.05485,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              97,
+              92,
+              36
+            ]
+          ],
+          "edge_density": 0.05073291452503331,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              135,
+              113,
+              51
+            ]
+          ],
+          "edge_density": 0.05046136101499423,
+          "semantic": "road"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              114,
+              102,
+              42
+            ]
+          ],
+          "edge_density": 0.05549209975252237,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        512,
+        0,
+        768,
+        256
+      ],
+      "x": 2,
+      "y": 0
+    },
+    {
+      "context_bbox": [
+        512,
+        0,
+        1024,
+        512
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 21,
+        "center_dominance_score": 0.086881,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 8,
+        "micro_cluster_count": 8,
+        "periodicity_risk_score": 0.052128,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "north": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              92,
+              87,
+              34
+            ]
+          ],
+          "edge_density": 0.09251856082238721,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              134,
+              112,
+              51
+            ]
+          ],
+          "edge_density": 0.060169165705497886,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        768,
+        0,
+        1024,
+        256
+      ],
+      "x": 3,
+      "y": 0
+    },
+    {
+      "context_bbox": [
+        0,
+        0,
+        512,
+        768
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 22,
+        "center_dominance_score": 0.078032,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 15,
+        "micro_cluster_count": 15,
+        "periodicity_risk_score": 0.046819,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              127,
+              110,
+              46
+            ]
+          ],
+          "edge_density": 0.033885398819722065,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              90,
+              88,
+              35
+            ]
+          ],
+          "edge_density": 0.10178777393310265,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              101,
+              95,
+              37
+            ]
+          ],
+          "edge_density": 0.05711022272986865,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        0,
+        256,
+        256,
+        512
+      ],
+      "x": 0,
+      "y": 1
+    },
+    {
+      "context_bbox": [
+        0,
+        0,
+        768,
+        768
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 23,
+        "center_dominance_score": 0.073773,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 11,
+        "micro_cluster_count": 11,
+        "periodicity_risk_score": 0.044264,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              135,
+              113,
+              51
+            ]
+          ],
+          "edge_density": 0.05046136101499423,
+          "semantic": "road"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              114,
+              102,
+              42
+            ]
+          ],
+          "edge_density": 0.05549209975252237,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              138,
+              114,
+              51
+            ]
+          ],
+          "edge_density": 0.05174851541144312,
+          "semantic": "road"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              101,
+              94,
+              38
+            ]
+          ],
+          "edge_density": 0.0725682429834679,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        256,
+        256,
+        512,
+        512
+      ],
+      "x": 1,
+      "y": 1
+    },
+    {
+      "context_bbox": [
+        256,
+        0,
+        1024,
+        768
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 21,
+        "center_dominance_score": 0.079192,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 20,
+        "micro_cluster_count": 20,
+        "periodicity_risk_score": 0.047515,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              92,
+              87,
+              34
+            ]
+          ],
+          "edge_density": 0.09251856082238721,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              134,
+              112,
+              51
+            ]
+          ],
+          "edge_density": 0.060169165705497886,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              136,
+              117,
+              52
+            ]
+          ],
+          "edge_density": 0.0442604226156482,
+          "semantic": "road"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              127,
+              110,
+              46
+            ]
+          ],
+          "edge_density": 0.033885398819722065,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "road",
+      "source_bbox": [
+        512,
+        256,
+        768,
+        512
+      ],
+      "x": 2,
+      "y": 1
+    },
+    {
+      "context_bbox": [
+        512,
+        0,
+        1024,
+        768
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 20,
+        "center_dominance_score": 0.10939,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 10,
+        "micro_cluster_count": 10,
+        "periodicity_risk_score": 0.065634,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              97,
+              92,
+              36
+            ]
+          ],
+          "edge_density": 0.05073291452503331,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              104,
+              98,
+              39
+            ]
+          ],
+          "edge_density": 0.053350928456970495,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              135,
+              113,
+              51
+            ]
+          ],
+          "edge_density": 0.05046136101499423,
+          "semantic": "road"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        768,
+        256,
+        1024,
+        512
+      ],
+      "x": 3,
+      "y": 1
+    },
+    {
+      "context_bbox": [
+        0,
+        256,
+        512,
+        1024
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 21,
+        "center_dominance_score": 0.108692,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 10,
+        "micro_cluster_count": 10,
+        "periodicity_risk_score": 0.065215,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              138,
+              114,
+              51
+            ]
+          ],
+          "edge_density": 0.05174851541144312,
+          "semantic": "road"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              101,
+              94,
+              38
+            ]
+          ],
+          "edge_density": 0.0725682429834679,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              92,
+              87,
+              32
+            ]
+          ],
+          "edge_density": 0.08986928104575163,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        0,
+        512,
+        256,
+        768
+      ],
+      "x": 0,
+      "y": 2
+    },
+    {
+      "context_bbox": [
+        0,
+        256,
+        768,
+        1024
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 21,
+        "center_dominance_score": 0.09117,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 10,
+        "micro_cluster_count": 10,
+        "periodicity_risk_score": 0.054702,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              136,
+              117,
+              52
+            ]
+          ],
+          "edge_density": 0.0442604226156482,
+          "semantic": "road"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              127,
+              110,
+              46
+            ]
+          ],
+          "edge_density": 0.033885398819722065,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              130,
+              109,
+              48
+            ]
+          ],
+          "edge_density": 0.07338663620788122,
+          "semantic": "road"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              101,
+              95,
+              37
+            ]
+          ],
+          "edge_density": 0.05711022272986865,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "road",
+      "source_bbox": [
+        256,
+        512,
+        512,
+        768
+      ],
+      "x": 1,
+      "y": 2
+    },
+    {
+      "context_bbox": [
+        256,
+        256,
+        1024,
+        1024
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 20,
+        "center_dominance_score": 0.162721,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 6,
+        "micro_cluster_count": 6,
+        "periodicity_risk_score": 0.097632,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              104,
+              98,
+              39
+            ]
+          ],
+          "edge_density": 0.053350928456970495,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              135,
+              113,
+              51
+            ]
+          ],
+          "edge_density": 0.05046136101499423,
+          "semantic": "road"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              140,
+              115,
+              52
+            ]
+          ],
+          "edge_density": 0.0716070742022299,
+          "semantic": "road"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              138,
+              114,
+              51
+            ]
+          ],
+          "edge_density": 0.05174851541144312,
+          "semantic": "road"
+        }
+      },
+      "semantic": "road",
+      "source_bbox": [
+        512,
+        512,
+        768,
+        768
+      ],
+      "x": 2,
+      "y": 2
+    },
+    {
+      "context_bbox": [
+        512,
+        256,
+        1024,
+        1024
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 20,
+        "center_dominance_score": 0.078337,
+        "corner_seam_score": 0.010074,
+        "edge_continuity_score": 0.999685,
+        "horizontal_seam_score": 0.0644,
+        "isolated_pixel_count": 23,
+        "micro_cluster_count": 23,
+        "periodicity_risk_score": 0.048104,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.2137
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              92,
+              87,
+              34
+            ]
+          ],
+          "edge_density": 0.09251856082238721,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              101,
+              93,
+              40
+            ]
+          ],
+          "edge_density": 0.09537407195888065,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              136,
+              117,
+              52
+            ]
+          ],
+          "edge_density": 0.0442604226156482,
+          "semantic": "road"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        768,
+        512,
+        1024,
+        768
+      ],
+      "x": 3,
+      "y": 2
+    },
+    {
+      "context_bbox": [
+        0,
+        512,
+        512,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 20,
+        "center_dominance_score": 0.097763,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 7,
+        "micro_cluster_count": 7,
+        "periodicity_risk_score": 0.058658,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              130,
+              109,
+              48
+            ]
+          ],
+          "edge_density": 0.07338663620788122,
+          "semantic": "road"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              101,
+              95,
+              37
+            ]
+          ],
+          "edge_density": 0.05711022272986865,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              86,
+              81,
+              33
+            ]
+          ],
+          "edge_density": 0.08823529411764706,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        0,
+        768,
+        256,
+        1024
+      ],
+      "x": 0,
+      "y": 3
+    },
+    {
+      "context_bbox": [
+        0,
+        512,
+        768,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 21,
+        "center_dominance_score": 0.131614,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 9,
+        "micro_cluster_count": 9,
+        "periodicity_risk_score": 0.078969,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              140,
+              115,
+              52
+            ]
+          ],
+          "edge_density": 0.0716070742022299,
+          "semantic": "road"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              138,
+              114,
+              51
+            ]
+          ],
+          "edge_density": 0.05174851541144312,
+          "semantic": "road"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              121,
+              100,
+              44
+            ]
+          ],
+          "edge_density": 0.03506456781977566,
+          "semantic": "road"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              92,
+              87,
+              32
+            ]
+          ],
+          "edge_density": 0.08986928104575163,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "road",
+      "source_bbox": [
+        256,
+        768,
+        512,
+        1024
+      ],
+      "x": 1,
+      "y": 3
+    },
+    {
+      "context_bbox": [
+        256,
+        512,
+        1024,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 20,
+        "center_dominance_score": 0.09628,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 9,
+        "micro_cluster_count": 9,
+        "periodicity_risk_score": 0.057768,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              101,
+              93,
+              40
+            ]
+          ],
+          "edge_density": 0.09537407195888065,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              136,
+              117,
+              52
+            ]
+          ],
+          "edge_density": 0.0442604226156482,
+          "semantic": "road"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              119,
+              99,
+              43
+            ]
+          ],
+          "edge_density": 0.06424900057110222,
+          "semantic": "road"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              130,
+              109,
+              48
+            ]
+          ],
+          "edge_density": 0.07338663620788122,
+          "semantic": "road"
+        }
+      },
+      "semantic": "road",
+      "source_bbox": [
+        512,
+        768,
+        768,
+        1024
+      ],
+      "x": 2,
+      "y": 3
+    },
+    {
+      "context_bbox": [
+        512,
+        512,
+        1024,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 22,
+        "center_dominance_score": 0.058952,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 10,
+        "micro_cluster_count": 10,
+        "periodicity_risk_score": 0.035371,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              104,
+              98,
+              39
+            ]
+          ],
+          "edge_density": 0.053350928456970495,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [
+            [
+              92,
+              85,
+              36
+            ]
+          ],
+          "edge_density": 0.09850127250447734,
+          "semantic": "soil"
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              140,
+              115,
+              52
+            ]
+          ],
+          "edge_density": 0.0716070742022299,
+          "semantic": "road"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        768,
+        768,
+        1024,
+        1024
+      ],
+      "x": 3,
+      "y": 3
+    },
+    {
+      "context_bbox": [
+        0,
+        768,
+        512,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 18,
+        "center_dominance_score": 0.074478,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 21,
+        "micro_cluster_count": 21,
+        "periodicity_risk_score": 0.044687,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              121,
+              100,
+              44
+            ]
+          ],
+          "edge_density": 0.03506456781977566,
+          "semantic": "road"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              92,
+              87,
+              32
+            ]
+          ],
+          "edge_density": 0.08986928104575163,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "west": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        0,
+        1024,
+        256,
+        1280
+      ],
+      "x": 0,
+      "y": 4
+    },
+    {
+      "context_bbox": [
+        0,
+        768,
+        768,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 24,
+        "center_dominance_score": 0.097647,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 17,
+        "micro_cluster_count": 17,
+        "periodicity_risk_score": 0.058588,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              119,
+              99,
+              43
+            ]
+          ],
+          "edge_density": 0.06424900057110222,
+          "semantic": "road"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              130,
+              109,
+              48
+            ]
+          ],
+          "edge_density": 0.07338663620788122,
+          "semantic": "road"
+        },
+        "south": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              86,
+              81,
+              33
+            ]
+          ],
+          "edge_density": 0.08823529411764706,
+          "semantic": "soil"
+        }
+      },
+      "semantic": "road",
+      "source_bbox": [
+        256,
+        1024,
+        512,
+        1280
+      ],
+      "x": 1,
+      "y": 4
+    },
+    {
+      "context_bbox": [
+        256,
+        768,
+        1024,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 23,
+        "center_dominance_score": 0.082514,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 13,
+        "micro_cluster_count": 13,
+        "periodicity_risk_score": 0.049508,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [
+            [
+              92,
+              85,
+              36
+            ]
+          ],
+          "edge_density": 0.09850127250447734,
+          "semantic": "soil"
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              140,
+              115,
+              52
+            ]
+          ],
+          "edge_density": 0.0716070742022299,
+          "semantic": "road"
+        },
+        "south": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              121,
+              100,
+              44
+            ]
+          ],
+          "edge_density": 0.03506456781977566,
+          "semantic": "road"
+        }
+      },
+      "semantic": "road",
+      "source_bbox": [
+        512,
+        1024,
+        768,
+        1280
+      ],
+      "x": 2,
+      "y": 4
+    },
+    {
+      "context_bbox": [
+        512,
+        768,
+        1024,
+        1280
+      ],
+      "context_used": true,
+      "metrics": {
+        "actual_palette_count": 20,
+        "center_dominance_score": 0.087441,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 17,
+        "micro_cluster_count": 17,
+        "periodicity_risk_score": 0.052465,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      },
+      "neighbor_guidance": {
+        "east": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "north": {
+          "dominant_colors": [
+            [
+              101,
+              93,
+              40
+            ]
+          ],
+          "edge_density": 0.09537407195888065,
+          "semantic": "soil"
+        },
+        "south": {
+          "dominant_colors": [],
+          "edge_density": 0.0,
+          "semantic": null
+        },
+        "west": {
+          "dominant_colors": [
+            [
+              119,
+              99,
+              43
+            ]
+          ],
+          "edge_density": 0.06424900057110222,
+          "semantic": "road"
+        }
+      },
+      "semantic": "soil",
+      "source_bbox": [
+        768,
+        1024,
+        1024,
+        1280
+      ],
+      "x": 3,
+      "y": 4
+    }
+  ]
+}

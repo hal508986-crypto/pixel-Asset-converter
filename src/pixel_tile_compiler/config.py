@@ -21,6 +21,10 @@ class CompilerConfig:
     tile_mode: TileMode = "repeatable"
     semantic_provider: SemanticMode = "rule"
     seam_mode: SeamMode = "inspect"
+    repeat_opt_enabled: bool = True
+    repeat_opt_strength: float = 0.5
+    repeat_opt_edge_band: int = 6
+    center_suppression_strength: float = 0.4
     dither: DitherMode = "minimal"
     background_mode: Literal["auto", "alpha", "color"] = "alpha"
     background_color: Optional[str] = None
@@ -30,14 +34,28 @@ class CompilerConfig:
     seed: int = 42
     debug_enabled: bool = True
     semantic_callable: Optional[Callable[..., Any]] = None
+    palette_colors: Optional[tuple[tuple[int, int, int], ...]] = None
 
     def __post_init__(self) -> None:
         if (self.width, self.height) != (64, 64):
             raise ValueError("MVP output size is fixed at 64x64")
         if not 4 <= self.palette_budget <= 32:
             raise ValueError("palette_budget must be between 4 and 32")
+        if self.palette_colors is not None:
+            if not self.palette_colors:
+                raise ValueError("palette_colors must not be empty")
+            if len(self.palette_colors) > self.palette_budget:
+                raise ValueError("palette_colors cannot exceed palette_budget")
+            if any(len(color) != 3 or any(not 0 <= channel <= 255 for channel in color) for color in self.palette_colors):
+                raise ValueError("palette_colors must contain RGB triples")
         if self.background_tolerance < 0:
             raise ValueError("background_tolerance must be non-negative")
+        if not 0.0 <= self.repeat_opt_strength <= 1.0:
+            raise ValueError("repeat_opt_strength must be between 0 and 1")
+        if self.repeat_opt_edge_band < 1:
+            raise ValueError("repeat_opt_edge_band must be at least 1")
+        if not 0.0 <= self.center_suppression_strength <= 1.0:
+            raise ValueError("center_suppression_strength must be between 0 and 1")
 
     def as_dict(self) -> dict[str, Any]:
         """Return a JSON-safe representation, excluding runtime callbacks."""
@@ -45,3 +63,36 @@ class CompilerConfig:
         values.pop("semantic_callable", None)
         values["output_root"] = str(self.output_root)
         return values
+
+
+@dataclass
+class MapCompilerConfig:
+    """Configuration for MAP-first compilation while preserving single-tile defaults."""
+
+    output_root: Path = field(default_factory=lambda: Path("map_output"))
+    columns: int = 4
+    rows: int = 5
+    tile_size: int = 64
+    context_margin_tiles: int = 1
+    shared_palette_enabled: bool = True
+    global_palette_budget: int = 24
+    tile_mode: TileMode = "repeatable"
+    semantic_provider: SemanticMode = "rule"
+    seed: int = 42
+    debug_enabled: bool = True
+    smoothing_enabled: bool = True
+
+    def __post_init__(self) -> None:
+        if self.columns < 1 or self.rows < 1:
+            raise ValueError("columns and rows must be positive")
+        if self.tile_size != 64:
+            raise ValueError("MVP tile_size is fixed at 64")
+        if self.context_margin_tiles < 0:
+            raise ValueError("context_margin_tiles must be non-negative")
+        if self.global_palette_budget not in {16, 24, 32}:
+            raise ValueError("global_palette_budget must be 16, 24, or 32")
+
+    @property
+    def output_size(self) -> tuple[int, int]:
+        """Return the reconstructed MAP size in pixels."""
+        return self.columns * self.tile_size, self.rows * self.tile_size

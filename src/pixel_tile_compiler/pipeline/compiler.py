@@ -17,6 +17,7 @@ from pixel_tile_compiler.grammar.diagonals import cleanup_diagonals
 from pixel_tile_compiler.io.exporter import save_json, save_png
 from pixel_tile_compiler.io.loader import load_image
 from pixel_tile_compiler.ir.builder import build_tile_ir
+from pixel_tile_compiler.ir.schema import MapContext
 from pixel_tile_compiler.ir.validator import validate_tile_ir
 from pixel_tile_compiler.pixelizer.palette import palette_preview, quantize_palette
 from pixel_tile_compiler.pixelizer.spatial import region_aware_pixelize
@@ -27,6 +28,7 @@ from pixel_tile_compiler.semantic.base import SemanticProviderError
 from pixel_tile_compiler.semantic.mcp_provider import McpSemanticProvider
 from pixel_tile_compiler.semantic.rule_based import RuleBasedSemanticProvider
 from pixel_tile_compiler.tile.repeat_preview import make_tiled_preview
+from pixel_tile_compiler.tile.repeatability import measure_repeatability, optimize_repeatability
 from pixel_tile_compiler.tile.seam import SeamMetrics, measure_seams
 
 logger = logging.getLogger(__name__)
@@ -39,6 +41,11 @@ class CompilationMetrics:
     micro_cluster_count: int
     horizontal_seam_score: float | None
     vertical_seam_score: float | None
+    center_dominance_score: float | None
+    periodicity_risk_score: float | None
+    edge_continuity_score: float | None
+    corner_seam_score: float | None
+    repeatability_optimization_applied: bool
 
 
 @dataclass(frozen=True)
@@ -87,13 +94,23 @@ class PixelTileCompiler:
 
     def compile(self, source: Path, config: CompilerConfig) -> CompilationResult:
         """Run all MVP stages and export a complete artifact directory."""
-        logging.getLogger().setLevel(logging.INFO)
         source = Path(source)
+        return self.compile_image(load_image(source), config, source_name=source)
+
+    def compile_image(
+        self,
+        image: Image.Image,
+        config: CompilerConfig,
+        source_name: Path | str = "<memory>",
+        map_context: MapContext | None = None,
+    ) -> CompilationResult:
+        """Compile an in-memory image, optionally retaining MAP context in its IR."""
+        logging.getLogger().setLevel(logging.INFO)
         output_dir = Path(config.output_root)
         output_dir.mkdir(parents=True, exist_ok=True)
         debug_paths: dict[str, Path] = {}
 
-        loaded = load_image(source)
+        loaded = image.convert("RGBA").copy()
         normalized = normalize_image(loaded, work_size=config.work_size)
         normalized = apply_background(
             normalized,
@@ -119,12 +136,35 @@ class PixelTileCompiler:
         else:
             semantic = RuleBasedSemanticProvider().analyze(smooth, structural, config)
 
-        ir = validate_tile_ir(build_tile_ir(structural, semantic, config))
+        ir = build_tile_ir(structural, semantic, config)
+        if map_context is not None:
+            ir = ir.model_copy(update={"map_context": map_context})
+        ir = validate_tile_ir(ir)
         raw_pixelized = region_aware_pixelize(smooth, region_map, ir)
-        quantized = quantize_palette(raw_pixelized, budget=config.palette_budget, seed=config.seed)
+        quantized = quantize_palette(
+            raw_pixelized,
+            budget=config.palette_budget,
+            seed=config.seed,
+            palette_colors=config.palette_colors,
+        )
         cleaned, cluster_metrics = cleanup_pixel_clusters(quantized, min_cluster_size=2)
         cleaned = cleanup_diagonals(cleaned)
-        final = cleaned
+        repeatability_before = measure_repeatability(cleaned, tile_mode=config.tile_mode, edge_band=config.repeat_opt_edge_band)
+        repeatability_applied = bool(config.tile_mode == "repeatable" and config.repeat_opt_enabled)
+        if repeatability_applied:
+            optimized = optimize_repeatability(
+                cleaned,
+                tile_mode=config.tile_mode,
+                strength=config.repeat_opt_strength,
+                edge_band=config.repeat_opt_edge_band,
+                center_suppression_strength=config.center_suppression_strength,
+            )
+            optimized, optimized_cluster_metrics = cleanup_pixel_clusters(optimized, min_cluster_size=2)
+            final = cleanup_diagonals(optimized)
+            cluster_metrics = optimized_cluster_metrics
+        else:
+            final = cleaned
+        repeatability_after = measure_repeatability(final, tile_mode=config.tile_mode, edge_band=config.repeat_opt_edge_band)
         seam: SeamMetrics = measure_seams(final, tile_mode=config.tile_mode)
         metrics = CompilationMetrics(
             actual_palette_count=_palette_count(final),
@@ -132,6 +172,11 @@ class PixelTileCompiler:
             micro_cluster_count=cluster_metrics.micro_cluster_count,
             horizontal_seam_score=seam.horizontal_seam_score,
             vertical_seam_score=seam.vertical_seam_score,
+            center_dominance_score=repeatability_after.center_dominance_score,
+            periodicity_risk_score=repeatability_after.periodicity_risk_score,
+            edge_continuity_score=repeatability_after.edge_continuity_score,
+            corner_seam_score=repeatability_after.corner_seam_score,
+            repeatability_optimization_applied=repeatability_applied,
         )
 
         if config.debug_enabled:
@@ -143,7 +188,9 @@ class PixelTileCompiler:
                 "05_palette_preview": palette_preview(quantized),
                 "06_raw_pixelized": raw_pixelized,
                 "07_cluster_cleaned": cleaned,
+                "08_repeat_optimized": final,
                 "08_tile_preview": make_tiled_preview(final),
+                "09_tile_preview": make_tiled_preview(final),
             }
             for name, image in debug_images.items():
                 debug_paths[name] = save_png(image, output_dir / "debug" / f"{name}.png")
@@ -156,10 +203,16 @@ class PixelTileCompiler:
             output_dir / "baseline_bicubic_quantized.png",
         )
         metadata: dict[str, Any] = {
-            "source": str(source),
+            "source": str(source_name),
             "config": config.as_dict(),
             "semantic_provider": provider_name,
             "metrics": asdict(metrics),
+            "repeatability_before": asdict(repeatability_before),
+            "repeatability_after": asdict(repeatability_after),
+            "repeatability_optimization": {
+                "enabled": config.repeat_opt_enabled,
+                "applied": repeatability_applied,
+            },
             "pipeline": [
                 "load",
                 "normalize",
@@ -174,6 +227,7 @@ class PixelTileCompiler:
                 "palette",
                 "clusters",
                 "diagonals",
+                "repeatability",
                 "seam",
                 "export",
             ],

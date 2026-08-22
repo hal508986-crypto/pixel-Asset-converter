@@ -21,10 +21,33 @@ py -3.10 -m pip install -e ".[gui,dev]"
 
 ```powershell
 pixel-tile compile source.png --output output/source --palette 16 --tile-mode repeatable
+# repeatable最適化を比較用に無効化
+pixel-tile compile source.png --output output/source-off --tile-mode repeatable --no-repeat-opt
+pixel-tile compile-map map.png --output e2e/map_context_test --cols 4 --rows 5 --palette 24 --context 1 --shared-palette
 pixel-tile gui
 ```
 
-出力ディレクトリには `final.png`、`ir.json`、`metadata.json`、baseline 2種、debug画像8種を保存します。入力画像は変更しません。
+出力ディレクトリには `final.png`、`ir.json`、`metadata.json`、baseline 2種、debug画像を保存します。入力画像は変更しません。repeatable tileでは `08_repeat_optimized.png` と `09_tile_preview.png` が追加され、metadataに `periodicity_risk_score`、`center_dominance_score`、`edge_continuity_score`、`corner_seam_score` を記録します。
+
+### Repeatability optimization
+
+`tile_mode=repeatable` かつ `repeat_opt_enabled=true` のときだけ、palette-preservingな後処理を行います。左右・上下端をwrap-awareに対応させ、既存paletteから端の対応色を選び、中心dominant clusterの外周だけを弱めます。blurや補間、新しいalpha値は使いません。
+
+設定値は `repeat_opt_strength`、`repeat_opt_edge_band`、`center_suppression_strength` で調整できます。`directional` と `object` ではこの処理は発火しません。
+
+### MAP-first context compiler
+
+`compile-map` は高解像度MAP全体を先に解析し、4×5などのgridへ分割してから、周辺contextを判断材料に中央64×64だけをコンパイルします。`--shared-palette`（デフォルトON）ではMAP全体から決めた16/24/32色のpaletteを全tileで共有します。
+
+同じ入力から次の3方式を出力し、`comparison.png` と `metrics.json` で比較できます。
+
+```text
+baseline_global.png   MAP全体の直接縮小・減色
+independent_tiles.png context無しの独立tile compile
+context_compiled.png  周辺context + shared palette + 境界補正
+```
+
+各実験ディレクトリには、`tiles/`、`map_layout.json`、`global_analysis.json`、`grid_overlay.png` も保存されます。grid overlayは確認用で、最終MAP画像には罫線を書き込みません。
 
 ## GUI
 

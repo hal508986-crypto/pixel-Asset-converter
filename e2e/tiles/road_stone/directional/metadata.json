@@ -1,0 +1,71 @@
+{
+  "config": {
+    "background_color": null,
+    "background_mode": "alpha",
+    "background_tolerance": 12,
+    "center_suppression_strength": 0.4,
+    "debug_enabled": true,
+    "dither": "minimal",
+    "height": 64,
+    "output_root": "E:\\ena-dri\\repos\\pixelart-compiler\\e2e\\tiles\\road_stone\\directional",
+    "palette_budget": 16,
+    "repeat_opt_edge_band": 6,
+    "repeat_opt_enabled": false,
+    "repeat_opt_strength": 0.5,
+    "seam_mode": "inspect",
+    "seed": 42,
+    "semantic_provider": "rule",
+    "smoothing_enabled": true,
+    "tile_mode": "directional",
+    "width": 64,
+    "work_size": 256
+  },
+  "metrics": {
+    "actual_palette_count": 15,
+    "center_dominance_score": null,
+    "corner_seam_score": null,
+    "edge_continuity_score": null,
+    "horizontal_seam_score": null,
+    "isolated_pixel_count": 0,
+    "micro_cluster_count": 0,
+    "periodicity_risk_score": null,
+    "repeatability_optimization_applied": false,
+    "vertical_seam_score": null
+  },
+  "pipeline": [
+    "load",
+    "normalize",
+    "background",
+    "smoothing",
+    "edges",
+    "regions",
+    "structural",
+    "semantic",
+    "ir",
+    "pixelize",
+    "palette",
+    "clusters",
+    "diagonals",
+    "repeatability",
+    "seam",
+    "export"
+  ],
+  "repeatability_after": {
+    "center_dominance_score": null,
+    "corner_seam_score": null,
+    "edge_continuity_score": null,
+    "periodicity_risk_score": null
+  },
+  "repeatability_before": {
+    "center_dominance_score": null,
+    "corner_seam_score": null,
+    "edge_continuity_score": null,
+    "periodicity_risk_score": null
+  },
+  "repeatability_optimization": {
+    "applied": false,
+    "enabled": false
+  },
+  "semantic_provider": "rule",
+  "source": "E:\\ena-dri\\repos\\pixelart-compiler\\assets\\source\\road_stone_1024.png"
+}

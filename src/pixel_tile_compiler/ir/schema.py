@@ -35,6 +35,22 @@ class RegionIR(BaseModel):
     discard_micro_detail: bool
 
 
+class MapContext(BaseModel):
+    """Optional MAP-level context retained alongside a single tile IR."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    tile_x: int = Field(ge=0)
+    tile_y: int = Field(ge=0)
+    north_semantic: str | None = None
+    south_semantic: str | None = None
+    east_semantic: str | None = None
+    west_semantic: str | None = None
+    global_palette_id: str | None = None
+    local_brightness_target: float = Field(ge=0.0, le=1.0)
+    local_texture_target: float = Field(ge=0.0, le=1.0)
+
+
 class TileIR(BaseModel):
     """Stable intermediate representation between analysis and rasterization."""
 
@@ -48,3 +64,4 @@ class TileIR(BaseModel):
     palette_budget: int = Field(ge=4, le=32)
     global_style: GlobalStyle
     regions: list[RegionIR]
+    map_context: MapContext | None = None

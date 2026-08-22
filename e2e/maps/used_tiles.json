@@ -1,0 +1,121 @@
+{
+  "map": "test_map_4x5.png",
+  "tile_size": 64,
+  "tiles": [
+    {
+      "id": "grass_bright",
+      "source": "assets/source/grass_bright_1024.png",
+      "compiler_output": "e2e/tiles/grass_bright/repeatable",
+      "mode": "repeatable",
+      "selection_reason": "明るいベース草原",
+      "metrics": {
+        "actual_palette_count": 16,
+        "center_dominance_score": 0.0757,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 3,
+        "micro_cluster_count": 3,
+        "periodicity_risk_score": 0.04542,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      }
+    },
+    {
+      "id": "grass_worn",
+      "source": "assets/source/grass_worn_1024.png",
+      "compiler_output": "e2e/tiles/grass_worn/repeatable",
+      "mode": "repeatable",
+      "selection_reason": "変化用の踏み荒らし草地",
+      "metrics": {
+        "actual_palette_count": 16,
+        "center_dominance_score": 0.071766,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 4,
+        "micro_cluster_count": 4,
+        "periodicity_risk_score": 0.043059,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      }
+    },
+    {
+      "id": "grass_soil",
+      "source": "assets/source/grass_soil_1024.png",
+      "compiler_output": "e2e/tiles/grass_soil/repeatable",
+      "mode": "repeatable",
+      "selection_reason": "草土混合のベース補助",
+      "metrics": {
+        "actual_palette_count": 15,
+        "center_dominance_score": 0.058542,
+        "corner_seam_score": 0.0,
+        "edge_continuity_score": 1.0,
+        "horizontal_seam_score": 0.0,
+        "isolated_pixel_count": 6,
+        "micro_cluster_count": 6,
+        "periodicity_risk_score": 0.035125,
+        "repeatability_optimization_applied": true,
+        "vertical_seam_score": 0.0
+      }
+    },
+    {
+      "id": "road_dirt",
+      "source": "assets/source/road_dirt_1024.png",
+      "compiler_output": "e2e/tiles/road_dirt/directional",
+      "mode": "directional",
+      "selection_reason": "主街道の標準タイル",
+      "metrics": {
+        "actual_palette_count": 16,
+        "center_dominance_score": null,
+        "corner_seam_score": null,
+        "edge_continuity_score": null,
+        "horizontal_seam_score": null,
+        "isolated_pixel_count": 5,
+        "micro_cluster_count": 5,
+        "periodicity_risk_score": null,
+        "repeatability_optimization_applied": false,
+        "vertical_seam_score": null
+      }
+    },
+    {
+      "id": "road_grass",
+      "source": "assets/source/road_grass_1024.png",
+      "compiler_output": "e2e/tiles/road_grass/directional",
+      "mode": "directional",
+      "selection_reason": "細めの草縁街道",
+      "metrics": {
+        "actual_palette_count": 15,
+        "center_dominance_score": null,
+        "corner_seam_score": null,
+        "edge_continuity_score": null,
+        "horizontal_seam_score": null,
+        "isolated_pixel_count": 19,
+        "micro_cluster_count": 19,
+        "periodicity_risk_score": null,
+        "repeatability_optimization_applied": false,
+        "vertical_seam_score": null
+      }
+    },
+    {
+      "id": "road_stone",
+      "source": "assets/source/road_stone_1024.png",
+      "compiler_output": "e2e/tiles/road_stone/directional",
+      "mode": "directional",
+      "selection_reason": "中央の石混じり変化タイル",
+      "metrics": {
+        "actual_palette_count": 15,
+        "center_dominance_score": null,
+        "corner_seam_score": null,
+        "edge_continuity_score": null,
+        "horizontal_seam_score": null,
+        "isolated_pixel_count": 0,
+        "micro_cluster_count": 0,
+        "periodicity_risk_score": null,
+        "repeatability_optimization_applied": false,
+        "vertical_seam_score": null
+      }
+    }
+  ],
+  "comparison_map": "test_map_4x5_repeatable_road.png"
+}

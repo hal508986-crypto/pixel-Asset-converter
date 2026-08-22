@@ -1,0 +1,17 @@
+{
+  "model": "Image 2.0",
+  "size": "1024x1280",
+  "use_case": "stylized-concept",
+  "asset_type": "high-resolution SRPG MAP source for a context-aware pixel-art compiler experiment",
+  "prompt": "Create a high-resolution top-down tactical SRPG map source image in a 4:5 composition. The entire image is one coherent grassy plain with a natural dirt road running vertically from the top edge to the bottom edge, slightly offset and gently meandering while remaining continuous. Include broad grass color variation, subtle worn patches, small soil transitions, and a few sparse low-contrast rocks near the edges. Preserve large connected terrain regions and the direction of the road so the image can be divided into a 4 columns by 5 rows grid and compiled into twenty 64x64 map tiles. Keep the visual style consistent across the whole map, with a shared warm green and earth-tone palette. Use a clean top-down game-map composition with no UI, no characters, no text, no grid lines, no borders, and no isolated central landmark.",
+  "constraints": [
+    "one coherent MAP, not twenty separate panels",
+    "4:5 aspect ratio",
+    "grassland base with a continuous vertical dirt road",
+    "road and terrain boundaries should continue across logical tile boundaries",
+    "no strong central object or focal landmark",
+    "no grid overlay, labels, text, UI, characters, watermark, or border"
+  ],
+  "negative_prompt": "separate tiles, collage, split panels, visible grid, checkerboard, isometric perspective, characters, buildings, large trees, mountain, river crossing, text, labels, UI, watermark, border, strong central landmark",
+  "notes": "Workspace source is normalized to 1024x1280 after generation if the built-in generator returns a different raster size."
+}

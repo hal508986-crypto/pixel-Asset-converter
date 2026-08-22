@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QPushButton,
+    QCheckBox,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -75,9 +76,12 @@ class MainWindow(QMainWindow):
         self.result_preview = QLabel("変換結果")
         self.tile_preview = QLabel("3×3タイル")
         self.status = QLabel("準備完了")
+        self.metrics = QLabel("継ぎ目・周期メトリクス")
         self.palette = QSpinBox()
         self.palette.setRange(4, 32)
         self.palette.setValue(16)
+        self.repeat_opt = QCheckBox("繰り返しタイル最適化")
+        self.repeat_opt.setChecked(True)
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -87,6 +91,7 @@ class MainWindow(QMainWindow):
         compile_button.clicked.connect(self.compile_image)
         form = QFormLayout()
         form.addRow("パレット", self.palette)
+        form.addRow(self.repeat_opt)
         form.addRow(open_button)
         form.addRow(compile_button)
         settings = QWidget()
@@ -108,6 +113,7 @@ class MainWindow(QMainWindow):
         container.setLayout(root)
         outer = QVBoxLayout()
         outer.addWidget(container)
+        outer.addWidget(self.metrics)
         outer.addWidget(self.status)
         wrapper = QWidget()
         wrapper.setLayout(outer)
@@ -127,11 +133,27 @@ class MainWindow(QMainWindow):
         output = Path("output") / self.source_path.stem
         result = PixelTileCompiler().compile(
             self.source_path,
-            CompilerConfig(output_root=output, palette_budget=self.palette.value()),
+            CompilerConfig(
+                output_root=output,
+                palette_budget=self.palette.value(),
+                repeat_opt_enabled=self.repeat_opt.isChecked(),
+            ),
         )
         self.canvas.set_image(result.final_path)
         self.result_preview.setPixmap(_pixmap(result.final_path, 2))
-        tile = output / "debug" / "08_tile_preview.png"
+        tile = output / "debug" / "09_tile_preview.png"
+        if not tile.exists():
+            tile = output / "debug" / "08_tile_preview.png"
         if tile.exists():
             self.tile_preview.setPixmap(_pixmap(tile, 1).scaled(180, 180, Qt.KeepAspectRatio, Qt.FastTransformation))
+        self.metrics.setText(
+            " / ".join(
+                [
+                    f"左右継ぎ目 {result.metrics.horizontal_seam_score}",
+                    f"上下継ぎ目 {result.metrics.vertical_seam_score}",
+                    f"周期リスク {result.metrics.periodicity_risk_score}",
+                    f"中心集中 {result.metrics.center_dominance_score}",
+                ]
+            )
+        )
         self.status.setText(f"完了: {result.metrics.actual_palette_count}色")

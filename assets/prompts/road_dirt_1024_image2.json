@@ -1,0 +1,8 @@
+{
+  "model": "Image 2.0",
+  "use_case": "stylized-concept",
+  "asset_type": "source image for a directional SRPG dirt-road tile",
+  "size": "1024x1024",
+  "prompt": "A square top-down tactical SRPG terrain source image with a broad dirt road running vertically from the top edge to the bottom edge. The road is the clear directional structure, with warm compacted earth, soft uneven edges, green grass verges on both sides, and no object in the center. Make the top and bottom road exits visually compatible for stacking directional tiles, original painterly game environment concept art intended for deterministic 64x64 reduction.",
+  "constraints": ["square 1024x1024", "road connects top edge to bottom edge", "clear grass-road boundary", "no characters, buildings, intersections, text, UI, logo, watermark, border", "final pixel placement is done by the compiler"]
+}

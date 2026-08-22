@@ -1,0 +1,2396 @@
+{
+  "global_style": {
+    "contrast_strength": 0.5,
+    "dithering": "minimal",
+    "edge_strength": 0.12257291201538256,
+    "outline_mode": "selective",
+    "seam_mode": "inspect",
+    "texture_density": 0.09060655134250822
+  },
+  "height": 64,
+  "map_context": {
+    "east_semantic": "road",
+    "global_palette_id": "d9e9c90c031f",
+    "local_brightness_target": 0.25974388740203236,
+    "local_texture_target": 0.310677170753479,
+    "north_semantic": "soil",
+    "south_semantic": null,
+    "tile_x": 0,
+    "tile_y": 4,
+    "west_semantic": null
+  },
+  "palette_budget": 24,
+  "regions": [
+    {
+      "area_ratio": 0.011077880859375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        76,
+        72,
+        26
+      ],
+      "id": 0,
+      "importance": 0.09764371663331985,
+      "merge_candidates": [
+        1,
+        9,
+        14,
+        16,
+        19,
+        95
+      ],
+      "preserve_edges": false,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.09894171357154846
+    },
+    {
+      "area_ratio": 0.0147552490234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        103,
+        95,
+        46
+      ],
+      "id": 1,
+      "importance": 0.25642552673816676,
+      "merge_candidates": [
+        0,
+        2,
+        13,
+        14,
+        17,
+        95,
+        98,
+        101
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.18466173112392426
+    },
+    {
+      "area_ratio": 0.010162353515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        86,
+        82,
+        30
+      ],
+      "id": 2,
+      "importance": 0.1534730702638626,
+      "merge_candidates": [
+        1,
+        3,
+        12,
+        13,
+        98
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.09523060917854309
+    },
+    {
+      "area_ratio": 0.0082244873046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        81,
+        79,
+        28
+      ],
+      "id": 3,
+      "importance": 0.05,
+      "merge_candidates": [
+        2,
+        4,
+        12,
+        94,
+        98,
+        102
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0113372802734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        99,
+        95,
+        30
+      ],
+      "id": 4,
+      "importance": 0.1516683131456375,
+      "merge_candidates": [
+        3,
+        5,
+        10,
+        12,
+        18,
+        102
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.0669669434428215
+    },
+    {
+      "area_ratio": 0.007843017578125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        92,
+        88,
+        28
+      ],
+      "id": 5,
+      "importance": 0.08845476955175399,
+      "merge_candidates": [
+        4,
+        6,
+        10,
+        93,
+        97,
+        102
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.0622299499809742
+    },
+    {
+      "area_ratio": 0.0086669921875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        81,
+        77,
+        27
+      ],
+      "id": 6,
+      "importance": 0.05517251342535019,
+      "merge_candidates": [
+        5,
+        7,
+        10,
+        97
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05591830238699913
+    },
+    {
+      "area_ratio": 0.0101318359375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        100,
+        90,
+        36
+      ],
+      "id": 7,
+      "importance": 0.12368649393320083,
+      "merge_candidates": [
+        6,
+        8,
+        10,
+        15,
+        97,
+        100
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07745357602834702
+    },
+    {
+      "area_ratio": 0.0087890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        136,
+        108,
+        53
+      ],
+      "id": 8,
+      "importance": 0.1816514790058136,
+      "merge_candidates": [
+        7,
+        9,
+        11,
+        15,
+        96,
+        99,
+        100
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08115517348051071
+    },
+    {
+      "area_ratio": 0.010406494140625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        140,
+        111,
+        54
+      ],
+      "id": 9,
+      "importance": 0.23592988848686217,
+      "merge_candidates": [
+        0,
+        8,
+        11,
+        16,
+        99
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.10638333112001419
+    },
+    {
+      "area_ratio": 0.011688232421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        107,
+        100,
+        35
+      ],
+      "id": 10,
+      "importance": 0.1994800180196762,
+      "merge_candidates": [
+        4,
+        5,
+        6,
+        7,
+        15,
+        18,
+        21,
+        24,
+        28
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08657699823379517
+    },
+    {
+      "area_ratio": 0.0092926025390625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        118,
+        98,
+        43
+      ],
+      "id": 11,
+      "importance": 0.23133712410926818,
+      "merge_candidates": [
+        8,
+        9,
+        15,
+        16,
+        22
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.09067213535308838
+    },
+    {
+      "area_ratio": 0.0097808837890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        83,
+        79,
+        30
+      ],
+      "id": 12,
+      "importance": 0.10478322803974152,
+      "merge_candidates": [
+        2,
+        3,
+        4,
+        13,
+        18,
+        20,
+        23
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07228641957044601
+    },
+    {
+      "area_ratio": 0.005859375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        100,
+        90,
+        37
+      ],
+      "id": 13,
+      "importance": 0.1945963591337204,
+      "merge_candidates": [
+        1,
+        2,
+        12,
+        17,
+        20
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07562058418989182
+    },
+    {
+      "area_ratio": 0.0103607177734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        71,
+        66,
+        43
+      ],
+      "id": 14,
+      "importance": 0.1631419003009796,
+      "merge_candidates": [
+        0,
+        1,
+        17,
+        19,
+        27
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.12657849490642548
+    },
+    {
+      "area_ratio": 0.0074462890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        116,
+        106,
+        38
+      ],
+      "id": 15,
+      "importance": 0.26563720703125,
+      "merge_candidates": [
+        7,
+        8,
+        10,
+        11,
+        21,
+        22
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.10519912093877792
+    },
+    {
+      "area_ratio": 0.01068115234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        105,
+        95,
+        36
+      ],
+      "id": 16,
+      "importance": 0.0938589945435524,
+      "merge_candidates": [
+        0,
+        9,
+        11,
+        19,
+        22,
+        29
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06067512556910515
+    },
+    {
+      "area_ratio": 0.0115509033203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        88,
+        80,
+        47
+      ],
+      "id": 17,
+      "importance": 0.20787644088268278,
+      "merge_candidates": [
+        1,
+        13,
+        14,
+        20,
+        25,
+        27
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.18551242351531982
+    },
+    {
+      "area_ratio": 0.0112762451171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        84,
+        80,
+        32
+      ],
+      "id": 18,
+      "importance": 0.24830799698829648,
+      "merge_candidates": [
+        4,
+        10,
+        12,
+        23,
+        24,
+        26
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.12249263375997543
+    },
+    {
+      "area_ratio": 0.013671875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        88,
+        76,
+        35
+      ],
+      "id": 19,
+      "importance": 0.1626395046710968,
+      "merge_candidates": [
+        0,
+        14,
+        16,
+        27,
+        29,
+        33,
+        36
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.12292543798685074
+    },
+    {
+      "area_ratio": 0.0079498291015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        86,
+        79,
+        33
+      ],
+      "id": 20,
+      "importance": 0.2182301491498947,
+      "merge_candidates": [
+        12,
+        13,
+        17,
+        23,
+        25,
+        31,
+        34
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.12125583738088608
+    },
+    {
+      "area_ratio": 0.00701904296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        84,
+        80,
+        28
+      ],
+      "id": 21,
+      "importance": 0.05169651284813881,
+      "merge_candidates": [
+        10,
+        15,
+        22,
+        28,
+        32
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.007232666015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        93,
+        87,
+        32
+      ],
+      "id": 22,
+      "importance": 0.05,
+      "merge_candidates": [
+        11,
+        15,
+        16,
+        21,
+        29,
+        30,
+        32
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0079345703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        72,
+        69,
+        29
+      ],
+      "id": 23,
+      "importance": 0.09166260063648224,
+      "merge_candidates": [
+        12,
+        18,
+        20,
+        26,
+        31
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07054784893989563
+    },
+    {
+      "area_ratio": 0.008392333984375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        81,
+        79,
+        28
+      ],
+      "id": 24,
+      "importance": 0.17035117745399475,
+      "merge_candidates": [
+        10,
+        18,
+        26,
+        28,
+        35,
+        37
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.10091767460107803
+    },
+    {
+      "area_ratio": 0.0089263916015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        95,
+        87,
+        36
+      ],
+      "id": 25,
+      "importance": 0.3007967174053192,
+      "merge_candidates": [
+        17,
+        20,
+        27,
+        34,
+        38
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.12134581804275513
+    },
+    {
+      "area_ratio": 0.0113983154296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        71,
+        69,
+        27
+      ],
+      "id": 26,
+      "importance": 0.20465935468673704,
+      "merge_candidates": [
+        18,
+        23,
+        24,
+        31,
+        35
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.11529770493507385
+    },
+    {
+      "area_ratio": 0.0106353759765625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        66,
+        63,
+        25
+      ],
+      "id": 27,
+      "importance": 0.14572022557258607,
+      "merge_candidates": [
+        14,
+        17,
+        19,
+        25,
+        36,
+        38
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08380064368247986
+    },
+    {
+      "area_ratio": 0.00732421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        92,
+        88,
+        30
+      ],
+      "id": 28,
+      "importance": 0.05,
+      "merge_candidates": [
+        10,
+        21,
+        24,
+        32,
+        37
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06293532252311707
+    },
+    {
+      "area_ratio": 0.0059356689453125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        86,
+        83,
+        33
+      ],
+      "id": 29,
+      "importance": 0.2412566781044006,
+      "merge_candidates": [
+        16,
+        19,
+        22,
+        30,
+        33
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.0938902422785759
+    },
+    {
+      "area_ratio": 0.0091552734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        69,
+        68,
+        28
+      ],
+      "id": 30,
+      "importance": 0.09589274227619171,
+      "merge_candidates": [
+        22,
+        29,
+        32,
+        33,
+        40
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0096435546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        63,
+        63,
+        24
+      ],
+      "id": 31,
+      "importance": 0.12468184232711792,
+      "merge_candidates": [
+        20,
+        23,
+        26,
+        34,
+        35,
+        41
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06982686370611191
+    },
+    {
+      "area_ratio": 0.0097808837890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        91,
+        85,
+        31
+      ],
+      "id": 32,
+      "importance": 0.11414360105991364,
+      "merge_candidates": [
+        21,
+        22,
+        28,
+        30,
+        37,
+        39,
+        40
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06042725220322609
+    },
+    {
+      "area_ratio": 0.00927734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        71,
+        70,
+        27
+      ],
+      "id": 33,
+      "importance": 0.12967978715896605,
+      "merge_candidates": [
+        19,
+        29,
+        30,
+        36,
+        40
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.09722059965133667
+    },
+    {
+      "area_ratio": 0.01593017578125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        90,
+        82,
+        38
+      ],
+      "id": 34,
+      "importance": 0.2566334396600723,
+      "merge_candidates": [
+        20,
+        25,
+        31,
+        38,
+        41,
+        45,
+        49
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.18567658960819244
+    },
+    {
+      "area_ratio": 0.016265869140625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        81,
+        78,
+        30
+      ],
+      "id": 35,
+      "importance": 0.1664284974336624,
+      "merge_candidates": [
+        24,
+        26,
+        31,
+        37,
+        41,
+        42,
+        47
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.09629786759614944
+    },
+    {
+      "area_ratio": 0.0141143798828125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        93,
+        82,
+        37
+      ],
+      "id": 36,
+      "importance": 0.18855911493301392,
+      "merge_candidates": [
+        19,
+        27,
+        33,
+        38,
+        40,
+        44,
+        46,
+        49
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.10949605703353882
+    },
+    {
+      "area_ratio": 0.010833740234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        94,
+        89,
+        31
+      ],
+      "id": 37,
+      "importance": 0.1072578951716423,
+      "merge_candidates": [
+        24,
+        28,
+        32,
+        35,
+        39,
+        42,
+        43
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08661425113677979
+    },
+    {
+      "area_ratio": 0.0138702392578125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        79,
+        73,
+        32
+      ],
+      "id": 38,
+      "importance": 0.13693828284740447,
+      "merge_candidates": [
+        25,
+        27,
+        34,
+        36,
+        49
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.14494122564792633
+    },
+    {
+      "area_ratio": 0.013702392578125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        117,
+        103,
+        42
+      ],
+      "id": 39,
+      "importance": 0.2203117787837982,
+      "merge_candidates": [
+        32,
+        37,
+        40,
+        43,
+        44,
+        48,
+        52
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.09570061415433884
+    },
+    {
+      "area_ratio": 0.0057830810546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        98,
+        91,
+        33
+      ],
+      "id": 40,
+      "importance": 0.18892546892166134,
+      "merge_candidates": [
+        30,
+        32,
+        33,
+        36,
+        39,
+        44
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08201417326927185
+    },
+    {
+      "area_ratio": 0.0169677734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        75,
+        71,
+        39
+      ],
+      "id": 41,
+      "importance": 0.18940929770469664,
+      "merge_candidates": [
+        31,
+        34,
+        35,
+        45,
+        47,
+        50,
+        53
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.23103950917720795
+    },
+    {
+      "area_ratio": 0.00518798828125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        110,
+        101,
+        48
+      ],
+      "id": 42,
+      "importance": 0.2726594805717468,
+      "merge_candidates": [
+        35,
+        37,
+        43,
+        47,
+        51
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.1486518532037735
+    },
+    {
+      "area_ratio": 0.0134735107421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        110,
+        97,
+        38
+      ],
+      "id": 43,
+      "importance": 0.16645971238613128,
+      "merge_candidates": [
+        37,
+        39,
+        42,
+        51,
+        52,
+        58
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.10688241571187973
+    },
+    {
+      "area_ratio": 0.010467529296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        116,
+        106,
+        40
+      ],
+      "id": 44,
+      "importance": 0.2668797731399536,
+      "merge_candidates": [
+        36,
+        39,
+        40,
+        46,
+        48,
+        54,
+        55
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.09649202972650528
+    },
+    {
+      "area_ratio": 0.0078277587890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        72,
+        67,
+        46
+      ],
+      "id": 45,
+      "importance": 0.1938262015581131,
+      "merge_candidates": [
+        34,
+        41,
+        49,
+        50,
+        57
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.11687911301851273
+    },
+    {
+      "area_ratio": 0.00885009765625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        91,
+        85,
+        39
+      ],
+      "id": 46,
+      "importance": 0.25824037194252014,
+      "merge_candidates": [
+        36,
+        44,
+        49,
+        54,
+        57,
+        62
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.1927310973405838
+    },
+    {
+      "area_ratio": 0.0072021484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        83,
+        77,
+        50
+      ],
+      "id": 47,
+      "importance": 0.22487027645111085,
+      "merge_candidates": [
+        35,
+        41,
+        42,
+        51,
+        53,
+        56
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.1416611671447754
+    },
+    {
+      "area_ratio": 0.0080718994140625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        96,
+        88,
+        32
+      ],
+      "id": 48,
+      "importance": 0.09256535917520524,
+      "merge_candidates": [
+        39,
+        44,
+        52,
+        55,
+        60
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07264833152294159
+    },
+    {
+      "area_ratio": 0.0118408203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        84,
+        78,
+        34
+      ],
+      "id": 49,
+      "importance": 0.26842243075370786,
+      "merge_candidates": [
+        34,
+        36,
+        38,
+        45,
+        46,
+        57
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.18662290275096893
+    },
+    {
+      "area_ratio": 0.008514404296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        72,
+        70,
+        34
+      ],
+      "id": 50,
+      "importance": 0.20246805548667907,
+      "merge_candidates": [
+        41,
+        45,
+        53,
+        57,
+        59,
+        63
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.12373284250497818
+    },
+    {
+      "area_ratio": 0.0105133056640625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        98,
+        91,
+        35
+      ],
+      "id": 51,
+      "importance": 0.15705617666244506,
+      "merge_candidates": [
+        42,
+        43,
+        47,
+        56,
+        58,
+        65
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.1247434988617897
+    },
+    {
+      "area_ratio": 0.0106048583984375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        114,
+        101,
+        40
+      ],
+      "id": 52,
+      "importance": 0.12874501943588257,
+      "merge_candidates": [
+        39,
+        43,
+        48,
+        58,
+        60,
+        61
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06943998485803604
+    },
+    {
+      "area_ratio": 0.0071258544921875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        94,
+        87,
+        35
+      ],
+      "id": 53,
+      "importance": 0.2826302468776703,
+      "merge_candidates": [
+        41,
+        47,
+        50,
+        56,
+        59
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.13898874819278717
+    },
+    {
+      "area_ratio": 0.007781982421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        50,
+        49,
+        21
+      ],
+      "id": 54,
+      "importance": 0.05,
+      "merge_candidates": [
+        44,
+        46,
+        55,
+        62,
+        64
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.056858569383621216
+    },
+    {
+      "area_ratio": 0.0103607177734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        81,
+        78,
+        27
+      ],
+      "id": 55,
+      "importance": 0.05,
+      "merge_candidates": [
+        44,
+        48,
+        54,
+        60,
+        64,
+        66
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0090484619140625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        80,
+        75,
+        28
+      ],
+      "id": 56,
+      "importance": 0.13704561740159987,
+      "merge_candidates": [
+        47,
+        51,
+        53,
+        59,
+        65,
+        69
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.11408817768096924
+    },
+    {
+      "area_ratio": 0.0096893310546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        63,
+        61,
+        34
+      ],
+      "id": 57,
+      "importance": 0.12900901585817337,
+      "merge_candidates": [
+        45,
+        46,
+        49,
+        50,
+        62,
+        63,
+        68,
+        70
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.20993614196777344
+    },
+    {
+      "area_ratio": 0.0113677978515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        98,
+        90,
+        34
+      ],
+      "id": 58,
+      "importance": 0.17420794069766998,
+      "merge_candidates": [
+        43,
+        51,
+        52,
+        61,
+        65,
+        67,
+        72
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.11831235885620117
+    },
+    {
+      "area_ratio": 0.0104217529296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        68,
+        67,
+        26
+      ],
+      "id": 59,
+      "importance": 0.1917246311903,
+      "merge_candidates": [
+        50,
+        53,
+        56,
+        63,
+        69,
+        70
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.1501217931509018
+    },
+    {
+      "area_ratio": 0.0087127685546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        90,
+        84,
+        31
+      ],
+      "id": 60,
+      "importance": 0.0603283368051052,
+      "merge_candidates": [
+        48,
+        52,
+        55,
+        61,
+        66,
+        67,
+        71
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06832433491945267
+    },
+    {
+      "area_ratio": 0.0062408447265625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        112,
+        102,
+        41
+      ],
+      "id": 61,
+      "importance": 0.2282646983861923,
+      "merge_candidates": [
+        52,
+        58,
+        60,
+        67
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08664268255233765
+    },
+    {
+      "area_ratio": 0.0104827880859375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        80,
+        74,
+        48
+      ],
+      "id": 62,
+      "importance": 0.1952307343482971,
+      "merge_candidates": [
+        46,
+        54,
+        57,
+        64,
+        68,
+        73
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.20289047062397003
+    },
+    {
+      "area_ratio": 0.007293701171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        50,
+        51,
+        23
+      ],
+      "id": 63,
+      "importance": 0.10736698210239409,
+      "merge_candidates": [
+        50,
+        57,
+        59,
+        70
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05170590803027153
+    },
+    {
+      "area_ratio": 0.0108795166015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        83,
+        78,
+        28
+      ],
+      "id": 64,
+      "importance": 0.10559593439102172,
+      "merge_candidates": [
+        54,
+        55,
+        62,
+        66,
+        73,
+        77,
+        78
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.10113447904586792
+    },
+    {
+      "area_ratio": 0.00994873046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        88,
+        84,
+        29
+      ],
+      "id": 65,
+      "importance": 0.16966533362865446,
+      "merge_candidates": [
+        51,
+        56,
+        58,
+        69,
+        72,
+        76
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07594339549541473
+    },
+    {
+      "area_ratio": 0.0123748779296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        78,
+        74,
+        27
+      ],
+      "id": 66,
+      "importance": 0.10860130041837691,
+      "merge_candidates": [
+        55,
+        60,
+        64,
+        71,
+        77
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.061175812035799026
+    },
+    {
+      "area_ratio": 0.00927734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        84,
+        78,
+        34
+      ],
+      "id": 67,
+      "importance": 0.11158768385648726,
+      "merge_candidates": [
+        58,
+        60,
+        61,
+        71,
+        72,
+        79
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.11889654397964478
+    },
+    {
+      "area_ratio": 0.01007080078125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        79,
+        76,
+        26
+      ],
+      "id": 68,
+      "importance": 0.16357292234897614,
+      "merge_candidates": [
+        57,
+        62,
+        70,
+        73,
+        74,
+        75
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08207202702760696
+    },
+    {
+      "area_ratio": 0.0074310302734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        86,
+        82,
+        27
+      ],
+      "id": 69,
+      "importance": 0.0895271345973015,
+      "merge_candidates": [
+        56,
+        59,
+        65,
+        70,
+        76,
+        80
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06098274886608124
+    },
+    {
+      "area_ratio": 0.0132293701171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        69,
+        68,
+        24
+      ],
+      "id": 70,
+      "importance": 0.05200313106179237,
+      "merge_candidates": [
+        57,
+        59,
+        63,
+        68,
+        69,
+        74,
+        80,
+        81
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.055877406150102615
+    },
+    {
+      "area_ratio": 0.01312255859375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        94,
+        87,
+        56
+      ],
+      "id": 71,
+      "importance": 0.28104573488235474,
+      "merge_candidates": [
+        60,
+        66,
+        67,
+        77,
+        79,
+        83
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.19888772070407867
+    },
+    {
+      "area_ratio": 0.00994873046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        100,
+        92,
+        34
+      ],
+      "id": 72,
+      "importance": 0.1420579746365547,
+      "merge_candidates": [
+        58,
+        65,
+        67,
+        76,
+        79,
+        85
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06531911343336105
+    },
+    {
+      "area_ratio": 0.0102996826171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        79,
+        75,
+        25
+      ],
+      "id": 73,
+      "importance": 0.05,
+      "merge_candidates": [
+        62,
+        64,
+        68,
+        75,
+        78,
+        86
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.007965087890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        83,
+        81,
+        27
+      ],
+      "id": 74,
+      "importance": 0.0646194040775299,
+      "merge_candidates": [
+        68,
+        70,
+        75,
+        81,
+        82
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07306811958551407
+    },
+    {
+      "area_ratio": 0.008209228515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        89,
+        85,
+        30
+      ],
+      "id": 75,
+      "importance": 0.09158882051706313,
+      "merge_candidates": [
+        68,
+        73,
+        74,
+        82,
+        86,
+        89
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07274238765239716
+    },
+    {
+      "area_ratio": 0.010101318359375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        85,
+        81,
+        29
+      ],
+      "id": 76,
+      "importance": 0.09674147218465805,
+      "merge_candidates": [
+        65,
+        69,
+        72,
+        80,
+        85,
+        87,
+        91
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06279890239238739
+    },
+    {
+      "area_ratio": 0.0101776123046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        74,
+        72,
+        26
+      ],
+      "id": 77,
+      "importance": 0.08883925229310989,
+      "merge_candidates": [
+        64,
+        66,
+        71,
+        78,
+        83,
+        88
+      ],
+      "preserve_edges": false,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.0857783854007721
+    },
+    {
+      "area_ratio": 0.0101470947265625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        81,
+        78,
+        26
+      ],
+      "id": 78,
+      "importance": 0.05,
+      "merge_candidates": [
+        64,
+        73,
+        77,
+        86,
+        88,
+        92
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0099029541015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        83,
+        77,
+        30
+      ],
+      "id": 79,
+      "importance": 0.10246030390262603,
+      "merge_candidates": [
+        67,
+        71,
+        72,
+        83,
+        85,
+        90
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.0810728594660759
+    },
+    {
+      "area_ratio": 0.0092010498046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        86,
+        82,
+        28
+      ],
+      "id": 80,
+      "importance": 0.08399882465600968,
+      "merge_candidates": [
+        69,
+        70,
+        76,
+        81,
+        84,
+        87
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06283485889434814
+    },
+    {
+      "area_ratio": 0.0052337646484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        88,
+        86,
+        29
+      ],
+      "id": 81,
+      "importance": 0.05,
+      "merge_candidates": [
+        70,
+        74,
+        80,
+        82,
+        84
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0113372802734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        76,
+        74,
+        27
+      ],
+      "id": 82,
+      "importance": 0.060147452354431155,
+      "merge_candidates": [
+        74,
+        75,
+        81,
+        84,
+        89,
+        94,
+        98
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05565096437931061
+    },
+    {
+      "area_ratio": 0.009735107421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        68,
+        66,
+        25
+      ],
+      "id": 83,
+      "importance": 0.05,
+      "merge_candidates": [
+        71,
+        77,
+        79,
+        88,
+        90,
+        96
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0094146728515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        78,
+        76,
+        26
+      ],
+      "id": 84,
+      "importance": 0.05218572244048118,
+      "merge_candidates": [
+        80,
+        81,
+        82,
+        87,
+        94
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.051338668912649155
+    },
+    {
+      "area_ratio": 0.0106964111328125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        86,
+        82,
+        31
+      ],
+      "id": 85,
+      "importance": 0.0994952753186226,
+      "merge_candidates": [
+        72,
+        76,
+        79,
+        90,
+        91,
+        93,
+        97
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06374361366033554
+    },
+    {
+      "area_ratio": 0.009307861328125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        79,
+        77,
+        25
+      ],
+      "id": 86,
+      "importance": 0.05,
+      "merge_candidates": [
+        73,
+        75,
+        78,
+        89,
+        92,
+        95,
+        101
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.00634765625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        94,
+        88,
+        32
+      ],
+      "id": 87,
+      "importance": 0.07583007812499999,
+      "merge_candidates": [
+        76,
+        80,
+        84,
+        91,
+        93,
+        94,
+        102
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.0725402981042862
+    },
+    {
+      "area_ratio": 0.009521484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        65,
+        65,
+        24
+      ],
+      "id": 88,
+      "importance": 0.05,
+      "merge_candidates": [
+        77,
+        78,
+        83,
+        92,
+        96,
+        99
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07367260009050369
+    },
+    {
+      "area_ratio": 0.0084381103515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        75,
+        72,
+        26
+      ],
+      "id": 89,
+      "importance": 0.07196957916021346,
+      "merge_candidates": [
+        75,
+        82,
+        86,
+        98,
+        101
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.009613037109375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        75,
+        73,
+        27
+      ],
+      "id": 90,
+      "importance": 0.05,
+      "merge_candidates": [
+        79,
+        83,
+        85,
+        96,
+        97,
+        100
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0044403076171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        97,
+        91,
+        32
+      ],
+      "id": 91,
+      "importance": 0.17427309453487394,
+      "merge_candidates": [
+        76,
+        85,
+        87,
+        93
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05642169341444969
+    },
+    {
+      "area_ratio": 0.0067291259765625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        97,
+        91,
+        31
+      ],
+      "id": 92,
+      "importance": 0.11617198437452314,
+      "merge_candidates": [
+        78,
+        86,
+        88,
+        95,
+        99
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.07503979653120041
+    },
+    {
+      "area_ratio": 0.009185791015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        76,
+        73,
+        26
+      ],
+      "id": 93,
+      "importance": 0.06580178886651993,
+      "merge_candidates": [
+        5,
+        85,
+        87,
+        91,
+        97,
+        102
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.053489651530981064
+    },
+    {
+      "area_ratio": 0.0115509033203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        71,
+        70,
+        26
+      ],
+      "id": 94,
+      "importance": 0.05,
+      "merge_candidates": [
+        3,
+        82,
+        84,
+        87,
+        98,
+        102
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0091400146484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        77,
+        74,
+        25
+      ],
+      "id": 95,
+      "importance": 0.05,
+      "merge_candidates": [
+        0,
+        1,
+        86,
+        92,
+        99,
+        101
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0102996826171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        63,
+        64,
+        23
+      ],
+      "id": 96,
+      "importance": 0.05,
+      "merge_candidates": [
+        8,
+        83,
+        88,
+        90,
+        99,
+        100
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.008697509765625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        66,
+        65,
+        23
+      ],
+      "id": 97,
+      "importance": 0.05,
+      "merge_candidates": [
+        5,
+        6,
+        7,
+        85,
+        90,
+        93,
+        100
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0149688720703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        80,
+        76,
+        29
+      ],
+      "id": 98,
+      "importance": 0.07424808517098427,
+      "merge_candidates": [
+        1,
+        2,
+        3,
+        82,
+        89,
+        94,
+        101
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06600748002529144
+    },
+    {
+      "area_ratio": 0.0077972412109375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        68,
+        67,
+        25
+      ],
+      "id": 99,
+      "importance": 0.05,
+      "merge_candidates": [
+        8,
+        9,
+        88,
+        92,
+        95,
+        96
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.060429319739341736
+    },
+    {
+      "area_ratio": 0.00811767578125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        71,
+        70,
+        25
+      ],
+      "id": 100,
+      "importance": 0.05,
+      "merge_candidates": [
+        7,
+        8,
+        90,
+        96,
+        97
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.007232666015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        93,
+        87,
+        30
+      ],
+      "id": 101,
+      "importance": 0.08480885028839111,
+      "merge_candidates": [
+        1,
+        86,
+        89,
+        95,
+        98
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.06047471985220909
+    },
+    {
+      "area_ratio": 0.00775146484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        62,
+        63,
+        21
+      ],
+      "id": 102,
+      "importance": 0.05,
+      "merge_candidates": [
+        3,
+        4,
+        5,
+        87,
+        93,
+        94
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "soil",
+      "texture_priority": 0.05
+    }
+  ],
+  "tile_mode": "repeatable",
+  "tile_type": "soil",
+  "version": "0.1",
+  "width": 64
+}

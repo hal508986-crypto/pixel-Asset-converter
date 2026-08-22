@@ -77,3 +77,40 @@ def test_pipeline_preserves_binary_alpha_and_supports_flat_background(tmp_path: 
 
     assert alpha_values <= {0, 255}
     assert 0 in alpha_values
+
+
+def test_pipeline_reports_repeatability_metrics_and_debug_stages(tmp_path: Path):
+    source = tmp_path / "repeatable.png"
+    create_source(source)
+
+    result = PixelTileCompiler().compile(
+        source,
+        CompilerConfig(
+            output_root=tmp_path / "repeatable-out",
+            repeat_opt_enabled=True,
+            repeat_opt_strength=0.7,
+            repeat_opt_edge_band=6,
+            center_suppression_strength=0.4,
+        ),
+    )
+
+    assert result.metrics.repeatability_optimization_applied is True
+    assert result.metrics.periodicity_risk_score is not None
+    assert result.metrics.center_dominance_score is not None
+    assert "08_repeat_optimized" in result.debug_paths
+    assert "09_tile_preview" in result.debug_paths
+    assert result.metadata["repeatability_optimization"]["applied"] is True
+
+
+def test_pipeline_does_not_apply_repeatability_to_directional_tiles(tmp_path: Path):
+    source = tmp_path / "directional.png"
+    create_source(source)
+
+    result = PixelTileCompiler().compile(
+        source,
+        CompilerConfig(output_root=tmp_path / "directional-out", tile_mode="directional"),
+    )
+
+    assert result.metrics.repeatability_optimization_applied is False
+    assert result.metrics.periodicity_risk_score is None
+    assert result.metrics.center_dominance_score is None

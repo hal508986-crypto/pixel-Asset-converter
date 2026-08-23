@@ -1,0 +1,86 @@
+study:
+  output_root: ../e2e/pixel_hierarchy_study
+  hierarchy_modes:
+    - flat
+    - structured
+    - volumetric
+  targets:
+    - grass
+    - forest_canopy
+    - dirt_road
+    - river
+    - grass_forest
+    - grass_road
+    - grass_river
+    - forest_river
+    - tree_object
+    - rock_object
+  sources:
+    grass: ../assets/source_experiments/source/grass_src_08_illustrative.png
+    forest_canopy: ../assets/forest_source_experiments/source/forest_src_02_uniform_medium.png
+    road: ../assets/road_source_experiments/source/dirt_road_master.png
+    water: ../assets/river_source_experiments/source/water_master.png
+    bank: ../assets/road_source_experiments/source/dirt_road_master.png
+  target_specs:
+    grass:
+      semantic_role: surface
+      material: grass
+    forest_canopy:
+      semantic_role: surface
+      material: forest_canopy
+    dirt_road:
+      semantic_role: network
+      material: dirt_road
+      topology: EW
+      width_ratio: 0.28
+      base: grass
+      material_source: road
+    river:
+      semantic_role: network
+      material: river
+      topology: NEW
+      width_ratio: 0.26
+      width_variation: 0.04
+      bank_width_ratio: 0.04
+      base: forest_canopy
+      water_source: water
+      bank_source: bank
+      incoming: [N, W]
+      outgoing: [E]
+    grass_forest:
+      semantic_role: transition
+      material: grass_to_forest
+      orientation: EW
+    grass_road:
+      semantic_role: transition
+      material: grass_to_road
+      orientation: EW
+    grass_river:
+      semantic_role: transition
+      material: grass_to_river
+      orientation: EW
+    forest_river:
+      semantic_role: transition
+      material: forest_to_river
+      orientation: EW
+    tree_object:
+      semantic_role: object
+      material: tree
+    rock_object:
+      semantic_role: object
+      material: rock
+  lighting:
+    direction: [-1, -1]
+    strength: 0.5
+  maps:
+    enabled: true
+    width: 10
+    height: 10
+  object_preview_size: 5
+  generate_unit_preview: true
+  pixel:
+    source_size: 256
+    palette_budget: 28
+    shared_palette: true
+    enabled: true
+  seed: 42

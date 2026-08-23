@@ -1,0 +1,145 @@
+{
+  "brightness_discontinuity_score": 0.022645,
+  "contract_compatible": false,
+  "demo_id": "road_demo_forest",
+  "edge_discontinuity_score": 0.024012,
+  "grid_visibility_score": 0.019948,
+  "image": "experiments\\..\\e2e\\transition_network_study\\maps\\road_demo_forest\\independent_handoff.png",
+  "layout": [
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_road_forest_canopy_to_dirt_road_EW",
+      "dirt_road_forest_canopy_EW",
+      "dirt_road_forest_canopy_EW",
+      "dirt_road_forest_canopy_EW",
+      "dirt_road_forest_canopy_EW",
+      "forest_road_dirt_road_to_forest_canopy_EW",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ],
+    [
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy",
+      "forest_canopy"
+    ]
+  ],
+  "method": "independent_handoff",
+  "network_metrics": {
+    "road_break_risk": 0.019965,
+    "road_center_alignment_score": 0.919188,
+    "road_continuity_score": 0.980035,
+    "road_presence_score": 1.0,
+    "road_width_stability_score": 0.828294
+  },
+  "palette_discontinuity_score": 0.005741,
+  "transition_metrics": {
+    "boundary_abruptness_score": 0.101573,
+    "boundary_continuity_score": 0.980035,
+    "boundary_presence_score": 1.0,
+    "semantic_clarity_score": 0.154595
+  }
+}

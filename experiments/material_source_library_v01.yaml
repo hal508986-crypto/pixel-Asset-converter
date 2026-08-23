@@ -1,0 +1,24 @@
+library:
+  version: "0.1"
+  root: ../material_library
+  materials:
+    - grass
+    - dirt
+    - water
+    - stone
+  candidates_per_material: 8
+  promote_top: 2
+generation:
+  enabled: false
+source_gate:
+  enabled: true
+  allow_rejected_probe: true
+compile_probe:
+  variants: 8
+  palette: 28
+  shared_palette: true
+map_probe:
+  columns: 10
+  rows: 10
+seed: 42
+output: ../e2e/material_source_library_v01

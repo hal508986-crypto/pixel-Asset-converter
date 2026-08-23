@@ -121,6 +121,36 @@ py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli
 
 入力は `experiments/river_graph_10x10.json`、`experiments/river_surface_10x10.json`、Water Material Exemplar `assets/river_source_experiments/source/water_master.png` です。出力 `e2e/river_network_study/` には、directed Graph preview、topology/flow debug、centerline・body・bank mask、3方式の640×640 MAP、manifest、River metrics、比較レポートを保存します。RiverではNESW crossとdirected cycleをrejectし、T topologyをincoming 2 + outgoing 1のmergeとして扱います。
 
+### 64×64 Pixel Grammar Study
+
+`study-pixel-grammar` は、既存のSurface / Network / Transition / Object sampleを同じ条件で `Sparse / Balanced / Detailed` に通し、64×64での情報密度とsemantic readabilityの関係を比較します。NetworkのmaskやTransitionのboundary geometryは固定し、density変換はmaterial appearance側へ適用します。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" study-pixel-grammar --config experiments/pixel_grammar_study.yaml
+```
+
+出力 `e2e/pixel_grammar_study/` には、targetごとの3密度tile、Surface / Networkの10×10 preview、frequency band・clutter・readability・semantic fitness metrics、`summary/comparison_board.png`、`summary/recommended_profiles.json`、`summary/grammar_summary.md` を保存します。指標は仮説検証用の近似値であり、Pixel Artistによる最終確認を置き換えません。詳細は `docs/pixel_grammar_study.md` を参照してください。
+
+### 64×64 Flat / Structured / Volumetric Pixel Grammar Study
+
+`study-pixel-hierarchy` は、前回のDetailedを高周波detailとして増やす方式を見直し、`Flat / Structured / Volumetric` の表現階層を比較します。VolumetricはStructuredを土台に、共通光源・広い面の明暗・material固有のdepth cue・contact shadow・highlightを追加するVolumePassです。Network geometry、Transition boundary、Object silhouetteは変更せず、既存のRendererとPixel Compilerを再利用します。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" study-pixel-hierarchy --config experiments/pixel_hierarchy_study.yaml
+```
+
+出力 `e2e/pixel_hierarchy_study/` には、30サンプルの比較tile、Surface / Networkの10×10 MAP、Tree / Rockの5×5 preview、仮ユニットoverlay、hierarchy/noise/semantic/map metrics、`summary/comparison_board.png`、`summary/recommended_profiles.json`、`summary/hierarchy_summary.md` を保存します。詳細は `docs/pixel_hierarchy_study.md` を参照してください。
+
+### Material Source Library v0.1
+
+`build-material-library` は、`grass`、`dirt`、`water`、`stone` の4 material familyを同じ条件で登録・比較する実験です。各familyに8候補を用意し、Material Source Card、決定論的fingerprint、Source Gate、8 variant Compile Probe、10×10 Map Probe、5種類のfitness score、family別ranking、Top2 promotionまで一括で行います。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" build-material-library --config experiments/material_source_library_v01.yaml
+```
+
+実験成果物は `e2e/material_source_library_v01/`、昇格した永続ライブラリは `material_library/` です。後続Rendererはraw pathを直接参照せず、`MaterialLibrary.get_family()`、`get_preferred_source()`、`get_sources()`でmaterial IDから解決します。現在のCLIには外部t2i backendを接続していないため、既存のgrass/road/water/stone画像と決定論的adapterで32候補枠を埋め、prompt・generation metadata・人手レビュー枠を保存します。
+
 ## GUI
 
 GUIはPySide6で、入力・64×64結果・3×3タイルプレビュー、整数ズーム、nearest-neighbor表示、4倍以上でのpixel grid、パレット設定を提供します。画像処理はGUIへ埋め込まず、CLIと同じ `PixelTileCompiler` を呼び出します。

@@ -1,0 +1,145 @@
+{
+  "brightness_discontinuity_score": 0.003634,
+  "contract_compatible": true,
+  "demo_id": "road_demo_grass",
+  "edge_discontinuity_score": 0.006532,
+  "grid_visibility_score": 0.00556,
+  "image": "experiments\\..\\e2e\\transition_network_study\\maps\\road_demo_grass\\contract_aware.png",
+  "layout": [
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass_road_grass_to_dirt_road_EW",
+      "dirt_road_grass_EW",
+      "dirt_road_grass_EW",
+      "dirt_road_grass_EW",
+      "dirt_road_grass_EW",
+      "grass_road_dirt_road_to_grass_EW",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ],
+    [
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass",
+      "grass"
+    ]
+  ],
+  "method": "contract_aware",
+  "network_metrics": {
+    "road_break_risk": 0.019271,
+    "road_center_alignment_score": 0.927619,
+    "road_continuity_score": 0.980729,
+    "road_presence_score": 1.0,
+    "road_width_stability_score": 0.827084
+  },
+  "palette_discontinuity_score": 0.006016,
+  "transition_metrics": {
+    "boundary_abruptness_score": 0.102826,
+    "boundary_continuity_score": 0.980729,
+    "boundary_presence_score": 1.0,
+    "semantic_clarity_score": 0.136765
+  }
+}

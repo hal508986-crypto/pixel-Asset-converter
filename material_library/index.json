@@ -1,0 +1,20 @@
+{
+  "families": [
+    "grass",
+    "dirt",
+    "water",
+    "stone"
+  ],
+  "preferred_sources": {
+    "dirt": "dirt_v08_illustrative",
+    "grass": "grass_v01_uniform_dark",
+    "stone": "stone_v01_fine_grain",
+    "water": "water_v01_calm_uniform"
+  },
+  "resolver_api": [
+    "get_family",
+    "get_preferred_source",
+    "get_sources"
+  ],
+  "version": "0.1"
+}

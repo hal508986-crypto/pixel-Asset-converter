@@ -1,0 +1,106 @@
+{
+  "study": {
+    "levels": [
+      "sparse",
+      "balanced",
+      "detailed"
+    ],
+    "maps": {
+      "enabled": true,
+      "height": 10,
+      "width": 10
+    },
+    "output_root": "e2e\\pixel_grammar_study",
+    "pixel": {
+      "enabled": true,
+      "palette_budget": 28,
+      "shared_palette": true,
+      "source_size": 256
+    },
+    "seed": 42,
+    "sources": {
+      "bank": "experiments\\..\\assets\\road_source_experiments\\source\\dirt_road_master.png",
+      "forest_canopy": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_02_uniform_medium.png",
+      "grass": "experiments\\..\\assets\\source_experiments\\source\\grass_src_08_illustrative.png",
+      "road": "experiments\\..\\assets\\road_source_experiments\\source\\dirt_road_master.png",
+      "water": "experiments\\..\\assets\\river_source_experiments\\source\\water_master.png"
+    },
+    "target_specs": {
+      "dirt_road": {
+        "base": "grass",
+        "material": "dirt_road",
+        "material_source": "road",
+        "semantic_role": "network",
+        "topology": "EW",
+        "width_ratio": 0.28
+      },
+      "forest_canopy": {
+        "material": "forest_canopy",
+        "semantic_role": "surface"
+      },
+      "forest_river": {
+        "material": "forest_to_river",
+        "orientation": "EW",
+        "semantic_role": "transition"
+      },
+      "grass": {
+        "material": "grass",
+        "semantic_role": "surface"
+      },
+      "grass_forest": {
+        "material": "grass_to_forest",
+        "orientation": "EW",
+        "semantic_role": "transition"
+      },
+      "grass_river": {
+        "material": "grass_to_river",
+        "orientation": "EW",
+        "semantic_role": "transition"
+      },
+      "grass_road": {
+        "material": "grass_to_road",
+        "orientation": "EW",
+        "semantic_role": "transition"
+      },
+      "river": {
+        "bank_source": "bank",
+        "bank_width_ratio": 0.04,
+        "base": "forest_canopy",
+        "incoming": [
+          "N",
+          "W"
+        ],
+        "material": "river",
+        "outgoing": [
+          "E"
+        ],
+        "semantic_role": "network",
+        "topology": "NEW",
+        "water_source": "water",
+        "width_ratio": 0.26,
+        "width_variation": 0.04
+      },
+      "rock_object": {
+        "material": "rock",
+        "semantic_role": "object"
+      },
+      "tree_object": {
+        "material": "tree",
+        "semantic_role": "object"
+      }
+    },
+    "targets": [
+      "grass",
+      "forest_canopy",
+      "dirt_road",
+      "river",
+      "grass_forest",
+      "grass_road",
+      "grass_river",
+      "forest_river",
+      "tree_object",
+      "rock_object"
+    ],
+    "tile_size": 64
+  }
+}

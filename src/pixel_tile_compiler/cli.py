@@ -23,6 +23,9 @@ from pixel_tile_compiler.transition_network.river_study import (
     RiverGraphStudyRunner,
     load_river_graph_config,
 )
+from pixel_tile_compiler.pixel_grammar import PixelGrammarStudyRunner, load_pixel_grammar_config
+from pixel_tile_compiler.pixel_hierarchy import PixelHierarchyStudyRunner, load_pixel_hierarchy_config
+from pixel_tile_compiler.material_library import MaterialLibraryRunner, load_material_library_config
 
 app = typer.Typer(help="SRPG用64x64ピクセルアートMAPタイルコンパイラ")
 
@@ -222,6 +225,60 @@ def study_river_graph(
     typer.echo(f"manifest: {result.manifest_path}")
     typer.echo(f"metrics: {result.metrics_path}")
     typer.echo(f"comparison: {result.comparison_path}")
+
+
+@app.command("study-pixel-grammar")
+def study_pixel_grammar(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="64x64 Pixel Grammar Study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """Sparse / Balanced / Detailedの64x64 Pixel Grammarを比較します。"""
+    try:
+        study_config = load_pixel_grammar_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = PixelGrammarStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"metrics: {result.metrics_path}")
+    typer.echo(f"comparison: {result.comparison_board_path}")
+
+
+@app.command("study-pixel-hierarchy")
+def study_pixel_hierarchy(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Flat / Structured / Volumetric Study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """大形状・cluster・立体表現の階層を64x64で比較します。"""
+    try:
+        study_config = load_pixel_hierarchy_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = PixelHierarchyStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"metrics: {result.metrics_path}")
+    typer.echo(f"comparison: {result.comparison_board_path}")
+
+
+@app.command("build-material-library")
+def build_material_library(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Material Source Library YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """4 material familiesをSource Card/Gate/Probe/Rankingまで一括生成します。"""
+    try:
+        study_config = load_material_library_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = MaterialLibraryRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"library: {result.library_root}")
+    typer.echo(f"ランキング: {result.output_root / 'summary' / 'source_ranking.json'}")
 
 
 @app.command()

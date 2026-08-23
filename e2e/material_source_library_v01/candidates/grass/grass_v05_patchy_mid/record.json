@@ -1,0 +1,481 @@
+{
+  "artifacts": {
+    "candidate_root": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid",
+    "compile_probe": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe",
+    "map_probe": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\map_probe.png",
+    "pixel_tiles": [
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v01.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v02.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v03.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v04.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v05.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v06.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v07.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\compile_probe\\pixel_tiles\\pixel_v08.png"
+    ],
+    "source": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\source.png"
+  },
+  "compile_probe": {
+    "compile_fitness_score": 0.734573,
+    "compile_readability_score": 0.609175,
+    "compile_semantic_fitness_score": 0.74994,
+    "edge_continuity_score": 0.989825,
+    "grammar_score": 0.648182,
+    "grid_visibility_score": 0.026009,
+    "map_edge_discontinuity_score": 0.014862,
+    "map_fitness_score": 0.736936,
+    "map_readability_score": 0.736936,
+    "palette_budget": 28,
+    "palette_usage": 28,
+    "periodicity_risk": 0.984635,
+    "variants": 8
+  },
+  "fingerprint": {
+    "autocorrelation_peak_risk": 0.060184,
+    "brightness_spatial_variance": 7.7e-05,
+    "center_dominance_score": 0.129537,
+    "color_spatial_variance": 0.230169,
+    "edge_density": 1.0,
+    "estimated_feature_scale_px": 2.5,
+    "feature_scale_error": 0.375,
+    "frequency_entropy": 1.466713,
+    "high_frequency_energy": 0.492276,
+    "large_landmark_risk": 0.038774,
+    "lighting_bias_score": 0.164913,
+    "local_contrast_mean": 0.156995,
+    "local_contrast_variance": 0.0001,
+    "low_frequency_energy": 0.169889,
+    "low_frequency_pattern_strength": 0.169889,
+    "medium_frequency_energy": 0.337835,
+    "orientation_bias": 0.011573,
+    "patch_grid": 4,
+    "patch_statistics": [
+      {
+        "brightness_mean": 103.960373,
+        "color_mean": [
+          94.39502,
+          115.663818,
+          16.194336
+        ],
+        "column": 0,
+        "edge_density": 0.526611,
+        "local_contrast": 0.156128,
+        "row": 0
+      },
+      {
+        "brightness_mean": 104.710449,
+        "color_mean": [
+          95.493408,
+          116.315674,
+          16.891602
+        ],
+        "column": 1,
+        "edge_density": 0.557373,
+        "local_contrast": 0.157838,
+        "row": 0
+      },
+      {
+        "brightness_mean": 105.676849,
+        "color_mean": [
+          96.806641,
+          117.226074,
+          17.391602
+        ],
+        "column": 2,
+        "edge_density": 0.534424,
+        "local_contrast": 0.155473,
+        "row": 0
+      },
+      {
+        "brightness_mean": 105.302719,
+        "color_mean": [
+          96.092529,
+          116.922607,
+          17.318604
+        ],
+        "column": 3,
+        "edge_density": 0.579102,
+        "local_contrast": 0.158611,
+        "row": 0
+      },
+      {
+        "brightness_mean": 105.840919,
+        "color_mean": [
+          95.980469,
+          117.74707,
+          16.935791
+        ],
+        "column": 0,
+        "edge_density": 0.575684,
+        "local_contrast": 0.164796,
+        "row": 1
+      },
+      {
+        "brightness_mean": 104.999542,
+        "color_mean": [
+          95.601318,
+          116.747559,
+          16.299805
+        ],
+        "column": 1,
+        "edge_density": 0.550049,
+        "local_contrast": 0.155599,
+        "row": 1
+      },
+      {
+        "brightness_mean": 106.135696,
+        "color_mean": [
+          97.046875,
+          117.776855,
+          17.583496
+        ],
+        "column": 2,
+        "edge_density": 0.557129,
+        "local_contrast": 0.160542,
+        "row": 1
+      },
+      {
+        "brightness_mean": 106.672691,
+        "color_mean": [
+          97.800537,
+          118.349609,
+          17.128174
+        ],
+        "column": 3,
+        "edge_density": 0.588867,
+        "local_contrast": 0.16742,
+        "row": 1
+      },
+      {
+        "brightness_mean": 105.13591,
+        "color_mean": [
+          95.594971,
+          116.918457,
+          16.514404
+        ],
+        "column": 0,
+        "edge_density": 0.55249,
+        "local_contrast": 0.162878,
+        "row": 2
+      },
+      {
+        "brightness_mean": 105.695786,
+        "color_mean": [
+          96.769043,
+          117.346436,
+          16.572266
+        ],
+        "column": 1,
+        "edge_density": 0.537598,
+        "local_contrast": 0.149952,
+        "row": 2
+      },
+      {
+        "brightness_mean": 105.053757,
+        "color_mean": [
+          95.730713,
+          116.718994,
+          16.952637
+        ],
+        "column": 2,
+        "edge_density": 0.565186,
+        "local_contrast": 0.15899,
+        "row": 2
+      },
+      {
+        "brightness_mean": 105.954422,
+        "color_mean": [
+          96.973145,
+          117.605957,
+          16.982666
+        ],
+        "column": 3,
+        "edge_density": 0.535156,
+        "local_contrast": 0.15452,
+        "row": 2
+      },
+      {
+        "brightness_mean": 106.236801,
+        "color_mean": [
+          97.276123,
+          117.887207,
+          17.215576
+        ],
+        "column": 0,
+        "edge_density": 0.551514,
+        "local_contrast": 0.156814,
+        "row": 3
+      },
+      {
+        "brightness_mean": 106.354416,
+        "color_mean": [
+          97.964844,
+          117.851318,
+          17.172119
+        ],
+        "column": 1,
+        "edge_density": 0.53833,
+        "local_contrast": 0.150271,
+        "row": 3
+      },
+      {
+        "brightness_mean": 106.803299,
+        "color_mean": [
+          98.083496,
+          118.380127,
+          17.801758
+        ],
+        "column": 2,
+        "edge_density": 0.537354,
+        "local_contrast": 0.150645,
+        "row": 3
+      },
+      {
+        "brightness_mean": 106.907852,
+        "color_mean": [
+          98.441895,
+          118.437744,
+          17.623779
+        ],
+        "column": 3,
+        "edge_density": 0.553711,
+        "local_contrast": 0.151437,
+        "row": 3
+      }
+    ],
+    "stationarity_score": 0.935647,
+    "target_feature_scale_px": 4,
+    "texture_density_variance": 0.003549
+  },
+  "gate": {
+    "accepted_for_probe": true,
+    "errors": [],
+    "material_id": "grass",
+    "metrics": {
+      "autocorrelation_peak_risk": 0.060184,
+      "brightness_spatial_variance": 7.7e-05,
+      "center_dominance_score": 0.129537,
+      "color_spatial_variance": 0.230169,
+      "edge_density": 1.0,
+      "estimated_feature_scale_px": 2.5,
+      "feature_scale_error": 0.375,
+      "frequency_entropy": 1.466713,
+      "high_frequency_energy": 0.492276,
+      "large_landmark_risk": 0.038774,
+      "lighting_bias_score": 0.164913,
+      "local_contrast_mean": 0.156995,
+      "local_contrast_variance": 0.0001,
+      "low_frequency_energy": 0.169889,
+      "low_frequency_pattern_strength": 0.169889,
+      "medium_frequency_energy": 0.337835,
+      "orientation_bias": 0.011573,
+      "patch_grid": 4,
+      "patch_statistics": [
+        {
+          "brightness_mean": 103.960373,
+          "color_mean": [
+            94.39502,
+            115.663818,
+            16.194336
+          ],
+          "column": 0,
+          "edge_density": 0.526611,
+          "local_contrast": 0.156128,
+          "row": 0
+        },
+        {
+          "brightness_mean": 104.710449,
+          "color_mean": [
+            95.493408,
+            116.315674,
+            16.891602
+          ],
+          "column": 1,
+          "edge_density": 0.557373,
+          "local_contrast": 0.157838,
+          "row": 0
+        },
+        {
+          "brightness_mean": 105.676849,
+          "color_mean": [
+            96.806641,
+            117.226074,
+            17.391602
+          ],
+          "column": 2,
+          "edge_density": 0.534424,
+          "local_contrast": 0.155473,
+          "row": 0
+        },
+        {
+          "brightness_mean": 105.302719,
+          "color_mean": [
+            96.092529,
+            116.922607,
+            17.318604
+          ],
+          "column": 3,
+          "edge_density": 0.579102,
+          "local_contrast": 0.158611,
+          "row": 0
+        },
+        {
+          "brightness_mean": 105.840919,
+          "color_mean": [
+            95.980469,
+            117.74707,
+            16.935791
+          ],
+          "column": 0,
+          "edge_density": 0.575684,
+          "local_contrast": 0.164796,
+          "row": 1
+        },
+        {
+          "brightness_mean": 104.999542,
+          "color_mean": [
+            95.601318,
+            116.747559,
+            16.299805
+          ],
+          "column": 1,
+          "edge_density": 0.550049,
+          "local_contrast": 0.155599,
+          "row": 1
+        },
+        {
+          "brightness_mean": 106.135696,
+          "color_mean": [
+            97.046875,
+            117.776855,
+            17.583496
+          ],
+          "column": 2,
+          "edge_density": 0.557129,
+          "local_contrast": 0.160542,
+          "row": 1
+        },
+        {
+          "brightness_mean": 106.672691,
+          "color_mean": [
+            97.800537,
+            118.349609,
+            17.128174
+          ],
+          "column": 3,
+          "edge_density": 0.588867,
+          "local_contrast": 0.16742,
+          "row": 1
+        },
+        {
+          "brightness_mean": 105.13591,
+          "color_mean": [
+            95.594971,
+            116.918457,
+            16.514404
+          ],
+          "column": 0,
+          "edge_density": 0.55249,
+          "local_contrast": 0.162878,
+          "row": 2
+        },
+        {
+          "brightness_mean": 105.695786,
+          "color_mean": [
+            96.769043,
+            117.346436,
+            16.572266
+          ],
+          "column": 1,
+          "edge_density": 0.537598,
+          "local_contrast": 0.149952,
+          "row": 2
+        },
+        {
+          "brightness_mean": 105.053757,
+          "color_mean": [
+            95.730713,
+            116.718994,
+            16.952637
+          ],
+          "column": 2,
+          "edge_density": 0.565186,
+          "local_contrast": 0.15899,
+          "row": 2
+        },
+        {
+          "brightness_mean": 105.954422,
+          "color_mean": [
+            96.973145,
+            117.605957,
+            16.982666
+          ],
+          "column": 3,
+          "edge_density": 0.535156,
+          "local_contrast": 0.15452,
+          "row": 2
+        },
+        {
+          "brightness_mean": 106.236801,
+          "color_mean": [
+            97.276123,
+            117.887207,
+            17.215576
+          ],
+          "column": 0,
+          "edge_density": 0.551514,
+          "local_contrast": 0.156814,
+          "row": 3
+        },
+        {
+          "brightness_mean": 106.354416,
+          "color_mean": [
+            97.964844,
+            117.851318,
+            17.172119
+          ],
+          "column": 1,
+          "edge_density": 0.53833,
+          "local_contrast": 0.150271,
+          "row": 3
+        },
+        {
+          "brightness_mean": 106.803299,
+          "color_mean": [
+            98.083496,
+            118.380127,
+            17.801758
+          ],
+          "column": 2,
+          "edge_density": 0.537354,
+          "local_contrast": 0.150645,
+          "row": 3
+        },
+        {
+          "brightness_mean": 106.907852,
+          "color_mean": [
+            98.441895,
+            118.437744,
+            17.623779
+          ],
+          "column": 3,
+          "edge_density": 0.553711,
+          "local_contrast": 0.151437,
+          "row": 3
+        }
+      ],
+      "stationarity_score": 0.935647,
+      "target_feature_scale_px": 4,
+      "texture_density_variance": 0.003549
+    },
+    "source_id": "grass_v05_patchy_mid",
+    "status": "accepted",
+    "warnings": []
+  },
+  "material_class": "surface",
+  "material_id": "grass",
+  "prompt_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\prompt.txt",
+  "source_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v05_patchy_mid\\source.png",
+  "source_id": "grass_v05_patchy_mid",
+  "status": "accepted"
+}

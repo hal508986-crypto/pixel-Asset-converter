@@ -1,0 +1,472 @@
+{
+  "dirt_road": {
+    "dimension_winners": {
+      "hierarchy_quality": "structured",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "flat",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.752435,
+          "map_readability": 0.75,
+          "noise_risk": 0.041181,
+          "overall": 0.751399,
+          "semantic_fitness": 0.710761,
+          "tile_quality": 0.808735
+        }
+      },
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.706537,
+          "map_readability": 0.75,
+          "noise_risk": 0.03156,
+          "overall": 0.739438,
+          "semantic_fitness": 0.713339,
+          "tile_quality": 0.82057
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.714233,
+          "map_readability": 0.75,
+          "noise_risk": 0.040433,
+          "overall": 0.738255,
+          "semantic_fitness": 0.711366,
+          "tile_quality": 0.810346
+        }
+      }
+    ],
+    "recommended_mode": "structured",
+    "score": 0.751399,
+    "target": "dirt_road"
+  },
+  "forest_canopy": {
+    "dimension_winners": {
+      "hierarchy_quality": "flat",
+      "map_readability": "flat",
+      "noise_risk": "volumetric",
+      "semantic_fitness": "volumetric",
+      "tile_quality": "volumetric"
+    },
+    "ranked_modes": [
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.670689,
+          "map_readability": 0.75,
+          "noise_risk": 0.139679,
+          "overall": 0.697297,
+          "semantic_fitness": 0.750005,
+          "tile_quality": 0.719205
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.562561,
+          "map_readability": 0.75,
+          "noise_risk": 0.081048,
+          "overall": 0.684262,
+          "semantic_fitness": 0.760915,
+          "tile_quality": 0.787767
+        }
+      },
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.582074,
+          "map_readability": 0.75,
+          "noise_risk": 0.168609,
+          "overall": 0.657446,
+          "semantic_fitness": 0.746096,
+          "tile_quality": 0.704129
+        }
+      }
+    ],
+    "recommended_mode": "flat",
+    "score": 0.697297,
+    "target": "forest_canopy"
+  },
+  "forest_river": {
+    "dimension_winners": {
+      "hierarchy_quality": "structured",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "flat",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.711952,
+          "map_readability": 0.75,
+          "noise_risk": 0.045412,
+          "overall": 0.729323,
+          "semantic_fitness": 0.688206,
+          "tile_quality": 0.800269
+        }
+      },
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.670808,
+          "map_readability": 0.75,
+          "noise_risk": 0.029893,
+          "overall": 0.719099,
+          "semantic_fitness": 0.688809,
+          "tile_quality": 0.811073
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.641473,
+          "map_readability": 0.75,
+          "noise_risk": 0.046723,
+          "overall": 0.70246,
+          "semantic_fitness": 0.687279,
+          "tile_quality": 0.795564
+        }
+      }
+    ],
+    "recommended_mode": "structured",
+    "score": 0.729323,
+    "target": "forest_river"
+  },
+  "grass": {
+    "dimension_winners": {
+      "hierarchy_quality": "flat",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "flat",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.692306,
+          "map_readability": 0.75,
+          "noise_risk": 0.064783,
+          "overall": 0.734504,
+          "semantic_fitness": 0.756578,
+          "tile_quality": 0.798338
+        }
+      },
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.631137,
+          "map_readability": 0.75,
+          "noise_risk": 0.084058,
+          "overall": 0.704394,
+          "semantic_fitness": 0.752385,
+          "tile_quality": 0.778113
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.569771,
+          "map_readability": 0.75,
+          "noise_risk": 0.075497,
+          "overall": 0.685181,
+          "semantic_fitness": 0.753456,
+          "tile_quality": 0.784844
+        }
+      }
+    ],
+    "recommended_mode": "flat",
+    "score": 0.734504,
+    "target": "grass"
+  },
+  "grass_forest": {
+    "dimension_winners": {
+      "hierarchy_quality": "volumetric",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "flat",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.762583,
+          "map_readability": 0.75,
+          "noise_risk": 0.030415,
+          "overall": 0.721572,
+          "semantic_fitness": 0.581477,
+          "tile_quality": 0.782362
+        }
+      },
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.750017,
+          "map_readability": 0.75,
+          "noise_risk": 0.030909,
+          "overall": 0.719954,
+          "semantic_fitness": 0.592229,
+          "tile_quality": 0.784859
+        }
+      },
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.681227,
+          "map_readability": 0.75,
+          "noise_risk": 0.01768,
+          "overall": 0.709442,
+          "semantic_fitness": 0.627948,
+          "tile_quality": 0.80489
+        }
+      }
+    ],
+    "recommended_mode": "volumetric",
+    "score": 0.721572,
+    "target": "grass_forest"
+  },
+  "grass_river": {
+    "dimension_winners": {
+      "hierarchy_quality": "structured",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "structured",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.734045,
+          "map_readability": 0.75,
+          "noise_risk": 0.031194,
+          "overall": 0.741558,
+          "semantic_fitness": 0.688395,
+          "tile_quality": 0.810824
+        }
+      },
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.679142,
+          "map_readability": 0.75,
+          "noise_risk": 0.028593,
+          "overall": 0.722441,
+          "semantic_fitness": 0.687618,
+          "tile_quality": 0.812939
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.675483,
+          "map_readability": 0.75,
+          "noise_risk": 0.040533,
+          "overall": 0.717463,
+          "semantic_fitness": 0.686038,
+          "tile_quality": 0.805105
+        }
+      }
+    ],
+    "recommended_mode": "structured",
+    "score": 0.741558,
+    "target": "grass_river"
+  },
+  "grass_road": {
+    "dimension_winners": {
+      "hierarchy_quality": "structured",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "flat",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.701269,
+          "map_readability": 0.75,
+          "noise_risk": 0.031184,
+          "overall": 0.706536,
+          "semantic_fitness": 0.609035,
+          "tile_quality": 0.786805
+        }
+      },
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.663626,
+          "map_readability": 0.75,
+          "noise_risk": 0.025558,
+          "overall": 0.703621,
+          "semantic_fitness": 0.63859,
+          "tile_quality": 0.80122
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.649705,
+          "map_readability": 0.75,
+          "noise_risk": 0.03081,
+          "overall": 0.687105,
+          "semantic_fitness": 0.605229,
+          "tile_quality": 0.786493
+        }
+      }
+    ],
+    "recommended_mode": "structured",
+    "score": 0.706536,
+    "target": "grass_road"
+  },
+  "river": {
+    "dimension_winners": {
+      "hierarchy_quality": "structured",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "flat",
+      "tile_quality": "volumetric"
+    },
+    "ranked_modes": [
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.714505,
+          "map_readability": 0.75,
+          "noise_risk": 0.049696,
+          "overall": 0.757265,
+          "semantic_fitness": 0.782566,
+          "tile_quality": 0.828509
+        }
+      },
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.682143,
+          "map_readability": 0.75,
+          "noise_risk": 0.033577,
+          "overall": 0.753137,
+          "semantic_fitness": 0.793793,
+          "tile_quality": 0.8415
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.684634,
+          "map_readability": 0.75,
+          "noise_risk": 0.033807,
+          "overall": 0.752422,
+          "semantic_fitness": 0.785099,
+          "tile_quality": 0.84287
+        }
+      }
+    ],
+    "recommended_mode": "structured",
+    "score": 0.757265,
+    "target": "river"
+  },
+  "rock_object": {
+    "dimension_winners": {
+      "hierarchy_quality": "flat",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "flat",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.739864,
+          "map_readability": 0.722062,
+          "noise_risk": 0.041184,
+          "overall": 0.706052,
+          "semantic_fitness": 0.598494,
+          "tile_quality": 0.762512
+        }
+      },
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.706639,
+          "map_readability": 0.721272,
+          "noise_risk": 0.056883,
+          "overall": 0.686963,
+          "semantic_fitness": 0.594921,
+          "tile_quality": 0.744532
+        }
+      },
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.685625,
+          "map_readability": 0.718891,
+          "noise_risk": 0.055917,
+          "overall": 0.678376,
+          "semantic_fitness": 0.592077,
+          "tile_quality": 0.744183
+        }
+      }
+    ],
+    "recommended_mode": "flat",
+    "score": 0.706052,
+    "target": "rock_object"
+  },
+  "tree_object": {
+    "dimension_winners": {
+      "hierarchy_quality": "volumetric",
+      "map_readability": "flat",
+      "noise_risk": "flat",
+      "semantic_fitness": "volumetric",
+      "tile_quality": "flat"
+    },
+    "ranked_modes": [
+      {
+        "mode": "volumetric",
+        "scores": {
+          "hierarchy_quality": 0.836711,
+          "map_readability": 0.719483,
+          "noise_risk": 0.038059,
+          "overall": 0.751107,
+          "semantic_fitness": 0.62796,
+          "tile_quality": 0.778334
+        }
+      },
+      {
+        "mode": "structured",
+        "scores": {
+          "hierarchy_quality": 0.797369,
+          "map_readability": 0.718693,
+          "noise_risk": 0.038189,
+          "overall": 0.735251,
+          "semantic_fitness": 0.624108,
+          "tile_quality": 0.775469
+        }
+      },
+      {
+        "mode": "flat",
+        "scores": {
+          "hierarchy_quality": 0.768052,
+          "map_readability": 0.721319,
+          "noise_risk": 0.031752,
+          "overall": 0.726139,
+          "semantic_fitness": 0.61978,
+          "tile_quality": 0.780255
+        }
+      }
+    ],
+    "recommended_mode": "volumetric",
+    "score": 0.751107,
+    "target": "tree_object"
+  }
+}

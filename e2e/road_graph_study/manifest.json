@@ -1,0 +1,1684 @@
+{
+  "cells": [
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 1,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 2,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 3,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_to_forest_canopy_ew_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 5,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 6,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 7,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 8,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 0
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 1,
+      "y": 1
+    },
+    {
+      "network": {
+        "connector_mask": 4,
+        "topology": "S",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "s_v00",
+      "transition": null,
+      "x": 2,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 3,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_to_forest_canopy_ew_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 5,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 6,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 7,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 8,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 1
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 6,
+        "topology": "SE",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "se_v00",
+      "transition": null,
+      "x": 1,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 11,
+        "topology": "NEW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "new_v00",
+      "transition": null,
+      "x": 2,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 3,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 14,
+        "topology": "ESW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "grass_forest_road_esw_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 5,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 6,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 7,
+      "y": 2
+    },
+    {
+      "network": {
+        "connector_mask": 12,
+        "topology": "SW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "sw_v00",
+      "transition": null,
+      "x": 8,
+      "y": 2
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 2
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 3
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 1,
+      "y": 3
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 2,
+      "y": 3
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 3,
+      "y": 3
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "grass_forest_road_ns_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 3
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 5,
+      "y": 3
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 6,
+      "y": 3
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 7,
+      "y": 3
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 8,
+      "y": 3
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 3
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 4
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 1,
+      "y": 4
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 2,
+      "y": 4
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 3,
+      "y": 4
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "grass_forest_road_ns_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 4
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 5,
+      "y": 4
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 6,
+      "y": 4
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 7,
+      "y": 4
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 8,
+      "y": 4
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 4
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 7,
+        "topology": "NES",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "nes_v00",
+      "transition": null,
+      "x": 1,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 2,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 3,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 15,
+        "topology": "NESW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "grass_forest_road_nesw_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 5,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 6,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 7,
+      "y": 5
+    },
+    {
+      "network": {
+        "connector_mask": 13,
+        "topology": "NSW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "nsw_v00",
+      "transition": null,
+      "x": 8,
+      "y": 5
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 5
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 6
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 1,
+      "y": 6
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 2,
+      "y": 6
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 3,
+      "y": 6
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "grass_forest_road_ns_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 6
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 5,
+      "y": 6
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 6,
+      "y": 6
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 7,
+      "y": 6
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 8,
+      "y": 6
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 6
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 7
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 1,
+      "y": 7
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 2,
+      "y": 7
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 3,
+      "y": 7
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "grass_forest_road_ns_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 7
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 5,
+      "y": 7
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 6,
+      "y": 7
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 7,
+      "y": 7
+    },
+    {
+      "network": {
+        "connector_mask": 5,
+        "topology": "NS",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ns_v00",
+      "transition": null,
+      "x": 8,
+      "y": 7
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 7
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 3,
+        "topology": "NE",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ne_v00",
+      "transition": null,
+      "x": 1,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 2,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 3,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 11,
+        "topology": "NEW",
+        "type": "road"
+      },
+      "surface": "grass",
+      "tile_asset": "grass_forest_road_new_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 5,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 6,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 10,
+        "topology": "EW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "ew_v00",
+      "transition": null,
+      "x": 7,
+      "y": 8
+    },
+    {
+      "network": {
+        "connector_mask": 9,
+        "topology": "NW",
+        "type": "road"
+      },
+      "surface": "forest_canopy",
+      "tile_asset": "nw_v00",
+      "transition": null,
+      "x": 8,
+      "y": 8
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 8
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 0,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 1,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 2,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_surface_v00",
+      "transition": null,
+      "x": 3,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "grass",
+      "tile_asset": "grass_to_forest_canopy_ew_v00",
+      "transition": "grass_to_forest_EW",
+      "x": 4,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 5,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 6,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 7,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 8,
+      "y": 9
+    },
+    {
+      "network": null,
+      "surface": "forest_canopy",
+      "tile_asset": "forest_canopy_surface_v00",
+      "transition": null,
+      "x": 9,
+      "y": 9
+    }
+  ],
+  "config": {
+    "graph": {
+      "edges": [
+        {
+          "end": [
+            1,
+            3
+          ],
+          "start": [
+            1,
+            2
+          ]
+        },
+        {
+          "end": [
+            2,
+            2
+          ],
+          "start": [
+            1,
+            2
+          ]
+        },
+        {
+          "end": [
+            1,
+            4
+          ],
+          "start": [
+            1,
+            3
+          ]
+        },
+        {
+          "end": [
+            1,
+            5
+          ],
+          "start": [
+            1,
+            4
+          ]
+        },
+        {
+          "end": [
+            1,
+            6
+          ],
+          "start": [
+            1,
+            5
+          ]
+        },
+        {
+          "end": [
+            2,
+            5
+          ],
+          "start": [
+            1,
+            5
+          ]
+        },
+        {
+          "end": [
+            1,
+            7
+          ],
+          "start": [
+            1,
+            6
+          ]
+        },
+        {
+          "end": [
+            1,
+            8
+          ],
+          "start": [
+            1,
+            7
+          ]
+        },
+        {
+          "end": [
+            2,
+            8
+          ],
+          "start": [
+            1,
+            8
+          ]
+        },
+        {
+          "end": [
+            2,
+            2
+          ],
+          "start": [
+            2,
+            1
+          ]
+        },
+        {
+          "end": [
+            3,
+            2
+          ],
+          "start": [
+            2,
+            2
+          ]
+        },
+        {
+          "end": [
+            3,
+            5
+          ],
+          "start": [
+            2,
+            5
+          ]
+        },
+        {
+          "end": [
+            3,
+            8
+          ],
+          "start": [
+            2,
+            8
+          ]
+        },
+        {
+          "end": [
+            4,
+            2
+          ],
+          "start": [
+            3,
+            2
+          ]
+        },
+        {
+          "end": [
+            4,
+            5
+          ],
+          "start": [
+            3,
+            5
+          ]
+        },
+        {
+          "end": [
+            4,
+            8
+          ],
+          "start": [
+            3,
+            8
+          ]
+        },
+        {
+          "end": [
+            4,
+            3
+          ],
+          "start": [
+            4,
+            2
+          ]
+        },
+        {
+          "end": [
+            5,
+            2
+          ],
+          "start": [
+            4,
+            2
+          ]
+        },
+        {
+          "end": [
+            4,
+            4
+          ],
+          "start": [
+            4,
+            3
+          ]
+        },
+        {
+          "end": [
+            4,
+            5
+          ],
+          "start": [
+            4,
+            4
+          ]
+        },
+        {
+          "end": [
+            4,
+            6
+          ],
+          "start": [
+            4,
+            5
+          ]
+        },
+        {
+          "end": [
+            5,
+            5
+          ],
+          "start": [
+            4,
+            5
+          ]
+        },
+        {
+          "end": [
+            4,
+            7
+          ],
+          "start": [
+            4,
+            6
+          ]
+        },
+        {
+          "end": [
+            4,
+            8
+          ],
+          "start": [
+            4,
+            7
+          ]
+        },
+        {
+          "end": [
+            5,
+            8
+          ],
+          "start": [
+            4,
+            8
+          ]
+        },
+        {
+          "end": [
+            6,
+            2
+          ],
+          "start": [
+            5,
+            2
+          ]
+        },
+        {
+          "end": [
+            6,
+            5
+          ],
+          "start": [
+            5,
+            5
+          ]
+        },
+        {
+          "end": [
+            6,
+            8
+          ],
+          "start": [
+            5,
+            8
+          ]
+        },
+        {
+          "end": [
+            7,
+            2
+          ],
+          "start": [
+            6,
+            2
+          ]
+        },
+        {
+          "end": [
+            7,
+            5
+          ],
+          "start": [
+            6,
+            5
+          ]
+        },
+        {
+          "end": [
+            7,
+            8
+          ],
+          "start": [
+            6,
+            8
+          ]
+        },
+        {
+          "end": [
+            8,
+            2
+          ],
+          "start": [
+            7,
+            2
+          ]
+        },
+        {
+          "end": [
+            8,
+            5
+          ],
+          "start": [
+            7,
+            5
+          ]
+        },
+        {
+          "end": [
+            8,
+            8
+          ],
+          "start": [
+            7,
+            8
+          ]
+        },
+        {
+          "end": [
+            8,
+            3
+          ],
+          "start": [
+            8,
+            2
+          ]
+        },
+        {
+          "end": [
+            8,
+            4
+          ],
+          "start": [
+            8,
+            3
+          ]
+        },
+        {
+          "end": [
+            8,
+            5
+          ],
+          "start": [
+            8,
+            4
+          ]
+        },
+        {
+          "end": [
+            8,
+            6
+          ],
+          "start": [
+            8,
+            5
+          ]
+        },
+        {
+          "end": [
+            8,
+            7
+          ],
+          "start": [
+            8,
+            6
+          ]
+        },
+        {
+          "end": [
+            8,
+            8
+          ],
+          "start": [
+            8,
+            7
+          ]
+        }
+      ],
+      "height": 10,
+      "nodes": [
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          1,
+          6
+        ],
+        [
+          1,
+          7
+        ],
+        [
+          1,
+          8
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          2,
+          5
+        ],
+        [
+          2,
+          8
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          8
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          7
+        ],
+        [
+          4,
+          8
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          8
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          7,
+          2
+        ],
+        [
+          7,
+          5
+        ],
+        [
+          7,
+          8
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          8,
+          4
+        ],
+        [
+          8,
+          5
+        ],
+        [
+          8,
+          6
+        ],
+        [
+          8,
+          7
+        ],
+        [
+          8,
+          8
+        ]
+      ],
+      "width": 10
+    },
+    "network": {
+      "center_offset": 0.0,
+      "edge_softness": 0.08,
+      "material": "dirt_road",
+      "network_type": "road",
+      "variants_per_topology": 3,
+      "width_ratio": 0.22
+    },
+    "network_map": {
+      "height": 10,
+      "tile_size": 64,
+      "width": 10
+    },
+    "output_root": "e2e\\road_graph_study",
+    "pixel": {
+      "enabled": true,
+      "palette_budget": 24,
+      "shared_palette": true
+    },
+    "seed": 42,
+    "sources": {
+      "dirt_road": "experiments\\..\\assets\\road_source_experiments\\source\\dirt_road_master.png",
+      "forest_canopy": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_02_uniform_medium.png",
+      "grass": "experiments\\..\\assets\\source_experiments\\source\\grass_src_08_illustrative.png"
+    },
+    "surface": {
+      "edge_types": 3,
+      "variants": 12
+    },
+    "surface_map": [
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ],
+      [
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "grass",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy",
+        "forest_canopy"
+      ]
+    ]
+  },
+  "graph_validation": {
+    "disconnected_components": 1,
+    "is_valid": true,
+    "isolated_nodes": [],
+    "warnings": []
+  },
+  "network_type": "road",
+  "schema_version": 1,
+  "topology_counts": {
+    "EMPTY": 63,
+    "ESW": 1,
+    "EW": 14,
+    "NE": 1,
+    "NES": 1,
+    "NESW": 1,
+    "NEW": 2,
+    "NS": 12,
+    "NSW": 1,
+    "NW": 1,
+    "S": 1,
+    "SE": 1,
+    "SW": 1
+  }
+}

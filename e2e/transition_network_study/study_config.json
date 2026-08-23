@@ -1,0 +1,27 @@
+{
+  "study": {
+    "generation": {
+      "enabled": false
+    },
+    "output_root": "experiments\\..\\e2e\\transition_network_study",
+    "seed": 42,
+    "sources": {
+      "dirt_road": "experiments\\..\\assets\\road_source_experiments\\source\\dirt_road_master.png",
+      "forest_canopy": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_02_uniform_medium.png",
+      "grass": "experiments\\..\\assets\\source_experiments\\source\\grass_src_08_illustrative.png"
+    },
+    "tileset": {
+      "debug_enabled": true,
+      "network_variants": 2,
+      "palette": 24,
+      "pixelize": true,
+      "preview_cols": 10,
+      "preview_rows": 10,
+      "shared_palette": true,
+      "source_size": 512,
+      "surface_edge_types": 3,
+      "surface_variants": 12,
+      "transition_variants": 2
+    }
+  }
+}

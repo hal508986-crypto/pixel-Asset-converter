@@ -1,0 +1,66 @@
+{
+  "dirt": {
+    "correlations": {
+      "autocorrelation_peak_risk": -0.110822,
+      "brightness_spatial_variance": -0.08251,
+      "center_dominance_score": -0.352627,
+      "color_spatial_variance": -0.334681,
+      "edge_density": null,
+      "estimated_feature_scale_px": -0.426086,
+      "low_frequency_pattern_strength": -0.288523,
+      "orientation_bias": -0.064234,
+      "stationarity_score": 0.310719,
+      "texture_density_variance": -0.237144
+    },
+    "interpretation": "exploratory",
+    "n": 8
+  },
+  "grass": {
+    "correlations": {
+      "autocorrelation_peak_risk": -0.051694,
+      "brightness_spatial_variance": -0.066061,
+      "center_dominance_score": 0.248374,
+      "color_spatial_variance": 0.280655,
+      "edge_density": -0.750735,
+      "estimated_feature_scale_px": 0.228173,
+      "low_frequency_pattern_strength": -0.177662,
+      "orientation_bias": -0.337778,
+      "stationarity_score": 0.14583,
+      "texture_density_variance": -0.07382
+    },
+    "interpretation": "exploratory",
+    "n": 8
+  },
+  "stone": {
+    "correlations": {
+      "autocorrelation_peak_risk": 0.462816,
+      "brightness_spatial_variance": -0.838507,
+      "center_dominance_score": -0.791592,
+      "color_spatial_variance": -0.914022,
+      "edge_density": -0.852127,
+      "estimated_feature_scale_px": 0.566081,
+      "low_frequency_pattern_strength": -0.12691,
+      "orientation_bias": -0.393046,
+      "stationarity_score": 0.725695,
+      "texture_density_variance": -0.613072
+    },
+    "interpretation": "exploratory",
+    "n": 8
+  },
+  "water": {
+    "correlations": {
+      "autocorrelation_peak_risk": 0.693379,
+      "brightness_spatial_variance": 0.434988,
+      "center_dominance_score": -0.604898,
+      "color_spatial_variance": -0.626385,
+      "edge_density": -0.650575,
+      "estimated_feature_scale_px": 0.786529,
+      "low_frequency_pattern_strength": 0.438836,
+      "orientation_bias": 0.117692,
+      "stationarity_score": -0.226925,
+      "texture_density_variance": -0.036259
+    },
+    "interpretation": "exploratory",
+    "n": 8
+  }
+}

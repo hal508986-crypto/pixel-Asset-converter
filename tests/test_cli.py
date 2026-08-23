@@ -50,3 +50,22 @@ def test_cli_compile_map_creates_three_way_experiment(tmp_path: Path):
     assert (output / "context_compiled.png").exists()
     assert (output / "comparison.png").exists()
     assert (output / "metrics.json").exists()
+
+
+def test_cli_help_lists_study_transition_network():
+    result = CliRunner().invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "study-transition-network" in result.stdout
+
+
+def test_cli_help_lists_study_road_graph():
+    result = CliRunner().invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "study-road-graph" in result.stdout
+
+
+def test_cli_help_lists_study_river_graph():
+    result = CliRunner().invoke(app, ["--help"])
+    assert result.exit_code == 0
+    assert "study-river-graph" in result.stdout

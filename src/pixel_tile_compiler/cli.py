@@ -8,6 +8,21 @@ import typer
 from pixel_tile_compiler.config import CompilerConfig, MapCompilerConfig
 from pixel_tile_compiler.map.compiler import MapExperimentRunner
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+from pixel_tile_compiler.tileset.compiler import TilesetSourceCompiler
+from pixel_tile_compiler.tileset.source_tile import TilesetConfig
+from pixel_tile_compiler.source_study.runner import SourceStudyRunner, load_study_config
+from pixel_tile_compiler.transition_network.study import (
+    TransitionNetworkStudyRunner,
+    load_transition_network_config,
+)
+from pixel_tile_compiler.transition_network.road_graph import (
+    RoadGraphStudyRunner,
+    load_road_graph_config,
+)
+from pixel_tile_compiler.transition_network.river_study import (
+    RiverGraphStudyRunner,
+    load_river_graph_config,
+)
 
 app = typer.Typer(help="SRPG用64x64ピクセルアートMAPタイルコンパイラ")
 
@@ -82,6 +97,131 @@ def compile_map(
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"完了: {result.context_path}")
     typer.echo(f"比較: {result.comparison_path}")
+
+
+@app.command("build-tileset")
+def build_tileset(
+    source: Path = typer.Argument(..., exists=True, readable=True, help="Material Exemplar画像PNG/JPEG/WebP"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Tileset実験出力ディレクトリ"),
+    variants: int = typer.Option(12, "--variants", min=1, help="生成するSource Tile数"),
+    edge_types: int = typer.Option(3, "--edge-types", min=1, max=8, help="Edge Contract種類数"),
+    palette: int = typer.Option(24, "--palette", min=4, max=32, help="共有palette上限"),
+    map_cols: int = typer.Option(10, "--map-cols", min=1, help="比較MAP列数"),
+    map_rows: int = typer.Option(10, "--map-rows", min=1, help="比較MAP行数"),
+    patch_size: int = typer.Option(256, "--patch-size", min=2, help="quilt patchサイズ"),
+    patch_overlap: int = typer.Option(64, "--patch-overlap", min=0, help="quilt overlapサイズ"),
+    source_tile_size: int = typer.Option(512, "--source-tile-size", min=64, help="高解像度Source Tileサイズ"),
+    strip_width: int = typer.Option(96, "--strip-width", min=1, help="Edge Strip幅"),
+    shared_palette: bool = typer.Option(True, "--shared-palette/--no-shared-palette", help="Tileset全体でpaletteを共有"),
+    seed: int = typer.Option(42, "--seed", help="再現性用seed"),
+) -> None:
+    """1枚のgrass Material Exemplarから契約付きTilesetを生成します。"""
+    output_dir = output or (Path("experiment") / f"{source.stem}_tileset")
+    try:
+        config = TilesetConfig(
+            output_root=output_dir,
+            variants=variants,
+            edge_types=edge_types,
+            palette_budget=palette,
+            map_columns=map_cols,
+            map_rows=map_rows,
+            patch_size=patch_size,
+            patch_overlap=patch_overlap,
+            source_tile_size=source_tile_size,
+            strip_width=strip_width,
+            shared_palette=shared_palette,
+            seed=seed,
+        )
+        result = TilesetSourceCompiler().build(source, config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.map_path}")
+    typer.echo(f"比較: {result.comparison_path}")
+    typer.echo(f"metrics: {result.metrics_path}")
+
+
+@app.command("study-sources")
+def study_sources(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="source study JSON/YAML設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """複数のMaterial Sourceを同条件で検証・比較します。"""
+    try:
+        study_config = load_study_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = SourceStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"ランキング: {result.output_root / 'summary' / 'source_ranking.json'}")
+    typer.echo(f"montage: {result.output_root / 'summary' / 'montage.png'}")
+
+
+@app.command("study-forest-sources")
+def study_forest_sources(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="forest source study JSON/YAML設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """複数のcontinuous forest canopy Sourceを同条件で検証・比較します。"""
+    study_sources(config=config, output=output)
+
+
+@app.command("study-transition-network")
+def study_transition_network(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Transition / Network study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """Surface / Network / Transitionを同一layoutで比較します。"""
+    try:
+        study_config = load_transition_network_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = TransitionNetworkStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"manifest: {result.manifest_path}")
+    typer.echo(f"ランキング: {result.ranking_path}")
+    typer.echo(f"montage: {result.montage_path}")
+
+
+@app.command("study-road-graph")
+def study_road_graph(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Logical Road Graph study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """Logical Road GraphからTopologyを解決して10x10 MAPを生成します。"""
+    try:
+        study_config = load_road_graph_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = RoadGraphStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"manifest: {result.manifest_path}")
+    typer.echo(f"metrics: {result.metrics_path}")
+    typer.echo(f"comparison: {result.comparison_path}")
+
+
+@app.command("study-river-graph")
+def study_river_graph(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Generic River Graph study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """Generic Network GraphからRiver topologyを解決して10x10 MAPを生成します。"""
+    try:
+        study_config = load_river_graph_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = RiverGraphStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"manifest: {result.manifest_path}")
+    typer.echo(f"metrics: {result.metrics_path}")
+    typer.echo(f"comparison: {result.comparison_path}")
 
 
 @app.command()

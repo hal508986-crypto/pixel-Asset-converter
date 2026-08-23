@@ -1,0 +1,100 @@
+study:
+  material: forest_canopy
+  source_root: ../assets/forest_source_experiments/source
+  prompt_root: ../assets/forest_source_experiments/prompts
+  output_root: ../e2e/forest_source_study
+  generation:
+    enabled: false
+  seed: 42
+  source_candidates:
+    - id: forest_src_01_uniform_sparse
+      source_file: ../assets/forest_source_experiments/source/forest_src_01_uniform_sparse.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_01_uniform_sparse.txt
+      canopy_density: sparse
+      cluster_scale: small
+      homogeneity: highly homogeneous
+      brightness_variation: low
+      illustrative: false
+      composition: no focal point
+      contrast: low
+    - id: forest_src_02_uniform_medium
+      source_file: ../assets/forest_source_experiments/source/forest_src_02_uniform_medium.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_02_uniform_medium.txt
+      canopy_density: medium
+      cluster_scale: small
+      homogeneity: highly homogeneous
+      brightness_variation: low
+      illustrative: false
+      composition: no focal point
+      contrast: low
+    - id: forest_src_03_uniform_dense
+      source_file: ../assets/forest_source_experiments/source/forest_src_03_uniform_dense.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_03_uniform_dense.txt
+      canopy_density: dense
+      cluster_scale: medium
+      homogeneity: highly homogeneous
+      brightness_variation: low
+      illustrative: false
+      composition: no focal point
+      contrast: low
+    - id: forest_src_04_small_clusters
+      source_file: ../assets/forest_source_experiments/source/forest_src_04_small_clusters.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_04_small_clusters.txt
+      canopy_density: medium
+      cluster_scale: small
+      homogeneity: slightly varied
+      brightness_variation: medium
+      illustrative: false
+      composition: subtle natural variation
+      contrast: medium
+    - id: forest_src_05_medium_clusters
+      source_file: ../assets/forest_source_experiments/source/forest_src_05_medium_clusters.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_05_medium_clusters.txt
+      canopy_density: medium
+      cluster_scale: medium
+      homogeneity: slightly varied
+      brightness_variation: medium
+      illustrative: false
+      composition: subtle natural variation
+      contrast: medium
+    - id: forest_src_06_large_masses
+      source_file: ../assets/forest_source_experiments/source/forest_src_06_large_masses.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_06_large_masses.txt
+      canopy_density: dense
+      cluster_scale: large
+      homogeneity: strongly varied
+      brightness_variation: medium
+      illustrative: false
+      composition: subtle natural variation
+      contrast: high
+    - id: forest_src_07_dark_variation
+      source_file: ../assets/forest_source_experiments/source/forest_src_07_dark_variation.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_07_dark_variation.txt
+      canopy_density: medium
+      cluster_scale: medium
+      homogeneity: strongly varied
+      brightness_variation: high
+      illustrative: false
+      composition: subtle natural variation
+      contrast: high
+    - id: forest_src_08_illustrative
+      source_file: ../assets/forest_source_experiments/source/forest_src_08_illustrative.png
+      prompt_file: ../assets/forest_source_experiments/prompts/forest_src_08_illustrative.txt
+      canopy_density: dense
+      cluster_scale: large
+      homogeneity: strongly varied
+      brightness_variation: high
+      illustrative: true
+      composition: more illustrative and scenic
+      contrast: high
+  tileset:
+    variants: 12
+    edge_types: 3
+    palette: 24
+    shared_palette: true
+    preview_cols: 10
+    preview_rows: 10
+    source_tile_size: 512
+    patch_size: 256
+    patch_overlap: 64
+    strip_width: 96

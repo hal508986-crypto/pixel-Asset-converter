@@ -1,0 +1,84 @@
+study:
+  material: grass
+  source_root: ../assets/source_experiments/source
+  prompt_root: ../assets/source_experiments/prompts
+  output_root: ../e2e/source_study
+  generation:
+    enabled: false
+  seed: 42
+  source_candidates:
+    - id: grass_src_01_uniform_dark
+      source_file: ../assets/source_experiments/source/grass_src_01_uniform_dark.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_01_uniform_dark.txt
+      homogeneity: very homogeneous
+      brightness_variation: low
+      tufts: almost no obvious tufts
+      composition: no focal point
+      contrast: low
+    - id: grass_src_02_uniform_mid
+      source_file: ../assets/source_experiments/source/grass_src_02_uniform_mid.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_02_uniform_mid.txt
+      homogeneity: very homogeneous
+      brightness_variation: medium
+      tufts: almost no obvious tufts
+      composition: no focal point
+      contrast: low
+    - id: grass_src_03_uniform_light
+      source_file: ../assets/source_experiments/source/grass_src_03_uniform_light.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_03_uniform_light.txt
+      homogeneity: very homogeneous
+      brightness_variation: low
+      tufts: small sparse tufts
+      composition: no focal point
+      contrast: low
+    - id: grass_src_04_sparse_tufts
+      source_file: ../assets/source_experiments/source/grass_src_04_sparse_tufts.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_04_sparse_tufts.txt
+      homogeneity: moderately varied
+      brightness_variation: low
+      tufts: small sparse tufts
+      composition: slight natural variation
+      contrast: low
+    - id: grass_src_05_patchy_mid
+      source_file: ../assets/source_experiments/source/grass_src_05_patchy_mid.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_05_patchy_mid.txt
+      homogeneity: moderately varied
+      brightness_variation: medium
+      tufts: small sparse tufts
+      composition: slight natural variation
+      contrast: medium
+    - id: grass_src_06_bright_variation
+      source_file: ../assets/source_experiments/source/grass_src_06_bright_variation.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_06_bright_variation.txt
+      homogeneity: moderately varied
+      brightness_variation: high
+      tufts: small sparse tufts
+      composition: slight natural variation
+      contrast: medium
+    - id: grass_src_07_dense_tufts
+      source_file: ../assets/source_experiments/source/grass_src_07_dense_tufts.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_07_dense_tufts.txt
+      homogeneity: strongly varied
+      brightness_variation: medium
+      tufts: medium visible tufts
+      composition: slight natural variation
+      contrast: medium
+    - id: grass_src_08_illustrative
+      source_file: ../assets/source_experiments/source/grass_src_08_illustrative.png
+      prompt_file: ../assets/source_experiments/prompts/grass_src_08_illustrative.txt
+      homogeneity: strongly varied
+      brightness_variation: high
+      tufts: medium visible tufts
+      composition: more illustrative and image-like
+      contrast: high
+  tileset:
+    variants: 12
+    edge_types: 3
+    palette: 24
+    shared_palette: true
+    preview_cols: 10
+    preview_rows: 10
+    source_tile_size: 512
+    patch_size: 256
+    patch_overlap: 64
+    strip_width: 96

@@ -1,0 +1,42 @@
+study:
+  output_root: ../e2e/river_network_study
+  graph_file: river_graph_10x10.json
+  surface_file: river_surface_10x10.json
+  sources:
+    grass: ../assets/source_experiments/source/grass_src_08_illustrative.png
+    forest_canopy: ../assets/forest_source_experiments/source/forest_src_02_uniform_medium.png
+    water: ../assets/river_source_experiments/source/water_master.png
+    bank: ../assets/road_source_experiments/source/dirt_road_master.png
+  seed: 42
+
+network_map:
+  width: 10
+  height: 10
+  tile_size: 64
+
+network:
+  type: river
+  material: water
+  width_ratio: 0.26
+  center_offset: 0.0
+  edge_softness: 0.08
+  variants_per_topology: 3
+
+river:
+  base_width_ratio: 0.26
+  width_variation: 0.04
+  bank_width_ratio: 0.04
+  allow_split: false
+  variants: 3
+
+surface:
+  variants: 12
+  edge_types: 3
+
+pixel:
+  source_size: 256
+  palette_budget: 24
+  shared_palette: true
+  enabled: true
+
+seed: 42

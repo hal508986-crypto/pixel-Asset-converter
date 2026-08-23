@@ -1,0 +1,24 @@
+study:
+  output_root: ../e2e/transition_network_study
+  sources:
+    grass:
+      source_file: ../assets/source_experiments/source/grass_src_08_illustrative.png
+    forest_canopy:
+      source_file: ../assets/forest_source_experiments/source/forest_src_02_uniform_medium.png
+    dirt_road:
+      source_file: ../assets/road_source_experiments/source/dirt_road_master.png
+  generation:
+    enabled: false
+  seed: 42
+  tileset:
+    preview_cols: 10
+    preview_rows: 10
+    palette: 24
+    shared_palette: true
+    surface_variants: 12
+    surface_edge_types: 3
+    network_variants: 2
+    transition_variants: 2
+    source_size: 512
+    pixelize: true
+    debug_enabled: true

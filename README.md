@@ -24,6 +24,7 @@ pixel-tile compile source.png --output output/source --palette 16 --tile-mode re
 # repeatable最適化を比較用に無効化
 pixel-tile compile source.png --output output/source-off --tile-mode repeatable --no-repeat-opt
 pixel-tile compile-map map.png --output e2e/map_context_test --cols 4 --rows 5 --palette 24 --context 1 --shared-palette
+pixel-tile build-tileset assets/source/grass_master.png --output experiment/grass_tileset --variants 12 --edge-types 3 --palette 24 --map-cols 10 --map-rows 10
 pixel-tile gui
 ```
 
@@ -48,6 +49,77 @@ context_compiled.png  周辺context + shared palette + 境界補正
 ```
 
 各実験ディレクトリには、`tiles/`、`map_layout.json`、`global_analysis.json`、`grid_overlay.png` も保存されます。grid overlayは確認用で、最終MAP画像には罫線を書き込みません。
+
+### Tileset Source Compiler実験
+
+`build-tileset` は1枚のMaterial Exemplarから、高解像度Source Tile群を作り、既存の `PixelTileCompiler` で64×64へ変換します。patch metadata、quiltのdebug、edge strip、Source Tile、pixel tile、契約付き10×10 MAP、A/B/C比較画像、metricsを同じ実験ディレクトリへ保存します。現在のmaterialは `grass` と `forest_canopy` に対応します。
+
+```text
+grass_master.png
+→ Material validation / analysis
+→ deterministic patch database
+→ overlapping image quilting + minimum-error seam
+→ Wang-style edge contracts / compatible edge strips
+→ high-resolution source tiles
+→ existing PixelTileCompiler / optional shared palette
+→ contract-aware random MAP and comparison.png
+```
+
+Surfaceは `grass` と `forest_canopy` を対象にしています。`road`、`river`、`cliff`、transition、object、GraphCutは実装対象外です。
+
+### Grass Source比較実験
+
+複数のGrass Source候補を同じCompiler条件で比較する実験ランナーも提供しています。既定の8候補、構造化プロンプト、Source validation、single-repeat / independent variants / Source Compiler tilesetのA/B/C、指標ランキング、比較montageを一括生成します。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" study-sources --config experiments/source_study.yaml
+```
+
+主な出力は `e2e/source_study/summary/source_ranking.json`、`best_sources.md`、`best_prompt_template.txt`、`montage.png` です。ランキングは今回の重み付きヒューリスティックによる実験内比較であり、一般的な知覚品質の保証ではありません。生成モデルを使わず、`assets/source_experiments/source/` に置いた画像を固定入力として再実行することもできます。
+
+### Continuous Forest Canopy Source Study
+
+`forest_canopy` は、単独の木や森林床ではなく、上から見た連続樹冠面をMaterial Exemplarとして比較する実験です。8候補のdensity / cluster scale / homogeneity / brightness variation / compositionを固定prompt matrix化し、forest向けのcluster scale・fragmentation・large mass dominance・cluster continuityをmetricsへ追加しています。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" study-forest-sources --config experiments/forest_source_study.yaml
+```
+
+主な入力は `assets/forest_source_experiments/`、出力は `e2e/forest_source_study/` です。`study-sources` でも同じconfigを実行できます。森林のrankingも実験内の重み付きヒューリスティックであり、景観としての美しさや実ゲームでの最終品質を保証するものではありません。
+
+### Transition / Network Edge Contract Study
+
+`study-transition-network` は、grass / continuous forest canopy / dirt roadを対象に、surface、network、transitionを同じseed・同じ10×10 layoutで比較します。既存の単純な `EdgeContract` は維持し、network connector・transition boundary・外側materialを表すsemantic edge profileを追加しています。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" study-transition-network --config experiments/transition_network_study.yaml
+```
+
+実験の出力は `e2e/transition_network_study/` に、`families/surface`、`families/network/dirt_road`、`families/transition`、`maps`、`metrics`、`manifest.json`、`summary/method_ranking.json`、`summary/montage.png` として保存されます。roadはmask-firstでNS/EW/NE/NW/SE/SWのcurveを生成し、forest baseのroad handoffも必ず実行します。
+
+方向規約は、road `NS`=北南に接続、`EW`=東西に接続、transition `NS`=material_aが北・material_bが南、`EW`=material_aが西・material_bが東です。比較方式は surface-only、independent handoff、contract-aware の3つです。
+
+初回実行時は、設定で指定した `assets/road_source_experiments/source/dirt_road_master.png` を用意してください。再現性のため、grass/forestも source studyの実在PNGを固定参照します。road sourceの推奨生成promptは `e2e/transition_network_study/summary/best_prompt_template.txt` に出力されます。
+
+### Logical Road Graph → Network Tile Study
+
+`study-road-graph` は、道路のTopologyを人手で並べる代わりに、論理Graphの隣接からN/E/S/W connector bitmaskを解決します。dead end、NS/EW直線、4種類のcurve、4種類のT junction、NESW crossを同じNetwork abstractionで扱い、grass/forestの境界では既存transitionを先に合成してからroad materialを重ねます。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" study-road-graph --config experiments/road_graph_study.yaml
+```
+
+入力は `experiments/road_graph_10x10.json` と `experiments/road_surface_10x10.json` です。出力 `e2e/road_graph_study/` には、`logical_graph_preview.png`、`topology_debug.png`、`source_tiles/`、`pixel_tiles/`、3方式（manual baseline / graph resolved / graph resolved + variants）のMAP、`manifest.json`、`metrics.json`、`summary/report.md` を保存します。`graph_fidelity_score` は論理edgeが最終64×64画像の両端へ到達しているかを近似検査します。
+
+### Generic Network Graph → River Renderer Study
+
+`study-river-graph` は、Roadで利用している `NetworkGraph`、directed `NetworkEdge`、connector bitmask、`NetworkTopologyResolver` を再利用し、River固有のflow・merge制約、quadratic curve geometry、可変幅water body、bank transitionを追加します。Road-like stripe baseline、River Renderer、variants付きRiver Rendererを同じ10×10 Graphで比較します。
+
+```powershell
+py -3.12 -c "import sys; sys.path.insert(0, 'src'); from pixel_tile_compiler.cli import app; app()" study-river-graph --config experiments/river_network_study.yaml
+```
+
+入力は `experiments/river_graph_10x10.json`、`experiments/river_surface_10x10.json`、Water Material Exemplar `assets/river_source_experiments/source/water_master.png` です。出力 `e2e/river_network_study/` には、directed Graph preview、topology/flow debug、centerline・body・bank mask、3方式の640×640 MAP、manifest、River metrics、比較レポートを保存します。RiverではNESW crossとdirected cycleをrejectし、T topologyをincoming 2 + outgoing 1のmergeとして扱います。
 
 ## GUI
 

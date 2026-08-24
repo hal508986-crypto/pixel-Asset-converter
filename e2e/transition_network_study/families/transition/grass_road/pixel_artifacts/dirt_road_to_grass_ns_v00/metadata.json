@@ -1,0 +1,72 @@
+{
+  "config": {
+    "background_color": null,
+    "background_mode": "alpha",
+    "background_tolerance": 12,
+    "center_suppression_strength": 0.4,
+    "debug_enabled": true,
+    "dither": "minimal",
+    "height": 64,
+    "output_root": "experiments\\..\\e2e\\transition_network_study\\families\\transition\\grass_road\\pixel_artifacts\\dirt_road_to_grass_ns_v00",
+    "palette_budget": 24,
+    "palette_colors": null,
+    "repeat_opt_edge_band": 6,
+    "repeat_opt_enabled": true,
+    "repeat_opt_strength": 0.5,
+    "seam_mode": "inspect",
+    "seed": 42,
+    "semantic_provider": "rule",
+    "smoothing_enabled": true,
+    "tile_mode": "repeatable",
+    "width": 64,
+    "work_size": 256
+  },
+  "metrics": {
+    "actual_palette_count": 24,
+    "center_dominance_score": 0.062797,
+    "corner_seam_score": 0.0,
+    "edge_continuity_score": 1.0,
+    "horizontal_seam_score": 0.0,
+    "isolated_pixel_count": 5,
+    "micro_cluster_count": 5,
+    "periodicity_risk_score": 0.037678,
+    "repeatability_optimization_applied": true,
+    "vertical_seam_score": 0.0
+  },
+  "pipeline": [
+    "load",
+    "normalize",
+    "background",
+    "smoothing",
+    "edges",
+    "regions",
+    "structural",
+    "semantic",
+    "ir",
+    "pixelize",
+    "palette",
+    "clusters",
+    "diagonals",
+    "repeatability",
+    "seam",
+    "export"
+  ],
+  "repeatability_after": {
+    "center_dominance_score": 0.062797,
+    "corner_seam_score": 0.0,
+    "edge_continuity_score": 1.0,
+    "periodicity_risk_score": 0.037678
+  },
+  "repeatability_before": {
+    "center_dominance_score": 0.061636,
+    "corner_seam_score": 0.080469,
+    "edge_continuity_score": 0.917747,
+    "periodicity_risk_score": 0.069704
+  },
+  "repeatability_optimization": {
+    "applied": true,
+    "enabled": true
+  },
+  "semantic_provider": "rule",
+  "source": "dirt_road_to_grass_ns_v00"
+}

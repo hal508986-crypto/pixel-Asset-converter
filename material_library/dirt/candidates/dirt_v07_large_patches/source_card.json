@@ -1,0 +1,495 @@
+{
+  "compiler": {
+    "compile_fitness_score": 0.757594,
+    "compile_readability_score": 0.654556,
+    "compile_semantic_fitness_score": 0.757145,
+    "edge_continuity_score": 0.990215,
+    "grammar_score": 0.671518,
+    "grid_visibility_score": 0.025547,
+    "map_edge_discontinuity_score": 0.014598,
+    "map_fitness_score": 0.737271,
+    "map_readability_score": 0.737271,
+    "palette_budget": 28,
+    "palette_usage": 28,
+    "periodicity_risk": 0.984496,
+    "variants": 8
+  },
+  "constraints": {
+    "directionality": "none",
+    "landmark_allowed": false,
+    "lighting_bias": "neutral",
+    "macro_pattern_allowed": false,
+    "perspective": "forbidden",
+    "preferred_stationarity": 0.7
+  },
+  "fingerprint": {
+    "autocorrelation_peak_risk": 0.062449,
+    "brightness_spatial_variance": 0.00011,
+    "center_dominance_score": 0.074284,
+    "color_spatial_variance": 0.062271,
+    "edge_density": 1.0,
+    "estimated_feature_scale_px": 1.5,
+    "feature_scale_error": 0.75,
+    "frequency_entropy": 1.34059,
+    "high_frequency_energy": 0.606706,
+    "large_landmark_risk": 0.080092,
+    "lighting_bias_score": 0.111862,
+    "local_contrast_mean": 0.153669,
+    "local_contrast_variance": 9e-05,
+    "low_frequency_energy": 0.145265,
+    "low_frequency_pattern_strength": 0.145265,
+    "medium_frequency_energy": 0.248029,
+    "orientation_bias": 0.070318,
+    "patch_grid": 4,
+    "patch_statistics": [
+      {
+        "brightness_mean": 93.058441,
+        "color_mean": [
+          116.398926,
+          89.225586,
+          62.297607
+        ],
+        "column": 0,
+        "edge_density": 0.52832,
+        "local_contrast": 0.144972,
+        "row": 0
+      },
+      {
+        "brightness_mean": 94.74691,
+        "color_mean": [
+          118.63623,
+          90.843018,
+          63.07373
+        ],
+        "column": 1,
+        "edge_density": 0.54834,
+        "local_contrast": 0.149884,
+        "row": 0
+      },
+      {
+        "brightness_mean": 94.632156,
+        "color_mean": [
+          117.868896,
+          90.837158,
+          63.801758
+        ],
+        "column": 2,
+        "edge_density": 0.572021,
+        "local_contrast": 0.152592,
+        "row": 0
+      },
+      {
+        "brightness_mean": 93.333862,
+        "color_mean": [
+          116.753418,
+          89.500977,
+          62.340576
+        ],
+        "column": 3,
+        "edge_density": 0.569824,
+        "local_contrast": 0.152236,
+        "row": 0
+      },
+      {
+        "brightness_mean": 93.369316,
+        "color_mean": [
+          116.84668,
+          89.53418,
+          62.228027
+        ],
+        "column": 0,
+        "edge_density": 0.558105,
+        "local_contrast": 0.155199,
+        "row": 1
+      },
+      {
+        "brightness_mean": 95.014221,
+        "color_mean": [
+          119.022705,
+          91.104248,
+          63.050293
+        ],
+        "column": 1,
+        "edge_density": 0.560547,
+        "local_contrast": 0.150947,
+        "row": 1
+      },
+      {
+        "brightness_mean": 94.347458,
+        "color_mean": [
+          117.829102,
+          90.531982,
+          62.998779
+        ],
+        "column": 2,
+        "edge_density": 0.588135,
+        "local_contrast": 0.157073,
+        "row": 1
+      },
+      {
+        "brightness_mean": 93.75,
+        "color_mean": [
+          117.243652,
+          89.929199,
+          62.418701
+        ],
+        "column": 3,
+        "edge_density": 0.563965,
+        "local_contrast": 0.1593,
+        "row": 1
+      },
+      {
+        "brightness_mean": 93.013527,
+        "color_mean": [
+          116.279053,
+          89.199951,
+          62.282471
+        ],
+        "column": 0,
+        "edge_density": 0.560547,
+        "local_contrast": 0.149214,
+        "row": 2
+      },
+      {
+        "brightness_mean": 94.198288,
+        "color_mean": [
+          117.789551,
+          90.351074,
+          62.841309
+        ],
+        "column": 1,
+        "edge_density": 0.596436,
+        "local_contrast": 0.16256,
+        "row": 2
+      },
+      {
+        "brightness_mean": 96.65654,
+        "color_mean": [
+          120.67334,
+          92.759033,
+          64.544678
+        ],
+        "column": 2,
+        "edge_density": 0.615234,
+        "local_contrast": 0.16156,
+        "row": 2
+      },
+      {
+        "brightness_mean": 95.787079,
+        "color_mean": [
+          119.872803,
+          91.856689,
+          63.798096
+        ],
+        "column": 3,
+        "edge_density": 0.572266,
+        "local_contrast": 0.150616,
+        "row": 2
+      },
+      {
+        "brightness_mean": 94.433281,
+        "color_mean": [
+          118.258301,
+          90.530029,
+          62.943115
+        ],
+        "column": 0,
+        "edge_density": 0.576904,
+        "local_contrast": 0.156278,
+        "row": 3
+      },
+      {
+        "brightness_mean": 94.702202,
+        "color_mean": [
+          118.41748,
+          90.827637,
+          63.250977
+        ],
+        "column": 1,
+        "edge_density": 0.575928,
+        "local_contrast": 0.152014,
+        "row": 3
+      },
+      {
+        "brightness_mean": 94.724556,
+        "color_mean": [
+          118.704102,
+          90.808594,
+          62.905273
+        ],
+        "column": 2,
+        "edge_density": 0.557373,
+        "local_contrast": 0.148425,
+        "row": 3
+      },
+      {
+        "brightness_mean": 94.004791,
+        "color_mean": [
+          117.722656,
+          90.127197,
+          62.575928
+        ],
+        "column": 3,
+        "edge_density": 0.577148,
+        "local_contrast": 0.155827,
+        "row": 3
+      }
+    ],
+    "stationarity_score": 0.928751,
+    "target_feature_scale_px": 6,
+    "texture_density_variance": 0.004455
+  },
+  "generation": {
+    "generation_date": null,
+    "generator": "deterministic_existing_asset_adapter",
+    "prompt_version": "material-library-v0.1",
+    "seed": 42,
+    "source_dimensions": [
+      256,
+      256
+    ],
+    "status": "generated_from_existing_asset"
+  },
+  "human_review": {
+    "accepted": null,
+    "notes": null,
+    "rating": null
+  },
+  "material_class": "surface",
+  "material_id": "dirt",
+  "prompt_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\dirt\\dirt_v07_large_patches\\prompt.txt",
+  "source_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\dirt\\dirt_v07_large_patches\\source.png",
+  "source_id": "dirt_v07_large_patches",
+  "status": "accepted",
+  "target_pixel_spec": {
+    "max_px": 12,
+    "min_px": 3,
+    "preferred_px": 6
+  },
+  "validation": {
+    "accepted_for_probe": true,
+    "errors": [],
+    "material_id": "dirt",
+    "metrics": {
+      "autocorrelation_peak_risk": 0.062449,
+      "brightness_spatial_variance": 0.00011,
+      "center_dominance_score": 0.074284,
+      "color_spatial_variance": 0.062271,
+      "edge_density": 1.0,
+      "estimated_feature_scale_px": 1.5,
+      "feature_scale_error": 0.75,
+      "frequency_entropy": 1.34059,
+      "high_frequency_energy": 0.606706,
+      "large_landmark_risk": 0.080092,
+      "lighting_bias_score": 0.111862,
+      "local_contrast_mean": 0.153669,
+      "local_contrast_variance": 9e-05,
+      "low_frequency_energy": 0.145265,
+      "low_frequency_pattern_strength": 0.145265,
+      "medium_frequency_energy": 0.248029,
+      "orientation_bias": 0.070318,
+      "patch_grid": 4,
+      "patch_statistics": [
+        {
+          "brightness_mean": 93.058441,
+          "color_mean": [
+            116.398926,
+            89.225586,
+            62.297607
+          ],
+          "column": 0,
+          "edge_density": 0.52832,
+          "local_contrast": 0.144972,
+          "row": 0
+        },
+        {
+          "brightness_mean": 94.74691,
+          "color_mean": [
+            118.63623,
+            90.843018,
+            63.07373
+          ],
+          "column": 1,
+          "edge_density": 0.54834,
+          "local_contrast": 0.149884,
+          "row": 0
+        },
+        {
+          "brightness_mean": 94.632156,
+          "color_mean": [
+            117.868896,
+            90.837158,
+            63.801758
+          ],
+          "column": 2,
+          "edge_density": 0.572021,
+          "local_contrast": 0.152592,
+          "row": 0
+        },
+        {
+          "brightness_mean": 93.333862,
+          "color_mean": [
+            116.753418,
+            89.500977,
+            62.340576
+          ],
+          "column": 3,
+          "edge_density": 0.569824,
+          "local_contrast": 0.152236,
+          "row": 0
+        },
+        {
+          "brightness_mean": 93.369316,
+          "color_mean": [
+            116.84668,
+            89.53418,
+            62.228027
+          ],
+          "column": 0,
+          "edge_density": 0.558105,
+          "local_contrast": 0.155199,
+          "row": 1
+        },
+        {
+          "brightness_mean": 95.014221,
+          "color_mean": [
+            119.022705,
+            91.104248,
+            63.050293
+          ],
+          "column": 1,
+          "edge_density": 0.560547,
+          "local_contrast": 0.150947,
+          "row": 1
+        },
+        {
+          "brightness_mean": 94.347458,
+          "color_mean": [
+            117.829102,
+            90.531982,
+            62.998779
+          ],
+          "column": 2,
+          "edge_density": 0.588135,
+          "local_contrast": 0.157073,
+          "row": 1
+        },
+        {
+          "brightness_mean": 93.75,
+          "color_mean": [
+            117.243652,
+            89.929199,
+            62.418701
+          ],
+          "column": 3,
+          "edge_density": 0.563965,
+          "local_contrast": 0.1593,
+          "row": 1
+        },
+        {
+          "brightness_mean": 93.013527,
+          "color_mean": [
+            116.279053,
+            89.199951,
+            62.282471
+          ],
+          "column": 0,
+          "edge_density": 0.560547,
+          "local_contrast": 0.149214,
+          "row": 2
+        },
+        {
+          "brightness_mean": 94.198288,
+          "color_mean": [
+            117.789551,
+            90.351074,
+            62.841309
+          ],
+          "column": 1,
+          "edge_density": 0.596436,
+          "local_contrast": 0.16256,
+          "row": 2
+        },
+        {
+          "brightness_mean": 96.65654,
+          "color_mean": [
+            120.67334,
+            92.759033,
+            64.544678
+          ],
+          "column": 2,
+          "edge_density": 0.615234,
+          "local_contrast": 0.16156,
+          "row": 2
+        },
+        {
+          "brightness_mean": 95.787079,
+          "color_mean": [
+            119.872803,
+            91.856689,
+            63.798096
+          ],
+          "column": 3,
+          "edge_density": 0.572266,
+          "local_contrast": 0.150616,
+          "row": 2
+        },
+        {
+          "brightness_mean": 94.433281,
+          "color_mean": [
+            118.258301,
+            90.530029,
+            62.943115
+          ],
+          "column": 0,
+          "edge_density": 0.576904,
+          "local_contrast": 0.156278,
+          "row": 3
+        },
+        {
+          "brightness_mean": 94.702202,
+          "color_mean": [
+            118.41748,
+            90.827637,
+            63.250977
+          ],
+          "column": 1,
+          "edge_density": 0.575928,
+          "local_contrast": 0.152014,
+          "row": 3
+        },
+        {
+          "brightness_mean": 94.724556,
+          "color_mean": [
+            118.704102,
+            90.808594,
+            62.905273
+          ],
+          "column": 2,
+          "edge_density": 0.557373,
+          "local_contrast": 0.148425,
+          "row": 3
+        },
+        {
+          "brightness_mean": 94.004791,
+          "color_mean": [
+            117.722656,
+            90.127197,
+            62.575928
+          ],
+          "column": 3,
+          "edge_density": 0.577148,
+          "local_contrast": 0.155827,
+          "row": 3
+        }
+      ],
+      "stationarity_score": 0.928751,
+      "target_feature_scale_px": 6,
+      "texture_density_variance": 0.004455
+    },
+    "source_id": "dirt_v07_large_patches",
+    "status": "accepted",
+    "warnings": []
+  },
+  "version": "0.1"
+}

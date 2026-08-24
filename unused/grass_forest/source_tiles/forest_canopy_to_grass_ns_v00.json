@@ -1,0 +1,69 @@
+{
+  "family": "grass_forest",
+  "material_a": "forest_canopy",
+  "material_b": "grass",
+  "metadata": {
+    "boundary": 0.5,
+    "mask_type": "material_boundary"
+  },
+  "semantic_contract": {
+    "east": {
+      "connects_to": [],
+      "feature_center": null,
+      "feature_type": "material_boundary",
+      "feature_width": null,
+      "flow": null,
+      "material": "forest_canopy",
+      "materials": [
+        "forest_canopy",
+        "grass"
+      ],
+      "orientation": "NS",
+      "role": "transition_boundary"
+    },
+    "north": {
+      "connects_to": [],
+      "feature_center": null,
+      "feature_type": null,
+      "feature_width": null,
+      "flow": null,
+      "material": "forest_canopy",
+      "materials": [
+        "forest_canopy"
+      ],
+      "orientation": null,
+      "role": "surface"
+    },
+    "orientation": "NS",
+    "south": {
+      "connects_to": [],
+      "feature_center": null,
+      "feature_type": null,
+      "feature_width": null,
+      "flow": null,
+      "material": "grass",
+      "materials": [
+        "grass"
+      ],
+      "orientation": null,
+      "role": "surface"
+    },
+    "west": {
+      "connects_to": [],
+      "feature_center": null,
+      "feature_type": "material_boundary",
+      "feature_width": null,
+      "flow": null,
+      "material": "forest_canopy",
+      "materials": [
+        "forest_canopy",
+        "grass"
+      ],
+      "orientation": "NS",
+      "role": "transition_boundary"
+    }
+  },
+  "tile_id": "forest_canopy_to_grass_ns_v00",
+  "topology": "NS",
+  "variant": 0
+}

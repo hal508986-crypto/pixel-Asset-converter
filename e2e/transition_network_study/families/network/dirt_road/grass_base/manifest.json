@@ -1,0 +1,840 @@
+{
+  "base_material": "grass",
+  "config": {
+    "debug_enabled": true,
+    "output_root": "experiments\\..\\e2e\\transition_network_study\\families\\network\\dirt_road\\grass_base",
+    "palette_budget": 24,
+    "pixelize": true,
+    "seed": 42,
+    "source_size": 512,
+    "topologies": [
+      "NS",
+      "EW",
+      "NE",
+      "NW",
+      "SE",
+      "SW"
+    ],
+    "variants": 2
+  },
+  "family_id": "dirt_road_grass",
+  "kind": "network",
+  "tiles": [
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.46,
+        "road_width": 0.26
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "orientation": "NS",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ns_v00",
+      "topology": "NS",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.54,
+        "road_width": 0.38
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "orientation": "NS",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ns_v01",
+      "topology": "NS",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.46,
+        "road_width": 0.26
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "EW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "ew_v00",
+      "topology": "EW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.54,
+        "road_width": 0.38
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "EW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "ew_v01",
+      "topology": "EW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.46,
+        "road_width": 0.26
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "orientation": "NE",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ne_v00",
+      "topology": "NE",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.54,
+        "road_width": 0.38
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "orientation": "NE",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ne_v01",
+      "topology": "NE",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.46,
+        "road_width": 0.26
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        },
+        "orientation": "NW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nw_v00",
+      "topology": "NW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.54,
+        "road_width": 0.38
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        },
+        "orientation": "NW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nw_v01",
+      "topology": "NW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.46,
+        "road_width": 0.26
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SE",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "se_v00",
+      "topology": "SE",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.54,
+        "road_width": 0.38
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SE",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "se_v01",
+      "topology": "SE",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.46,
+        "road_width": 0.26
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.46,
+          "feature_type": "road",
+          "feature_width": 0.26,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "sw_v00",
+      "topology": "SW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_grass",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.54,
+        "road_width": 0.38
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "grass",
+          "materials": [
+            "grass"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.54,
+          "feature_type": "road",
+          "feature_width": 0.38,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "sw_v01",
+      "topology": "SW",
+      "variant": 1
+    }
+  ]
+}

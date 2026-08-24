@@ -1,0 +1,483 @@
+{
+  "artifacts": {
+    "candidate_root": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry",
+    "compile_probe": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe",
+    "map_probe": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\map_probe.png",
+    "pixel_tiles": [
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v01.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v02.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v03.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v04.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v05.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v06.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v07.png",
+      "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\compile_probe\\pixel_tiles\\pixel_v08.png"
+    ],
+    "source": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\source.png"
+  },
+  "compile_probe": {
+    "compile_fitness_score": 0.834667,
+    "compile_readability_score": 0.824507,
+    "compile_semantic_fitness_score": 0.768545,
+    "edge_continuity_score": 0.973242,
+    "grammar_score": 0.740262,
+    "grid_visibility_score": 0.089291,
+    "map_edge_discontinuity_score": 0.051023,
+    "map_fitness_score": 0.700764,
+    "map_readability_score": 0.700764,
+    "palette_budget": 28,
+    "palette_usage": 28,
+    "periodicity_risk": 0.964787,
+    "variants": 8
+  },
+  "fingerprint": {
+    "autocorrelation_peak_risk": 0.699018,
+    "brightness_spatial_variance": 0.007046,
+    "center_dominance_score": 0.091932,
+    "color_spatial_variance": 0.045059,
+    "edge_density": 0.812469,
+    "estimated_feature_scale_px": 2.25,
+    "feature_scale_error": 0.678571,
+    "frequency_entropy": 1.565161,
+    "high_frequency_energy": 0.334673,
+    "large_landmark_risk": 0.265804,
+    "lighting_bias_score": 0.615959,
+    "local_contrast_mean": 0.18042,
+    "local_contrast_variance": 0.003144,
+    "low_frequency_energy": 0.399992,
+    "low_frequency_pattern_strength": 0.399992,
+    "medium_frequency_energy": 0.265335,
+    "orientation_bias": 0.086615,
+    "patch_grid": 4,
+    "patch_statistics": [
+      {
+        "brightness_mean": 86.722572,
+        "color_mean": [
+          86.078613,
+          90.125732,
+          54.907715
+        ],
+        "column": 0,
+        "edge_density": 0.387451,
+        "local_contrast": 0.143787,
+        "row": 0
+      },
+      {
+        "brightness_mean": 93.650803,
+        "color_mean": [
+          99.489502,
+          94.947998,
+          63.608398
+        ],
+        "column": 1,
+        "edge_density": 0.402832,
+        "local_contrast": 0.213118,
+        "row": 0
+      },
+      {
+        "brightness_mean": 106.161842,
+        "color_mean": [
+          120.964111,
+          104.734619,
+          76.712891
+        ],
+        "column": 2,
+        "edge_density": 0.341064,
+        "local_contrast": 0.173958,
+        "row": 0
+      },
+      {
+        "brightness_mean": 92.505478,
+        "color_mean": [
+          97.677246,
+          93.962158,
+          62.847168
+        ],
+        "column": 3,
+        "edge_density": 0.436035,
+        "local_contrast": 0.21172,
+        "row": 0
+      },
+      {
+        "brightness_mean": 89.839722,
+        "color_mean": [
+          89.391846,
+          93.296875,
+          56.912598
+        ],
+        "column": 0,
+        "edge_density": 0.388184,
+        "local_contrast": 0.14516,
+        "row": 1
+      },
+      {
+        "brightness_mean": 97.447342,
+        "color_mean": [
+          102.950195,
+          98.937744,
+          66.47998
+        ],
+        "column": 1,
+        "edge_density": 0.478027,
+        "local_contrast": 0.228703,
+        "row": 1
+      },
+      {
+        "brightness_mean": 112.536118,
+        "color_mean": [
+          127.993896,
+          111.033447,
+          81.904297
+        ],
+        "column": 2,
+        "edge_density": 0.316162,
+        "local_contrast": 0.166881,
+        "row": 1
+      },
+      {
+        "brightness_mean": 96.497932,
+        "color_mean": [
+          101.450684,
+          98.161133,
+          65.438721
+        ],
+        "column": 3,
+        "edge_density": 0.496094,
+        "local_contrast": 0.196163,
+        "row": 1
+      },
+      {
+        "brightness_mean": 91.233055,
+        "color_mean": [
+          90.483398,
+          94.843018,
+          57.680908
+        ],
+        "column": 0,
+        "edge_density": 0.421875,
+        "local_contrast": 0.147425,
+        "row": 2
+      },
+      {
+        "brightness_mean": 98.20977,
+        "color_mean": [
+          104.044434,
+          99.619873,
+          67.060791
+        ],
+        "column": 1,
+        "edge_density": 0.453125,
+        "local_contrast": 0.214291,
+        "row": 2
+      },
+      {
+        "brightness_mean": 110.524063,
+        "color_mean": [
+          125.7229,
+          109.047607,
+          80.39502
+        ],
+        "column": 2,
+        "edge_density": 0.301025,
+        "local_contrast": 0.151742,
+        "row": 2
+      },
+      {
+        "brightness_mean": 95.93866,
+        "color_mean": [
+          101.05835,
+          97.524414,
+          65.155029
+        ],
+        "column": 3,
+        "edge_density": 0.441162,
+        "local_contrast": 0.186583,
+        "row": 2
+      },
+      {
+        "brightness_mean": 90.554123,
+        "color_mean": [
+          90.19165,
+          94.018799,
+          57.301025
+        ],
+        "column": 0,
+        "edge_density": 0.407959,
+        "local_contrast": 0.148948,
+        "row": 3
+      },
+      {
+        "brightness_mean": 95.930298,
+        "color_mean": [
+          101.993408,
+          97.237061,
+          65.132324
+        ],
+        "column": 1,
+        "edge_density": 0.446777,
+        "local_contrast": 0.202169,
+        "row": 3
+      },
+      {
+        "brightness_mean": 108.964127,
+        "color_mean": [
+          124.10376,
+          107.485107,
+          79.034912
+        ],
+        "column": 2,
+        "edge_density": 0.346191,
+        "local_contrast": 0.161221,
+        "row": 3
+      },
+      {
+        "brightness_mean": 95.090385,
+        "color_mean": [
+          100.708008,
+          96.493164,
+          64.653076
+        ],
+        "column": 3,
+        "edge_density": 0.435791,
+        "local_contrast": 0.19485,
+        "row": 3
+      }
+    ],
+    "stationarity_score": 0.722262,
+    "target_feature_scale_px": 7,
+    "texture_density_variance": 0.036019
+  },
+  "gate": {
+    "accepted_for_probe": true,
+    "errors": [],
+    "material_id": "stone",
+    "metrics": {
+      "autocorrelation_peak_risk": 0.699018,
+      "brightness_spatial_variance": 0.007046,
+      "center_dominance_score": 0.091932,
+      "color_spatial_variance": 0.045059,
+      "edge_density": 0.812469,
+      "estimated_feature_scale_px": 2.25,
+      "feature_scale_error": 0.678571,
+      "frequency_entropy": 1.565161,
+      "high_frequency_energy": 0.334673,
+      "large_landmark_risk": 0.265804,
+      "lighting_bias_score": 0.615959,
+      "local_contrast_mean": 0.18042,
+      "local_contrast_variance": 0.003144,
+      "low_frequency_energy": 0.399992,
+      "low_frequency_pattern_strength": 0.399992,
+      "medium_frequency_energy": 0.265335,
+      "orientation_bias": 0.086615,
+      "patch_grid": 4,
+      "patch_statistics": [
+        {
+          "brightness_mean": 86.722572,
+          "color_mean": [
+            86.078613,
+            90.125732,
+            54.907715
+          ],
+          "column": 0,
+          "edge_density": 0.387451,
+          "local_contrast": 0.143787,
+          "row": 0
+        },
+        {
+          "brightness_mean": 93.650803,
+          "color_mean": [
+            99.489502,
+            94.947998,
+            63.608398
+          ],
+          "column": 1,
+          "edge_density": 0.402832,
+          "local_contrast": 0.213118,
+          "row": 0
+        },
+        {
+          "brightness_mean": 106.161842,
+          "color_mean": [
+            120.964111,
+            104.734619,
+            76.712891
+          ],
+          "column": 2,
+          "edge_density": 0.341064,
+          "local_contrast": 0.173958,
+          "row": 0
+        },
+        {
+          "brightness_mean": 92.505478,
+          "color_mean": [
+            97.677246,
+            93.962158,
+            62.847168
+          ],
+          "column": 3,
+          "edge_density": 0.436035,
+          "local_contrast": 0.21172,
+          "row": 0
+        },
+        {
+          "brightness_mean": 89.839722,
+          "color_mean": [
+            89.391846,
+            93.296875,
+            56.912598
+          ],
+          "column": 0,
+          "edge_density": 0.388184,
+          "local_contrast": 0.14516,
+          "row": 1
+        },
+        {
+          "brightness_mean": 97.447342,
+          "color_mean": [
+            102.950195,
+            98.937744,
+            66.47998
+          ],
+          "column": 1,
+          "edge_density": 0.478027,
+          "local_contrast": 0.228703,
+          "row": 1
+        },
+        {
+          "brightness_mean": 112.536118,
+          "color_mean": [
+            127.993896,
+            111.033447,
+            81.904297
+          ],
+          "column": 2,
+          "edge_density": 0.316162,
+          "local_contrast": 0.166881,
+          "row": 1
+        },
+        {
+          "brightness_mean": 96.497932,
+          "color_mean": [
+            101.450684,
+            98.161133,
+            65.438721
+          ],
+          "column": 3,
+          "edge_density": 0.496094,
+          "local_contrast": 0.196163,
+          "row": 1
+        },
+        {
+          "brightness_mean": 91.233055,
+          "color_mean": [
+            90.483398,
+            94.843018,
+            57.680908
+          ],
+          "column": 0,
+          "edge_density": 0.421875,
+          "local_contrast": 0.147425,
+          "row": 2
+        },
+        {
+          "brightness_mean": 98.20977,
+          "color_mean": [
+            104.044434,
+            99.619873,
+            67.060791
+          ],
+          "column": 1,
+          "edge_density": 0.453125,
+          "local_contrast": 0.214291,
+          "row": 2
+        },
+        {
+          "brightness_mean": 110.524063,
+          "color_mean": [
+            125.7229,
+            109.047607,
+            80.39502
+          ],
+          "column": 2,
+          "edge_density": 0.301025,
+          "local_contrast": 0.151742,
+          "row": 2
+        },
+        {
+          "brightness_mean": 95.93866,
+          "color_mean": [
+            101.05835,
+            97.524414,
+            65.155029
+          ],
+          "column": 3,
+          "edge_density": 0.441162,
+          "local_contrast": 0.186583,
+          "row": 2
+        },
+        {
+          "brightness_mean": 90.554123,
+          "color_mean": [
+            90.19165,
+            94.018799,
+            57.301025
+          ],
+          "column": 0,
+          "edge_density": 0.407959,
+          "local_contrast": 0.148948,
+          "row": 3
+        },
+        {
+          "brightness_mean": 95.930298,
+          "color_mean": [
+            101.993408,
+            97.237061,
+            65.132324
+          ],
+          "column": 1,
+          "edge_density": 0.446777,
+          "local_contrast": 0.202169,
+          "row": 3
+        },
+        {
+          "brightness_mean": 108.964127,
+          "color_mean": [
+            124.10376,
+            107.485107,
+            79.034912
+          ],
+          "column": 2,
+          "edge_density": 0.346191,
+          "local_contrast": 0.161221,
+          "row": 3
+        },
+        {
+          "brightness_mean": 95.090385,
+          "color_mean": [
+            100.708008,
+            96.493164,
+            64.653076
+          ],
+          "column": 3,
+          "edge_density": 0.435791,
+          "local_contrast": 0.19485,
+          "row": 3
+        }
+      ],
+      "stationarity_score": 0.722262,
+      "target_feature_scale_px": 7,
+      "texture_density_variance": 0.036019
+    },
+    "source_id": "stone_v06_dark_masonry",
+    "status": "warning",
+    "warnings": [
+      "high autocorrelation peak risk"
+    ]
+  },
+  "material_class": "surface",
+  "material_id": "stone",
+  "prompt_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\prompt.txt",
+  "source_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\stone\\stone_v06_dark_masonry\\source.png",
+  "source_id": "stone_v06_dark_masonry",
+  "status": "warning"
+}

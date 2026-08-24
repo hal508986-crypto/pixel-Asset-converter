@@ -1,0 +1,138 @@
+{
+  "study": {
+    "generation": {
+      "enabled": false
+    },
+    "material": "forest_canopy",
+    "output_root": "experiments\\..\\e2e\\forest_source_study",
+    "prompt_root": "experiments\\..\\assets\\forest_source_experiments\\prompts",
+    "seed": 42,
+    "source_candidates": [
+      {
+        "brightness_variation": "low",
+        "canopy_density": "sparse",
+        "cluster_scale": "small",
+        "composition": "no focal point",
+        "contrast": "low",
+        "generation": {},
+        "homogeneity": "highly homogeneous",
+        "illustrative": false,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_01_uniform_sparse.txt",
+        "source_id": "forest_src_01_uniform_sparse",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_01_uniform_sparse.png",
+        "tufts": "small sparse tufts"
+      },
+      {
+        "brightness_variation": "low",
+        "canopy_density": "medium",
+        "cluster_scale": "small",
+        "composition": "no focal point",
+        "contrast": "low",
+        "generation": {},
+        "homogeneity": "highly homogeneous",
+        "illustrative": false,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_02_uniform_medium.txt",
+        "source_id": "forest_src_02_uniform_medium",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_02_uniform_medium.png",
+        "tufts": "small sparse tufts"
+      },
+      {
+        "brightness_variation": "low",
+        "canopy_density": "dense",
+        "cluster_scale": "medium",
+        "composition": "no focal point",
+        "contrast": "low",
+        "generation": {},
+        "homogeneity": "highly homogeneous",
+        "illustrative": false,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_03_uniform_dense.txt",
+        "source_id": "forest_src_03_uniform_dense",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_03_uniform_dense.png",
+        "tufts": "small sparse tufts"
+      },
+      {
+        "brightness_variation": "medium",
+        "canopy_density": "medium",
+        "cluster_scale": "small",
+        "composition": "subtle natural variation",
+        "contrast": "medium",
+        "generation": {},
+        "homogeneity": "slightly varied",
+        "illustrative": false,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_04_small_clusters.txt",
+        "source_id": "forest_src_04_small_clusters",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_04_small_clusters.png",
+        "tufts": "small sparse tufts"
+      },
+      {
+        "brightness_variation": "medium",
+        "canopy_density": "medium",
+        "cluster_scale": "medium",
+        "composition": "subtle natural variation",
+        "contrast": "medium",
+        "generation": {},
+        "homogeneity": "slightly varied",
+        "illustrative": false,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_05_medium_clusters.txt",
+        "source_id": "forest_src_05_medium_clusters",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_05_medium_clusters.png",
+        "tufts": "small sparse tufts"
+      },
+      {
+        "brightness_variation": "medium",
+        "canopy_density": "dense",
+        "cluster_scale": "large",
+        "composition": "subtle natural variation",
+        "contrast": "high",
+        "generation": {},
+        "homogeneity": "strongly varied",
+        "illustrative": false,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_06_large_masses.txt",
+        "source_id": "forest_src_06_large_masses",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_06_large_masses.png",
+        "tufts": "small sparse tufts"
+      },
+      {
+        "brightness_variation": "high",
+        "canopy_density": "medium",
+        "cluster_scale": "medium",
+        "composition": "subtle natural variation",
+        "contrast": "high",
+        "generation": {},
+        "homogeneity": "strongly varied",
+        "illustrative": false,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_07_dark_variation.txt",
+        "source_id": "forest_src_07_dark_variation",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_07_dark_variation.png",
+        "tufts": "small sparse tufts"
+      },
+      {
+        "brightness_variation": "high",
+        "canopy_density": "dense",
+        "cluster_scale": "large",
+        "composition": "more illustrative and scenic",
+        "contrast": "high",
+        "generation": {},
+        "homogeneity": "strongly varied",
+        "illustrative": true,
+        "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_08_illustrative.txt",
+        "source_id": "forest_src_08_illustrative",
+        "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_08_illustrative.png",
+        "tufts": "small sparse tufts"
+      }
+    ],
+    "source_root": "experiments\\..\\assets\\forest_source_experiments\\source",
+    "tileset": {
+      "edge_types": 3,
+      "palette": 24,
+      "patch_overlap": 64,
+      "patch_size": 256,
+      "preview_cols": 10,
+      "preview_rows": 10,
+      "shared_palette": true,
+      "source_tile_size": 512,
+      "strip_width": 96,
+      "variants": 12
+    }
+  }
+}

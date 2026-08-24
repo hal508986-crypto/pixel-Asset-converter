@@ -1,0 +1,82 @@
+{
+  "family": "river",
+  "material_a": null,
+  "material_b": null,
+  "metadata": {
+    "bank_width_ratio": 0.04,
+    "incoming": [
+      "S",
+      "W"
+    ],
+    "mask_type": "centerline_variable_width_with_bank",
+    "outgoing": [
+      "E"
+    ],
+    "river_width": 0.26,
+    "width_variation": 0.04
+  },
+  "semantic_contract": {
+    "east": {
+      "connects_to": [
+        "east"
+      ],
+      "feature_center": 0.5,
+      "feature_type": "river",
+      "feature_width": 0.26,
+      "flow": "out",
+      "material": "water",
+      "materials": [
+        "water"
+      ],
+      "orientation": "ESW",
+      "role": "network_connector"
+    },
+    "north": {
+      "connects_to": [],
+      "feature_center": null,
+      "feature_type": null,
+      "feature_width": null,
+      "flow": null,
+      "material": "forest_canopy",
+      "materials": [
+        "forest_canopy"
+      ],
+      "orientation": null,
+      "role": "surface"
+    },
+    "orientation": "ESW",
+    "south": {
+      "connects_to": [
+        "south"
+      ],
+      "feature_center": 0.5,
+      "feature_type": "river",
+      "feature_width": 0.26,
+      "flow": "in",
+      "material": "water",
+      "materials": [
+        "water"
+      ],
+      "orientation": "ESW",
+      "role": "network_connector"
+    },
+    "west": {
+      "connects_to": [
+        "west"
+      ],
+      "feature_center": 0.5,
+      "feature_type": "river",
+      "feature_width": 0.26,
+      "flow": "in",
+      "material": "water",
+      "materials": [
+        "water"
+      ],
+      "orientation": "ESW",
+      "role": "network_connector"
+    }
+  },
+  "tile_id": "river_forest_canopy_esw_v01",
+  "topology": "ESW",
+  "variant": 1
+}

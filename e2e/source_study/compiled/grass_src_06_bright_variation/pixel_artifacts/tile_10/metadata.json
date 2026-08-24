@@ -1,0 +1,193 @@
+{
+  "config": {
+    "background_color": null,
+    "background_mode": "alpha",
+    "background_tolerance": 12,
+    "center_suppression_strength": 0.4,
+    "debug_enabled": true,
+    "dither": "minimal",
+    "height": 64,
+    "output_root": "experiments\\..\\e2e\\source_study\\compiled\\grass_src_06_bright_variation\\pixel_artifacts\\tile_10",
+    "palette_budget": 24,
+    "palette_colors": [
+      [
+        75,
+        93,
+        8
+      ],
+      [
+        89,
+        109,
+        12
+      ],
+      [
+        93,
+        118,
+        15
+      ],
+      [
+        99,
+        121,
+        16
+      ],
+      [
+        104,
+        127,
+        18
+      ],
+      [
+        104,
+        133,
+        19
+      ],
+      [
+        106,
+        122,
+        17
+      ],
+      [
+        110,
+        134,
+        20
+      ],
+      [
+        113,
+        135,
+        21
+      ],
+      [
+        116,
+        136,
+        21
+      ],
+      [
+        119,
+        142,
+        23
+      ],
+      [
+        121,
+        147,
+        19
+      ],
+      [
+        121,
+        148,
+        29
+      ],
+      [
+        122,
+        138,
+        22
+      ],
+      [
+        127,
+        149,
+        26
+      ],
+      [
+        131,
+        151,
+        27
+      ],
+      [
+        135,
+        161,
+        30
+      ],
+      [
+        138,
+        153,
+        28
+      ],
+      [
+        141,
+        163,
+        31
+      ],
+      [
+        146,
+        173,
+        36
+      ],
+      [
+        148,
+        165,
+        33
+      ],
+      [
+        158,
+        176,
+        38
+      ],
+      [
+        164,
+        187,
+        44
+      ],
+      [
+        185,
+        207,
+        59
+      ]
+    ],
+    "repeat_opt_edge_band": 6,
+    "repeat_opt_enabled": true,
+    "repeat_opt_strength": 0.5,
+    "seam_mode": "inspect",
+    "seed": 52,
+    "semantic_provider": "rule",
+    "smoothing_enabled": true,
+    "tile_mode": "repeatable",
+    "width": 64,
+    "work_size": 256
+  },
+  "metrics": {
+    "actual_palette_count": 9,
+    "center_dominance_score": 0.122133,
+    "corner_seam_score": 0.0,
+    "edge_continuity_score": 1.0,
+    "horizontal_seam_score": 0.0,
+    "isolated_pixel_count": 0,
+    "micro_cluster_count": 0,
+    "periodicity_risk_score": 0.07328,
+    "repeatability_optimization_applied": true,
+    "vertical_seam_score": 0.0
+  },
+  "pipeline": [
+    "load",
+    "normalize",
+    "background",
+    "smoothing",
+    "edges",
+    "regions",
+    "structural",
+    "semantic",
+    "ir",
+    "pixelize",
+    "palette",
+    "clusters",
+    "diagonals",
+    "repeatability",
+    "seam",
+    "export"
+  ],
+  "repeatability_after": {
+    "center_dominance_score": 0.122133,
+    "corner_seam_score": 0.0,
+    "edge_continuity_score": 1.0,
+    "periodicity_risk_score": 0.07328
+  },
+  "repeatability_before": {
+    "center_dominance_score": 0.122024,
+    "corner_seam_score": 0.0,
+    "edge_continuity_score": 0.993951,
+    "periodicity_risk_score": 0.075029
+  },
+  "repeatability_optimization": {
+    "applied": true,
+    "enabled": true
+  },
+  "semantic_provider": "rule",
+  "source": "tile_10"
+}

@@ -1,0 +1,668 @@
+{
+  "artifacts": {
+    "comparison": "experiments\\..\\e2e\\forest_source_study\\compiled\\forest_src_05_medium_clusters\\comparison.png",
+    "metrics": "experiments\\..\\e2e\\forest_source_study\\compiled\\forest_src_05_medium_clusters\\metrics.json",
+    "root": "experiments\\..\\e2e\\forest_source_study\\compiled\\forest_src_05_medium_clusters"
+  },
+  "prompt_file": "experiments\\..\\assets\\forest_source_experiments\\prompts\\forest_src_05_medium_clusters.txt",
+  "reasons": [
+    "canopy cluster continuity is low",
+    "low periodicity and grid visibility"
+  ],
+  "score": 0.853907,
+  "source_id": "forest_src_05_medium_clusters",
+  "source_path": "experiments\\..\\assets\\forest_source_experiments\\source\\forest_src_05_medium_clusters.png",
+  "status": "completed",
+  "tileset": {
+    "contract_validation": {
+      "compatible_map": true,
+      "pixel": {
+        "by_edge_id": {
+          "forest_canopy_A": {
+            "east_west": {
+              "brightness_distance": 0.011269,
+              "cluster_similarity": 0.701613,
+              "color_distance": 0.012545,
+              "score": 0.04081
+            },
+            "north_south": {
+              "brightness_distance": 0.01074,
+              "cluster_similarity": 0.684476,
+              "color_distance": 0.012024,
+              "score": 0.042053
+            }
+          },
+          "forest_canopy_B": {
+            "east_west": {
+              "brightness_distance": 0.013061,
+              "cluster_similarity": 0.621976,
+              "color_distance": 0.014543,
+              "score": 0.050521
+            },
+            "north_south": {
+              "brightness_distance": 0.01152,
+              "cluster_similarity": 0.633064,
+              "color_distance": 0.012797,
+              "score": 0.047892
+            }
+          },
+          "forest_canopy_C": {
+            "east_west": {
+              "brightness_distance": 0.014687,
+              "cluster_similarity": 0.627016,
+              "color_distance": 0.016192,
+              "score": 0.051495
+            },
+            "north_south": {
+              "brightness_distance": 0.017052,
+              "cluster_similarity": 0.609879,
+              "color_distance": 0.018848,
+              "score": 0.055526
+            }
+          }
+        },
+        "risk_score": 0.04805
+      },
+      "pixel_edge_risk": 0.04805,
+      "source": {
+        "by_edge_id": {
+          "forest_canopy_A": {
+            "east_west": {
+              "brightness_distance": 0.0,
+              "cluster_similarity": 1.0,
+              "color_distance": 0.0,
+              "score": 0.0
+            },
+            "north_south": {
+              "brightness_distance": 0.0,
+              "cluster_similarity": 1.0,
+              "color_distance": 0.0,
+              "score": 0.0
+            }
+          },
+          "forest_canopy_B": {
+            "east_west": {
+              "brightness_distance": 0.0,
+              "cluster_similarity": 1.0,
+              "color_distance": 0.0,
+              "score": 0.0
+            },
+            "north_south": {
+              "brightness_distance": 0.0,
+              "cluster_similarity": 1.0,
+              "color_distance": 0.0,
+              "score": 0.0
+            }
+          },
+          "forest_canopy_C": {
+            "east_west": {
+              "brightness_distance": 0.0,
+              "cluster_similarity": 1.0,
+              "color_distance": 0.0,
+              "score": 0.0
+            },
+            "north_south": {
+              "brightness_distance": 0.0,
+              "cluster_similarity": 1.0,
+              "color_distance": 0.0,
+              "score": 0.0
+            }
+          }
+        },
+        "risk_score": 0.0
+      }
+    },
+    "independent_variants": {
+      "adjacent_repeat_rate": 0.0,
+      "brightness_discontinuity_score": 0.018569,
+      "canopy_mass_break_risk": 0.458594,
+      "cluster_continuity_score": 0.541406,
+      "contract_validation": {
+        "by_edge_id": {
+          "forest_canopy_A": {
+            "east_west": {
+              "brightness_distance": 0.011269,
+              "cluster_similarity": 0.701613,
+              "color_distance": 0.012545,
+              "score": 0.04081
+            },
+            "north_south": {
+              "brightness_distance": 0.01074,
+              "cluster_similarity": 0.684476,
+              "color_distance": 0.012024,
+              "score": 0.042053
+            }
+          },
+          "forest_canopy_B": {
+            "east_west": {
+              "brightness_distance": 0.013061,
+              "cluster_similarity": 0.621976,
+              "color_distance": 0.014543,
+              "score": 0.050521
+            },
+            "north_south": {
+              "brightness_distance": 0.01152,
+              "cluster_similarity": 0.633064,
+              "color_distance": 0.012797,
+              "score": 0.047892
+            }
+          },
+          "forest_canopy_C": {
+            "east_west": {
+              "brightness_distance": 0.014687,
+              "cluster_similarity": 0.627016,
+              "color_distance": 0.016192,
+              "score": 0.051495
+            },
+            "north_south": {
+              "brightness_distance": 0.017052,
+              "cluster_similarity": 0.609879,
+              "color_distance": 0.018848,
+              "score": 0.055526
+            }
+          }
+        },
+        "risk_score": 0.04805
+      },
+      "edge_discontinuity_score": 0.020603,
+      "grid_visibility_score": 0.01638,
+      "palette_discontinuity_score": 0.00254,
+      "periodicity_risk": 0.016817,
+      "tile_reuse_frequency": 0.09
+    },
+    "single_repeat": {
+      "adjacent_repeat_rate": 1.0,
+      "brightness_discontinuity_score": 0.000102,
+      "canopy_mass_break_risk": 0.007812,
+      "cluster_continuity_score": 0.992188,
+      "contract_validation": {
+        "by_edge_id": {
+          "forest_canopy_A": {
+            "east_west": {
+              "brightness_distance": 0.011269,
+              "cluster_similarity": 0.701613,
+              "color_distance": 0.012545,
+              "score": 0.04081
+            },
+            "north_south": {
+              "brightness_distance": 0.01074,
+              "cluster_similarity": 0.684476,
+              "color_distance": 0.012024,
+              "score": 0.042053
+            }
+          },
+          "forest_canopy_B": {
+            "east_west": {
+              "brightness_distance": 0.013061,
+              "cluster_similarity": 0.621976,
+              "color_distance": 0.014543,
+              "score": 0.050521
+            },
+            "north_south": {
+              "brightness_distance": 0.01152,
+              "cluster_similarity": 0.633064,
+              "color_distance": 0.012797,
+              "score": 0.047892
+            }
+          },
+          "forest_canopy_C": {
+            "east_west": {
+              "brightness_distance": 0.014687,
+              "cluster_similarity": 0.627016,
+              "color_distance": 0.016192,
+              "score": 0.051495
+            },
+            "north_south": {
+              "brightness_distance": 0.017052,
+              "cluster_similarity": 0.609879,
+              "color_distance": 0.018848,
+              "score": 0.055526
+            }
+          }
+        },
+        "risk_score": 0.04805
+      },
+      "edge_discontinuity_score": 0.00012,
+      "grid_visibility_score": 0.000377,
+      "palette_discontinuity_score": 0.001434,
+      "periodicity_risk": 0.666818,
+      "tile_reuse_frequency": 1.0
+    },
+    "source_compiler_tileset": {
+      "adjacent_repeat_rate": 0.077778,
+      "brightness_discontinuity_score": 0.017824,
+      "canopy_mass_break_risk": 0.400608,
+      "cluster_continuity_score": 0.599392,
+      "contract_validation": {
+        "by_edge_id": {
+          "forest_canopy_A": {
+            "east_west": {
+              "brightness_distance": 0.011269,
+              "cluster_similarity": 0.701613,
+              "color_distance": 0.012545,
+              "score": 0.04081
+            },
+            "north_south": {
+              "brightness_distance": 0.01074,
+              "cluster_similarity": 0.684476,
+              "color_distance": 0.012024,
+              "score": 0.042053
+            }
+          },
+          "forest_canopy_B": {
+            "east_west": {
+              "brightness_distance": 0.013061,
+              "cluster_similarity": 0.621976,
+              "color_distance": 0.014543,
+              "score": 0.050521
+            },
+            "north_south": {
+              "brightness_distance": 0.01152,
+              "cluster_similarity": 0.633064,
+              "color_distance": 0.012797,
+              "score": 0.047892
+            }
+          },
+          "forest_canopy_C": {
+            "east_west": {
+              "brightness_distance": 0.014687,
+              "cluster_similarity": 0.627016,
+              "color_distance": 0.016192,
+              "score": 0.051495
+            },
+            "north_south": {
+              "brightness_distance": 0.017052,
+              "cluster_similarity": 0.609879,
+              "color_distance": 0.018848,
+              "score": 0.055526
+            }
+          }
+        },
+        "risk_score": 0.04805
+      },
+      "edge_discontinuity_score": 0.019749,
+      "grid_visibility_score": 0.016401,
+      "palette_discontinuity_score": 0.005896,
+      "periodicity_risk": 0.067373,
+      "tile_reuse_frequency": 0.2
+    }
+  },
+  "validation": {
+    "accepted": true,
+    "analysis": {
+      "brightness_range": [
+        8.934200286865234,
+        143.75498962402344
+      ],
+      "edge_density": 0.297546,
+      "global_color_distribution": [
+        {
+          "color": [
+            21,
+            37,
+            11
+          ],
+          "count": 4060
+        },
+        {
+          "color": [
+            14,
+            26,
+            8
+          ],
+          "count": 3426
+        },
+        {
+          "color": [
+            64,
+            89,
+            25
+          ],
+          "count": 3255
+        },
+        {
+          "color": [
+            55,
+            78,
+            22
+          ],
+          "count": 3213
+        },
+        {
+          "color": [
+            41,
+            63,
+            17
+          ],
+          "count": 3160
+        },
+        {
+          "color": [
+            26,
+            43,
+            12
+          ],
+          "count": 3056
+        },
+        {
+          "color": [
+            34,
+            54,
+            15
+          ],
+          "count": 3033
+        },
+        {
+          "color": [
+            47,
+            69,
+            19
+          ],
+          "count": 3010
+        },
+        {
+          "color": [
+            31,
+            49,
+            14
+          ],
+          "count": 2904
+        },
+        {
+          "color": [
+            67,
+            94,
+            25
+          ],
+          "count": 2857
+        },
+        {
+          "color": [
+            58,
+            83,
+            22
+          ],
+          "count": 2836
+        },
+        {
+          "color": [
+            49,
+            73,
+            20
+          ],
+          "count": 2652
+        },
+        {
+          "color": [
+            88,
+            115,
+            30
+          ],
+          "count": 2628
+        },
+        {
+          "color": [
+            39,
+            59,
+            17
+          ],
+          "count": 2582
+        },
+        {
+          "color": [
+            45,
+            65,
+            19
+          ],
+          "count": 2574
+        },
+        {
+          "color": [
+            73,
+            96,
+            27
+          ],
+          "count": 2464
+        },
+        {
+          "color": [
+            75,
+            101,
+            27
+          ],
+          "count": 2376
+        },
+        {
+          "color": [
+            37,
+            56,
+            16
+          ],
+          "count": 2310
+        },
+        {
+          "color": [
+            62,
+            84,
+            24
+          ],
+          "count": 2310
+        },
+        {
+          "color": [
+            84,
+            108,
+            30
+          ],
+          "count": 2293
+        },
+        {
+          "color": [
+            28,
+            47,
+            13
+          ],
+          "count": 2204
+        },
+        {
+          "color": [
+            53,
+            74,
+            21
+          ],
+          "count": 2180
+        },
+        {
+          "color": [
+            78,
+            105,
+            27
+          ],
+          "count": 2177
+        },
+        {
+          "color": [
+            99,
+            126,
+            33
+          ],
+          "count": 1976
+        }
+      ],
+      "image_size": [
+        1254,
+        1254
+      ],
+      "lab_palette_candidates": [
+        [
+          12.650566101074219,
+          -12.804373741149902,
+          13.901453971862793
+        ],
+        [
+          7.674959182739258,
+          -8.736401557922363,
+          8.049837112426758
+        ],
+        [
+          34.60991287231445,
+          -20.596057891845703,
+          32.6732177734375
+        ],
+        [
+          30.203109741210938,
+          -19.013002395629883,
+          29.242504119873047
+        ],
+        [
+          23.89120101928711,
+          -17.649337768554688,
+          24.669509887695312
+        ],
+        [
+          15.349544525146484,
+          -13.85354232788086,
+          17.063587188720703
+        ],
+        [
+          20.09531021118164,
+          -16.0639591217041,
+          21.422958374023438
+        ],
+        [
+          26.46971893310547,
+          -18.023193359375,
+          26.558441162109375
+        ],
+        [
+          18.007007598876953,
+          -14.738395690917969,
+          19.462779998779297
+        ],
+        [
+          36.49677276611328,
+          -21.884172439575195,
+          34.69807434082031
+        ],
+        [
+          32.13230895996094,
+          -20.332366943359375,
+          31.337923049926758
+        ],
+        [
+          28.029850006103516,
+          -19.184022903442383,
+          27.775318145751953
+        ],
+        [
+          44.84321975708008,
+          -23.185714721679688,
+          41.518272399902344
+        ],
+        [
+          22.301246643066406,
+          -16.35795783996582,
+          22.89094352722168
+        ],
+        [
+          24.90686798095703,
+          -16.743152618408203,
+          24.822458267211914
+        ],
+        [
+          37.59236526489258,
+          -20.144744873046875,
+          35.071353912353516
+        ],
+        [
+          39.38151168823242,
+          -21.867782592773438,
+          36.95812225341797
+        ],
+        [
+          21.052772521972656,
+          -15.706896781921387,
+          22.007633209228516
+        ],
+        [
+          32.76792907714844,
+          -18.923341751098633,
+          31.15668296813965
+        ],
+        [
+          42.31331253051758,
+          -21.3369140625,
+          38.86832046508789
+        ],
+        [
+          17.031455993652344,
+          -15.092670440673828,
+          18.726985931396484
+        ],
+        [
+          28.664901733398438,
+          -17.84825325012207,
+          28.04545783996582
+        ],
+        [
+          40.899566650390625,
+          -22.617996215820312,
+          38.56427764892578
+        ],
+        [
+          49.11077880859375,
+          -23.822486877441406,
+          44.827945709228516
+        ]
+      ],
+      "local_contrast_distribution": [
+        0.18705,
+        0.191089,
+        0.194839,
+        0.191944,
+        0.18704,
+        0.19464,
+        0.186032,
+        0.190406,
+        0.178673,
+        0.18171,
+        0.173136,
+        0.176608,
+        0.184669,
+        0.177751,
+        0.179649,
+        0.179475
+      ],
+      "metrics": {
+        "autocorrelation_peak_risk": 0.065975,
+        "brightness_spatial_variance": 5.3e-05,
+        "canopy_cluster_scale_score": 0.209631,
+        "canopy_fragmentation_score": 0.576667,
+        "center_dominance": 0.093754,
+        "center_dominance_score": 0.093754,
+        "color_spatial_variance": 4.4e-05,
+        "large_landmark_risk": 0.061862,
+        "large_mass_dominance_score": 0.437744,
+        "low_frequency_pattern_strength": 0.237867,
+        "texture_density_variance": 0.000731
+      },
+      "texture_scale": 0.107242
+    },
+    "metrics": {
+      "autocorrelation_peak_risk": 0.065975,
+      "brightness_spatial_variance": 5.3e-05,
+      "canopy_cluster_scale_score": 0.209631,
+      "canopy_fragmentation_score": 0.576667,
+      "center_dominance": 0.093754,
+      "center_dominance_score": 0.093754,
+      "color_spatial_variance": 4.4e-05,
+      "large_landmark_risk": 0.061862,
+      "large_mass_dominance_score": 0.437744,
+      "low_frequency_pattern_strength": 0.237867,
+      "texture_density_variance": 0.000731
+    },
+    "source_id": "forest_src_05_medium_clusters",
+    "status": "accepted",
+    "warnings": []
+  }
+}

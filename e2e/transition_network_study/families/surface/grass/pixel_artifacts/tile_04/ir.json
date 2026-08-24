@@ -1,0 +1,2405 @@
+{
+  "global_style": {
+    "contrast_strength": 0.5,
+    "dithering": "minimal",
+    "edge_strength": 0.14034739545761393,
+    "outline_mode": "selective",
+    "seam_mode": "inspect",
+    "texture_density": 0.08107622457095064
+  },
+  "height": 64,
+  "map_context": null,
+  "palette_budget": 24,
+  "regions": [
+    {
+      "area_ratio": 0.0091552734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        122,
+        152,
+        33
+      ],
+      "id": 0,
+      "importance": 0.21589274704456327,
+      "merge_candidates": [
+        1,
+        8,
+        9,
+        10,
+        12,
+        14,
+        18,
+        96
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.10575008392333984
+    },
+    {
+      "area_ratio": 0.00726318359375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        116,
+        148,
+        27
+      ],
+      "id": 1,
+      "importance": 0.05,
+      "merge_candidates": [
+        0,
+        2,
+        9,
+        12,
+        13,
+        96,
+        97
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.053847428411245346
+    },
+    {
+      "area_ratio": 0.005615234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        93,
+        136,
+        27
+      ],
+      "id": 2,
+      "importance": 0.06070503517985344,
+      "merge_candidates": [
+        1,
+        3,
+        13,
+        97,
+        101
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0058746337890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        96,
+        133,
+        26
+      ],
+      "id": 3,
+      "importance": 0.053895171731710434,
+      "merge_candidates": [
+        2,
+        4,
+        13,
+        99,
+        101
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.012451171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        113,
+        144,
+        29
+      ],
+      "id": 4,
+      "importance": 0.09600040167570113,
+      "merge_candidates": [
+        3,
+        5,
+        11,
+        13,
+        16,
+        17,
+        20,
+        99,
+        103
+      ],
+      "preserve_edges": false,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08069228380918503
+    },
+    {
+      "area_ratio": 0.010955810546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        133,
+        158,
+        34
+      ],
+      "id": 5,
+      "importance": 0.0675754465162754,
+      "merge_candidates": [
+        4,
+        6,
+        11,
+        16,
+        19,
+        102,
+        103
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.051660049706697464
+    },
+    {
+      "area_ratio": 0.0139923095703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        139,
+        164,
+        34
+      ],
+      "id": 6,
+      "importance": 0.10462921559810637,
+      "merge_candidates": [
+        5,
+        7,
+        15,
+        19,
+        21,
+        100,
+        102
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07090563327074051
+    },
+    {
+      "area_ratio": 0.00732421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        110,
+        143,
+        31
+      ],
+      "id": 7,
+      "importance": 0.0570475272834301,
+      "merge_candidates": [
+        6,
+        8,
+        14,
+        15,
+        100
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05745340511202812
+    },
+    {
+      "area_ratio": 0.006866455078125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        122,
+        152,
+        32
+      ],
+      "id": 8,
+      "importance": 0.09441955387592316,
+      "merge_candidates": [
+        0,
+        7,
+        14,
+        100
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07141038030385971
+    },
+    {
+      "area_ratio": 0.005157470703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        141,
+        168,
+        32
+      ],
+      "id": 9,
+      "importance": 0.08183660656213759,
+      "merge_candidates": [
+        0,
+        1
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07397940009832382
+    },
+    {
+      "area_ratio": 0.010040283203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        101,
+        138,
+        34
+      ],
+      "id": 10,
+      "importance": 0.11834903359413146,
+      "merge_candidates": [
+        0,
+        14,
+        18,
+        23,
+        26
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.12750482559204102
+    },
+    {
+      "area_ratio": 0.00482177734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        106,
+        133,
+        29
+      ],
+      "id": 11,
+      "importance": 0.05759408548474311,
+      "merge_candidates": [
+        4,
+        5,
+        16
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.010284423828125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        105,
+        137,
+        26
+      ],
+      "id": 12,
+      "importance": 0.15957947969436645,
+      "merge_candidates": [
+        0,
+        1,
+        13,
+        18,
+        22
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08394765853881836
+    },
+    {
+      "area_ratio": 0.0100250244140625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        123,
+        153,
+        30
+      ],
+      "id": 13,
+      "importance": 0.11542088985443114,
+      "merge_candidates": [
+        1,
+        2,
+        3,
+        4,
+        12,
+        17,
+        22
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05841014161705971
+    },
+    {
+      "area_ratio": 0.0091705322265625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        158,
+        180,
+        39
+      ],
+      "id": 14,
+      "importance": 0.14737791419029236,
+      "merge_candidates": [
+        0,
+        7,
+        8,
+        10,
+        15,
+        21,
+        23,
+        33
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08300229161977768
+    },
+    {
+      "area_ratio": 0.0057373046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        148,
+        174,
+        33
+      ],
+      "id": 15,
+      "importance": 0.1742823779582977,
+      "merge_candidates": [
+        6,
+        7,
+        14,
+        21
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06785593181848526
+    },
+    {
+      "area_ratio": 0.0133056640625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        128,
+        155,
+        31
+      ],
+      "id": 16,
+      "importance": 0.2527125298976898,
+      "merge_candidates": [
+        4,
+        5,
+        11,
+        19,
+        20,
+        24
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.12825384736061096
+    },
+    {
+      "area_ratio": 0.00653076171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        117,
+        149,
+        31
+      ],
+      "id": 17,
+      "importance": 0.24035011529922484,
+      "merge_candidates": [
+        4,
+        13,
+        20,
+        22
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06900758296251297
+    },
+    {
+      "area_ratio": 0.0125274658203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        138,
+        163,
+        37
+      ],
+      "id": 18,
+      "importance": 0.336904501914978,
+      "merge_candidates": [
+        0,
+        10,
+        12,
+        22,
+        26,
+        27,
+        34
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.12830835580825806
+    },
+    {
+      "area_ratio": 0.011199951171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        103,
+        135,
+        29
+      ],
+      "id": 19,
+      "importance": 0.10798856019973754,
+      "merge_candidates": [
+        5,
+        6,
+        16,
+        21,
+        24,
+        25
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07901579886674881
+    },
+    {
+      "area_ratio": 0.0136871337890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        101,
+        134,
+        29
+      ],
+      "id": 20,
+      "importance": 0.2762346237897873,
+      "merge_candidates": [
+        4,
+        16,
+        17,
+        22,
+        24,
+        28,
+        29,
+        32
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.09508991986513138
+    },
+    {
+      "area_ratio": 0.01531982421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        133,
+        162,
+        32
+      ],
+      "id": 21,
+      "importance": 0.17758996188640594,
+      "merge_candidates": [
+        6,
+        14,
+        15,
+        19,
+        25,
+        31,
+        33
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08177468925714493
+    },
+    {
+      "area_ratio": 0.0076904296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        125,
+        156,
+        31
+      ],
+      "id": 22,
+      "importance": 0.34353085756301877,
+      "merge_candidates": [
+        12,
+        13,
+        17,
+        18,
+        20,
+        27,
+        29
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.10258699208498001
+    },
+    {
+      "area_ratio": 0.0049285888671875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        130,
+        157,
+        36
+      ],
+      "id": 23,
+      "importance": 0.11870917230844497,
+      "merge_candidates": [
+        10,
+        14,
+        26,
+        33,
+        38,
+        39
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05634758248925209
+    },
+    {
+      "area_ratio": 0.0147247314453125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        112,
+        142,
+        29
+      ],
+      "id": 24,
+      "importance": 0.24957478046417236,
+      "merge_candidates": [
+        16,
+        19,
+        20,
+        25,
+        28,
+        30,
+        35,
+        36
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.1053752526640892
+    },
+    {
+      "area_ratio": 0.0105743408203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        109,
+        140,
+        31
+      ],
+      "id": 25,
+      "importance": 0.20835329890251159,
+      "merge_candidates": [
+        19,
+        21,
+        24,
+        30,
+        31,
+        37
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06443492323160172
+    },
+    {
+      "area_ratio": 0.0130157470703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        96,
+        138,
+        34
+      ],
+      "id": 26,
+      "importance": 0.07657105401158332,
+      "merge_candidates": [
+        10,
+        18,
+        23,
+        34,
+        38
+      ],
+      "preserve_edges": false,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.0914858877658844
+    },
+    {
+      "area_ratio": 0.0113677978515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        113,
+        143,
+        26
+      ],
+      "id": 27,
+      "importance": 0.21447640657424927,
+      "merge_candidates": [
+        18,
+        22,
+        29,
+        34
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07384689897298813
+    },
+    {
+      "area_ratio": 0.0054473876953125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        117,
+        148,
+        35
+      ],
+      "id": 28,
+      "importance": 0.1570977836847305,
+      "merge_candidates": [
+        20,
+        24,
+        32,
+        35
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06627390533685684
+    },
+    {
+      "area_ratio": 0.012847900390625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        115,
+        146,
+        28
+      ],
+      "id": 29,
+      "importance": 0.3310186088085174,
+      "merge_candidates": [
+        20,
+        22,
+        27,
+        32,
+        34,
+        45
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.1345767378807068
+    },
+    {
+      "area_ratio": 0.01458740234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        104,
+        139,
+        29
+      ],
+      "id": 30,
+      "importance": 0.27331136763095853,
+      "merge_candidates": [
+        24,
+        25,
+        36,
+        37,
+        43,
+        44
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.13931767642498016
+    },
+    {
+      "area_ratio": 0.01104736328125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        112,
+        146,
+        29
+      ],
+      "id": 31,
+      "importance": 0.09087902456521987,
+      "merge_candidates": [
+        21,
+        25,
+        33,
+        37,
+        40
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0113525390625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        130,
+        160,
+        37
+      ],
+      "id": 32,
+      "importance": 0.27115216255187985,
+      "merge_candidates": [
+        20,
+        28,
+        29,
+        35,
+        42,
+        45
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.0939747616648674
+    },
+    {
+      "area_ratio": 0.006500244140625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        156,
+        175,
+        45
+      ],
+      "id": 33,
+      "importance": 0.14745332896709443,
+      "merge_candidates": [
+        14,
+        21,
+        23,
+        31,
+        39,
+        40,
+        48
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07930225133895874
+    },
+    {
+      "area_ratio": 0.0130615234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        126,
+        153,
+        31
+      ],
+      "id": 34,
+      "importance": 0.25640115737915037,
+      "merge_candidates": [
+        18,
+        26,
+        27,
+        29,
+        38,
+        41,
+        45,
+        47
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.10193457454442978
+    },
+    {
+      "area_ratio": 0.008575439453125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        97,
+        131,
+        26
+      ],
+      "id": 35,
+      "importance": 0.17459205985069273,
+      "merge_candidates": [
+        24,
+        28,
+        32,
+        36,
+        42,
+        43,
+        46
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06611318141222
+    },
+    {
+      "area_ratio": 0.00860595703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        103,
+        137,
+        27
+      ],
+      "id": 36,
+      "importance": 0.19005832970142364,
+      "merge_candidates": [
+        24,
+        30,
+        35,
+        43
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08475914597511292
+    },
+    {
+      "area_ratio": 0.0095672607421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        94,
+        133,
+        28
+      ],
+      "id": 37,
+      "importance": 0.1604421257972717,
+      "merge_candidates": [
+        25,
+        30,
+        31,
+        40,
+        44
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.09226206690073013
+    },
+    {
+      "area_ratio": 0.00830078125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        112,
+        145,
+        33
+      ],
+      "id": 38,
+      "importance": 0.054196348041296,
+      "merge_candidates": [
+        23,
+        26,
+        34,
+        39,
+        41,
+        49,
+        51
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.051059190183877945
+    },
+    {
+      "area_ratio": 0.005157470703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        100,
+        137,
+        31
+      ],
+      "id": 39,
+      "importance": 0.1025466650724411,
+      "merge_candidates": [
+        23,
+        33,
+        38,
+        48,
+        51
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06432624906301498
+    },
+    {
+      "area_ratio": 0.0174560546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        111,
+        146,
+        32
+      ],
+      "id": 40,
+      "importance": 0.21935001909732818,
+      "merge_candidates": [
+        31,
+        33,
+        37,
+        44,
+        48,
+        53,
+        57,
+        62
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.13421498239040375
+    },
+    {
+      "area_ratio": 0.009033203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        125,
+        157,
+        34
+      ],
+      "id": 41,
+      "importance": 0.13214540183544157,
+      "merge_candidates": [
+        34,
+        38,
+        47,
+        49
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05994558706879616
+    },
+    {
+      "area_ratio": 0.0061187744140625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        99,
+        136,
+        32
+      ],
+      "id": 42,
+      "importance": 0.15748783051967621,
+      "merge_candidates": [
+        32,
+        35,
+        45,
+        46,
+        50,
+        54
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06861206144094467
+    },
+    {
+      "area_ratio": 0.0172271728515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        114,
+        152,
+        31
+      ],
+      "id": 43,
+      "importance": 0.2195251524448395,
+      "merge_candidates": [
+        30,
+        35,
+        36,
+        44,
+        46,
+        52,
+        53,
+        56
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.10686736553907394
+    },
+    {
+      "area_ratio": 0.01318359375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        113,
+        152,
+        33
+      ],
+      "id": 44,
+      "importance": 0.22675962150096893,
+      "merge_candidates": [
+        30,
+        37,
+        40,
+        43,
+        53
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.10851030796766281
+    },
+    {
+      "area_ratio": 0.009613037109375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        116,
+        143,
+        29
+      ],
+      "id": 45,
+      "importance": 0.12812388688325882,
+      "merge_candidates": [
+        29,
+        32,
+        34,
+        42,
+        47,
+        54
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05950873717665672
+    },
+    {
+      "area_ratio": 0.005096435546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        127,
+        160,
+        33
+      ],
+      "id": 46,
+      "importance": 0.2741755783557892,
+      "merge_candidates": [
+        35,
+        42,
+        43,
+        50,
+        52
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.09930051118135452
+    },
+    {
+      "area_ratio": 0.010498046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        120,
+        151,
+        30
+      ],
+      "id": 47,
+      "importance": 0.14123194217681884,
+      "merge_candidates": [
+        34,
+        41,
+        45,
+        49,
+        54,
+        55
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05740820989012718
+    },
+    {
+      "area_ratio": 0.01068115234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        107,
+        144,
+        33
+      ],
+      "id": 48,
+      "importance": 0.07957327738404274,
+      "merge_candidates": [
+        33,
+        39,
+        40,
+        51,
+        58,
+        62
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06435436010360718
+    },
+    {
+      "area_ratio": 0.00897216796875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        102,
+        142,
+        33
+      ],
+      "id": 49,
+      "importance": 0.05625651702284813,
+      "merge_candidates": [
+        38,
+        41,
+        47,
+        51,
+        55,
+        59,
+        61
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.0735490545630455
+    },
+    {
+      "area_ratio": 0.008331298828125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        114,
+        145,
+        30
+      ],
+      "id": 50,
+      "importance": 0.08342979699373244,
+      "merge_candidates": [
+        42,
+        46,
+        52,
+        54,
+        60,
+        64
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06425993889570236
+    },
+    {
+      "area_ratio": 0.00506591796875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        131,
+        156,
+        36
+      ],
+      "id": 51,
+      "importance": 0.09196372777223585,
+      "merge_candidates": [
+        38,
+        39,
+        48,
+        49,
+        58,
+        61
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.0669906809926033
+    },
+    {
+      "area_ratio": 0.0084991455078125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        125,
+        152,
+        27
+      ],
+      "id": 52,
+      "importance": 0.12556813359260557,
+      "merge_candidates": [
+        43,
+        46,
+        50,
+        56,
+        60
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.0638267770409584
+    },
+    {
+      "area_ratio": 0.010040283203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        130,
+        160,
+        33
+      ],
+      "id": 53,
+      "importance": 0.1852183371782303,
+      "merge_candidates": [
+        40,
+        43,
+        44,
+        56,
+        57,
+        65
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.1007494255900383
+    },
+    {
+      "area_ratio": 0.0097198486328125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        98,
+        136,
+        32
+      ],
+      "id": 54,
+      "importance": 0.12873193323612214,
+      "merge_candidates": [
+        42,
+        45,
+        47,
+        50,
+        55,
+        64
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06705319136381149
+    },
+    {
+      "area_ratio": 0.0093231201171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        111,
+        144,
+        35
+      ],
+      "id": 55,
+      "importance": 0.10795825570821763,
+      "merge_candidates": [
+        47,
+        49,
+        54,
+        59,
+        63,
+        64
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07129290699958801
+    },
+    {
+      "area_ratio": 0.0069580078125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        126,
+        150,
+        29
+      ],
+      "id": 56,
+      "importance": 0.29312059879302976,
+      "merge_candidates": [
+        43,
+        52,
+        53,
+        60,
+        65,
+        68
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.1168382540345192
+    },
+    {
+      "area_ratio": 0.00982666015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        137,
+        166,
+        31
+      ],
+      "id": 57,
+      "importance": 0.09982853531837464,
+      "merge_candidates": [
+        40,
+        53,
+        62,
+        66,
+        69
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07874976843595505
+    },
+    {
+      "area_ratio": 0.00787353515625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        114,
+        150,
+        32
+      ],
+      "id": 58,
+      "importance": 0.05,
+      "merge_candidates": [
+        48,
+        51,
+        61,
+        62,
+        67,
+        70
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05815160274505615
+    },
+    {
+      "area_ratio": 0.009063720703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        113,
+        144,
+        32
+      ],
+      "id": 59,
+      "importance": 0.05270384773612022,
+      "merge_candidates": [
+        49,
+        55,
+        61,
+        63,
+        67,
+        71
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.058960188180208206
+    },
+    {
+      "area_ratio": 0.0091094970703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        136,
+        162,
+        26
+      ],
+      "id": 60,
+      "importance": 0.22516008913516997,
+      "merge_candidates": [
+        50,
+        52,
+        56,
+        64,
+        68,
+        74
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07543645799160004
+    },
+    {
+      "area_ratio": 0.006072998046875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        114,
+        143,
+        32
+      ],
+      "id": 61,
+      "importance": 0.05,
+      "merge_candidates": [
+        49,
+        51,
+        58,
+        59,
+        67
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.006622314453125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        117,
+        145,
+        30
+      ],
+      "id": 62,
+      "importance": 0.05,
+      "merge_candidates": [
+        40,
+        48,
+        57,
+        58,
+        69,
+        70
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05148706212639809
+    },
+    {
+      "area_ratio": 0.005615234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        128,
+        159,
+        39
+      ],
+      "id": 63,
+      "importance": 0.17755286693572997,
+      "merge_candidates": [
+        55,
+        59,
+        64,
+        71,
+        72
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08115178346633911
+    },
+    {
+      "area_ratio": 0.014739990234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        103,
+        140,
+        31
+      ],
+      "id": 64,
+      "importance": 0.28561235070228574,
+      "merge_candidates": [
+        50,
+        54,
+        55,
+        60,
+        63,
+        72,
+        73,
+        74
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.11224698275327682
+    },
+    {
+      "area_ratio": 0.00982666015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        139,
+        158,
+        28
+      ],
+      "id": 65,
+      "importance": 0.20852419137954709,
+      "merge_candidates": [
+        53,
+        56,
+        66,
+        68,
+        75
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08622154593467712
+    },
+    {
+      "area_ratio": 0.0095367431640625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        124,
+        153,
+        31
+      ],
+      "id": 66,
+      "importance": 0.18962715566158295,
+      "merge_candidates": [
+        57,
+        65,
+        69,
+        75,
+        76
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08742018789052963
+    },
+    {
+      "area_ratio": 0.0112762451171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        126,
+        156,
+        30
+      ],
+      "id": 67,
+      "importance": 0.05,
+      "merge_candidates": [
+        58,
+        59,
+        61,
+        70,
+        71,
+        77,
+        82
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0082550048828125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        161,
+        174,
+        33
+      ],
+      "id": 68,
+      "importance": 0.2705702543258667,
+      "merge_candidates": [
+        56,
+        60,
+        65,
+        74,
+        75,
+        81
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "soil",
+      "texture_priority": 0.08815973252058029
+    },
+    {
+      "area_ratio": 0.009735107421875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        126,
+        157,
+        31
+      ],
+      "id": 69,
+      "importance": 0.09254403710365296,
+      "merge_candidates": [
+        57,
+        62,
+        66,
+        70,
+        76,
+        78
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07254771143198013
+    },
+    {
+      "area_ratio": 0.0091400146484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        133,
+        162,
+        30
+      ],
+      "id": 70,
+      "importance": 0.05,
+      "merge_candidates": [
+        58,
+        62,
+        67,
+        69,
+        77,
+        78,
+        79
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.051786307245492935
+    },
+    {
+      "area_ratio": 0.01116943359375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        120,
+        148,
+        32
+      ],
+      "id": 71,
+      "importance": 0.20241756439208985,
+      "merge_candidates": [
+        59,
+        63,
+        67,
+        72,
+        80,
+        82
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07447851449251175
+    },
+    {
+      "area_ratio": 0.0117645263671875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        96,
+        130,
+        29
+      ],
+      "id": 72,
+      "importance": 0.2828118562698364,
+      "merge_candidates": [
+        63,
+        64,
+        71,
+        73,
+        80,
+        83
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.11557140946388245
+    },
+    {
+      "area_ratio": 0.0115966796875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        137,
+        169,
+        38
+      ],
+      "id": 73,
+      "importance": 0.3651424944400787,
+      "merge_candidates": [
+        64,
+        72,
+        74,
+        81,
+        83,
+        85,
+        88
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.15348602831363678
+    },
+    {
+      "area_ratio": 0.00811767578125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        111,
+        146,
+        28
+      ],
+      "id": 74,
+      "importance": 0.3084004938602447,
+      "merge_candidates": [
+        60,
+        64,
+        68,
+        73,
+        81
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.12683601677417755
+    },
+    {
+      "area_ratio": 0.01556396484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        97,
+        133,
+        33
+      ],
+      "id": 75,
+      "importance": 0.28562551736831665,
+      "merge_candidates": [
+        65,
+        66,
+        68,
+        76,
+        81,
+        87,
+        89,
+        93,
+        94,
+        95
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.11523023247718811
+    },
+    {
+      "area_ratio": 0.0148468017578125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        107,
+        140,
+        35
+      ],
+      "id": 76,
+      "importance": 0.3086705684661865,
+      "merge_candidates": [
+        66,
+        69,
+        75,
+        78,
+        87
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.14912286400794983
+    },
+    {
+      "area_ratio": 0.0084991455078125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        109,
+        145,
+        30
+      ],
+      "id": 77,
+      "importance": 0.05,
+      "merge_candidates": [
+        67,
+        70,
+        79,
+        82,
+        84,
+        91
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0084075927734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        111,
+        146,
+        32
+      ],
+      "id": 78,
+      "importance": 0.11928933709859849,
+      "merge_candidates": [
+        69,
+        70,
+        76,
+        79,
+        87
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07721386104822159
+    },
+    {
+      "area_ratio": 0.0115966796875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        121,
+        150,
+        30
+      ],
+      "id": 79,
+      "importance": 0.05987934395670891,
+      "merge_candidates": [
+        70,
+        77,
+        78,
+        84,
+        87,
+        90
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06429000943899155
+    },
+    {
+      "area_ratio": 0.00909423828125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        109,
+        138,
+        30
+      ],
+      "id": 80,
+      "importance": 0.30601063966751096,
+      "merge_candidates": [
+        71,
+        72,
+        82,
+        83,
+        86
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.11080794781446457
+    },
+    {
+      "area_ratio": 0.0097198486328125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        90,
+        131,
+        31
+      ],
+      "id": 81,
+      "importance": 0.25118091404438014,
+      "merge_candidates": [
+        68,
+        73,
+        74,
+        75,
+        88,
+        89
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.08685695379972458
+    },
+    {
+      "area_ratio": 0.005615234375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        120,
+        145,
+        29
+      ],
+      "id": 82,
+      "importance": 0.0797267735004425,
+      "merge_candidates": [
+        67,
+        71,
+        77,
+        80,
+        86,
+        91
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07628242671489716
+    },
+    {
+      "area_ratio": 0.00872802734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        104,
+        138,
+        29
+      ],
+      "id": 83,
+      "importance": 0.3557414531707763,
+      "merge_candidates": [
+        72,
+        73,
+        80,
+        85,
+        86,
+        92
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.13695941865444183
+    },
+    {
+      "area_ratio": 0.0081024169921875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        116,
+        154,
+        34
+      ],
+      "id": 84,
+      "importance": 0.08857816308736802,
+      "merge_candidates": [
+        77,
+        79,
+        90,
+        91,
+        96,
+        100
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06797731667757034
+    },
+    {
+      "area_ratio": 0.0098114013671875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        106,
+        146,
+        33
+      ],
+      "id": 85,
+      "importance": 0.3005417466163635,
+      "merge_candidates": [
+        73,
+        83,
+        88,
+        92,
+        99
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.1042930856347084
+    },
+    {
+      "area_ratio": 0.01171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        100,
+        129,
+        28
+      ],
+      "id": 86,
+      "importance": 0.298046875,
+      "merge_candidates": [
+        80,
+        82,
+        83,
+        91,
+        92,
+        97,
+        101
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.12310685962438583
+    },
+    {
+      "area_ratio": 0.0116424560546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        120,
+        151,
+        33
+      ],
+      "id": 87,
+      "importance": 0.09784364998340606,
+      "merge_candidates": [
+        75,
+        76,
+        78,
+        79,
+        90,
+        95,
+        98
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07129304856061935
+    },
+    {
+      "area_ratio": 0.0087432861328125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        104,
+        144,
+        35
+      ],
+      "id": 88,
+      "importance": 0.14750574827194213,
+      "merge_candidates": [
+        73,
+        81,
+        85,
+        89,
+        93,
+        99
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.10267414897680283
+    },
+    {
+      "area_ratio": 0.009185791015625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        81,
+        122,
+        31
+      ],
+      "id": 89,
+      "importance": 0.1671306908130646,
+      "merge_candidates": [
+        75,
+        81,
+        88,
+        93
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07799902558326721
+    },
+    {
+      "area_ratio": 0.010284423828125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        106,
+        139,
+        29
+      ],
+      "id": 90,
+      "importance": 0.05,
+      "merge_candidates": [
+        79,
+        84,
+        87,
+        98,
+        100
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0078125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        106,
+        135,
+        29
+      ],
+      "id": 91,
+      "importance": 0.13945312499999998,
+      "merge_candidates": [
+        77,
+        82,
+        84,
+        86,
+        96,
+        97
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07366020977497101
+    },
+    {
+      "area_ratio": 0.0101165771484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        94,
+        128,
+        26
+      ],
+      "id": 92,
+      "importance": 0.23693108856678008,
+      "merge_candidates": [
+        83,
+        85,
+        86,
+        99,
+        101
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.11773713678121567
+    },
+    {
+      "area_ratio": 0.0042877197265625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        106,
+        135,
+        30
+      ],
+      "id": 93,
+      "importance": 0.07661986947059632,
+      "merge_candidates": [
+        75,
+        88,
+        89,
+        94,
+        99
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0100860595703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        137,
+        159,
+        34
+      ],
+      "id": 94,
+      "importance": 0.1588509291410446,
+      "merge_candidates": [
+        75,
+        93,
+        95,
+        99,
+        102,
+        103
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.0747096911072731
+    },
+    {
+      "area_ratio": 0.0077362060546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        145,
+        169,
+        35
+      ],
+      "id": 95,
+      "importance": 0.08330717384815216,
+      "merge_candidates": [
+        75,
+        87,
+        94,
+        98,
+        102
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06311190873384476
+    },
+    {
+      "area_ratio": 0.0127105712890625,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        110,
+        144,
+        32
+      ],
+      "id": 96,
+      "importance": 0.08551572933793067,
+      "merge_candidates": [
+        0,
+        1,
+        84,
+        91,
+        97,
+        100
+      ],
+      "preserve_edges": false,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.09267999976873398
+    },
+    {
+      "area_ratio": 0.0100555419921875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        107,
+        136,
+        28
+      ],
+      "id": 97,
+      "importance": 0.0514656525105238,
+      "merge_candidates": [
+        1,
+        2,
+        86,
+        91,
+        96,
+        101
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.009246826171875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        133,
+        160,
+        34
+      ],
+      "id": 98,
+      "importance": 0.05,
+      "merge_candidates": [
+        87,
+        90,
+        95,
+        100,
+        102
+      ],
+      "preserve_edges": true,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0149993896484375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        126,
+        152,
+        30
+      ],
+      "id": 99,
+      "importance": 0.07015589177608489,
+      "merge_candidates": [
+        3,
+        4,
+        85,
+        88,
+        92,
+        93,
+        94,
+        101,
+        103
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.07493221014738083
+    },
+    {
+      "area_ratio": 0.008758544921875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        104,
+        140,
+        34
+      ],
+      "id": 100,
+      "importance": 0.05,
+      "merge_candidates": [
+        6,
+        7,
+        8,
+        84,
+        90,
+        96,
+        98,
+        102
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05895906686782837
+    },
+    {
+      "area_ratio": 0.0066680908203125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        115,
+        144,
+        28
+      ],
+      "id": 101,
+      "importance": 0.071211227029562,
+      "merge_candidates": [
+        2,
+        3,
+        86,
+        92,
+        97,
+        99
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.05
+    },
+    {
+      "area_ratio": 0.0084075927734375,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        120,
+        148,
+        35
+      ],
+      "id": 102,
+      "importance": 0.05,
+      "merge_candidates": [
+        5,
+        6,
+        94,
+        95,
+        98,
+        100,
+        103
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.06565450876951218
+    },
+    {
+      "area_ratio": 0.0077362060546875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        100,
+        133,
+        31
+      ],
+      "id": 103,
+      "importance": 0.05372137650847435,
+      "merge_candidates": [
+        4,
+        5,
+        94,
+        99,
+        102
+      ],
+      "preserve_edges": false,
+      "preserve_texture": false,
+      "semantic": "grass",
+      "texture_priority": 0.054554786533117294
+    }
+  ],
+  "tile_mode": "repeatable",
+  "tile_type": "grass",
+  "version": "0.1",
+  "width": 64
+}

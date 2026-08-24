@@ -1,0 +1,495 @@
+{
+  "compiler": {
+    "compile_fitness_score": 0.752829,
+    "compile_readability_score": 0.644797,
+    "compile_semantic_fitness_score": 0.756462,
+    "edge_continuity_score": 0.989543,
+    "grammar_score": 0.664293,
+    "grid_visibility_score": 0.025025,
+    "map_edge_discontinuity_score": 0.0143,
+    "map_fitness_score": 0.737797,
+    "map_readability_score": 0.737797,
+    "palette_budget": 28,
+    "palette_usage": 28,
+    "periodicity_risk": 0.983748,
+    "variants": 8
+  },
+  "constraints": {
+    "directionality": "none",
+    "landmark_allowed": false,
+    "lighting_bias": "neutral",
+    "macro_pattern_allowed": false,
+    "perspective": "forbidden",
+    "preferred_stationarity": 0.7
+  },
+  "fingerprint": {
+    "autocorrelation_peak_risk": 0.060152,
+    "brightness_spatial_variance": 0.000171,
+    "center_dominance_score": 0.076332,
+    "color_spatial_variance": 0.064372,
+    "edge_density": 1.0,
+    "estimated_feature_scale_px": 1.75,
+    "feature_scale_error": 0.708333,
+    "frequency_entropy": 1.339958,
+    "high_frequency_energy": 0.607059,
+    "large_landmark_risk": 0.085561,
+    "lighting_bias_score": 0.144233,
+    "local_contrast_mean": 0.155865,
+    "local_contrast_variance": 7.2e-05,
+    "low_frequency_energy": 0.145037,
+    "low_frequency_pattern_strength": 0.145037,
+    "medium_frequency_energy": 0.247904,
+    "orientation_bias": 0.07057,
+    "patch_grid": 4,
+    "patch_statistics": [
+      {
+        "brightness_mean": 91.701385,
+        "color_mean": [
+          115.450684,
+          87.81543,
+          60.262695
+        ],
+        "column": 0,
+        "edge_density": 0.541748,
+        "local_contrast": 0.148547,
+        "row": 0
+      },
+      {
+        "brightness_mean": 94.248932,
+        "color_mean": [
+          118.385986,
+          90.318848,
+          62.105713
+        ],
+        "column": 1,
+        "edge_density": 0.549072,
+        "local_contrast": 0.150148,
+        "row": 0
+      },
+      {
+        "brightness_mean": 92.489746,
+        "color_mean": [
+          115.762939,
+          88.70459,
+          61.45459
+        ],
+        "column": 2,
+        "edge_density": 0.609375,
+        "local_contrast": 0.160761,
+        "row": 0
+      },
+      {
+        "brightness_mean": 91.889679,
+        "color_mean": [
+          115.53125,
+          88.033447,
+          60.473877
+        ],
+        "column": 3,
+        "edge_density": 0.579834,
+        "local_contrast": 0.15495,
+        "row": 0
+      },
+      {
+        "brightness_mean": 92.255249,
+        "color_mean": [
+          116.056641,
+          88.376465,
+          60.592285
+        ],
+        "column": 0,
+        "edge_density": 0.58667,
+        "local_contrast": 0.15905,
+        "row": 1
+      },
+      {
+        "brightness_mean": 93.772842,
+        "color_mean": [
+          118.047119,
+          89.827637,
+          61.375244
+        ],
+        "column": 1,
+        "edge_density": 0.588135,
+        "local_contrast": 0.156588,
+        "row": 1
+      },
+      {
+        "brightness_mean": 93.833824,
+        "color_mean": [
+          117.961426,
+          89.916748,
+          61.5896
+        ],
+        "column": 2,
+        "edge_density": 0.576172,
+        "local_contrast": 0.152384,
+        "row": 1
+      },
+      {
+        "brightness_mean": 93.079338,
+        "color_mean": [
+          117.19873,
+          89.16748,
+          60.807617
+        ],
+        "column": 3,
+        "edge_density": 0.564697,
+        "local_contrast": 0.151562,
+        "row": 1
+      },
+      {
+        "brightness_mean": 92.271614,
+        "color_mean": [
+          115.998291,
+          88.39917,
+          60.765869
+        ],
+        "column": 0,
+        "edge_density": 0.588867,
+        "local_contrast": 0.154413,
+        "row": 2
+      },
+      {
+        "brightness_mean": 92.956642,
+        "color_mean": [
+          116.924561,
+          89.056396,
+          61.015869
+        ],
+        "column": 1,
+        "edge_density": 0.586426,
+        "local_contrast": 0.158186,
+        "row": 2
+      },
+      {
+        "brightness_mean": 96.633896,
+        "color_mean": [
+          121.270508,
+          92.641846,
+          63.633545
+        ],
+        "column": 2,
+        "edge_density": 0.618164,
+        "local_contrast": 0.165202,
+        "row": 2
+      },
+      {
+        "brightness_mean": 93.768478,
+        "color_mean": [
+          117.973877,
+          89.822021,
+          61.586182
+        ],
+        "column": 3,
+        "edge_density": 0.59082,
+        "local_contrast": 0.156832,
+        "row": 2
+      },
+      {
+        "brightness_mean": 93.750519,
+        "color_mean": [
+          117.982178,
+          89.778564,
+          61.743408
+        ],
+        "column": 0,
+        "edge_density": 0.560303,
+        "local_contrast": 0.155575,
+        "row": 3
+      },
+      {
+        "brightness_mean": 93.931885,
+        "color_mean": [
+          118.004639,
+          90.005371,
+          61.942627
+        ],
+        "column": 1,
+        "edge_density": 0.584961,
+        "local_contrast": 0.1546,
+        "row": 3
+      },
+      {
+        "brightness_mean": 94.443146,
+        "color_mean": [
+          118.827148,
+          90.461914,
+          62.079346
+        ],
+        "column": 2,
+        "edge_density": 0.58252,
+        "local_contrast": 0.153438,
+        "row": 3
+      },
+      {
+        "brightness_mean": 92.893707,
+        "color_mean": [
+          116.686279,
+          89.008301,
+          61.322266
+        ],
+        "column": 3,
+        "edge_density": 0.600098,
+        "local_contrast": 0.161606,
+        "row": 3
+      }
+    ],
+    "stationarity_score": 0.926355,
+    "target_feature_scale_px": 6,
+    "texture_density_variance": 0.004582
+  },
+  "generation": {
+    "generation_date": null,
+    "generator": "deterministic_existing_asset_adapter",
+    "prompt_version": "material-library-v0.1",
+    "seed": 42,
+    "source_dimensions": [
+      256,
+      256
+    ],
+    "status": "generated_from_existing_asset"
+  },
+  "human_review": {
+    "accepted": null,
+    "notes": null,
+    "rating": null
+  },
+  "material_class": "surface",
+  "material_id": "dirt",
+  "prompt_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\dirt\\dirt_v04_medium_soil\\prompt.txt",
+  "source_file": "experiments\\..\\e2e\\material_source_library_v01\\candidates\\dirt\\dirt_v04_medium_soil\\source.png",
+  "source_id": "dirt_v04_medium_soil",
+  "status": "accepted",
+  "target_pixel_spec": {
+    "max_px": 12,
+    "min_px": 3,
+    "preferred_px": 6
+  },
+  "validation": {
+    "accepted_for_probe": true,
+    "errors": [],
+    "material_id": "dirt",
+    "metrics": {
+      "autocorrelation_peak_risk": 0.060152,
+      "brightness_spatial_variance": 0.000171,
+      "center_dominance_score": 0.076332,
+      "color_spatial_variance": 0.064372,
+      "edge_density": 1.0,
+      "estimated_feature_scale_px": 1.75,
+      "feature_scale_error": 0.708333,
+      "frequency_entropy": 1.339958,
+      "high_frequency_energy": 0.607059,
+      "large_landmark_risk": 0.085561,
+      "lighting_bias_score": 0.144233,
+      "local_contrast_mean": 0.155865,
+      "local_contrast_variance": 7.2e-05,
+      "low_frequency_energy": 0.145037,
+      "low_frequency_pattern_strength": 0.145037,
+      "medium_frequency_energy": 0.247904,
+      "orientation_bias": 0.07057,
+      "patch_grid": 4,
+      "patch_statistics": [
+        {
+          "brightness_mean": 91.701385,
+          "color_mean": [
+            115.450684,
+            87.81543,
+            60.262695
+          ],
+          "column": 0,
+          "edge_density": 0.541748,
+          "local_contrast": 0.148547,
+          "row": 0
+        },
+        {
+          "brightness_mean": 94.248932,
+          "color_mean": [
+            118.385986,
+            90.318848,
+            62.105713
+          ],
+          "column": 1,
+          "edge_density": 0.549072,
+          "local_contrast": 0.150148,
+          "row": 0
+        },
+        {
+          "brightness_mean": 92.489746,
+          "color_mean": [
+            115.762939,
+            88.70459,
+            61.45459
+          ],
+          "column": 2,
+          "edge_density": 0.609375,
+          "local_contrast": 0.160761,
+          "row": 0
+        },
+        {
+          "brightness_mean": 91.889679,
+          "color_mean": [
+            115.53125,
+            88.033447,
+            60.473877
+          ],
+          "column": 3,
+          "edge_density": 0.579834,
+          "local_contrast": 0.15495,
+          "row": 0
+        },
+        {
+          "brightness_mean": 92.255249,
+          "color_mean": [
+            116.056641,
+            88.376465,
+            60.592285
+          ],
+          "column": 0,
+          "edge_density": 0.58667,
+          "local_contrast": 0.15905,
+          "row": 1
+        },
+        {
+          "brightness_mean": 93.772842,
+          "color_mean": [
+            118.047119,
+            89.827637,
+            61.375244
+          ],
+          "column": 1,
+          "edge_density": 0.588135,
+          "local_contrast": 0.156588,
+          "row": 1
+        },
+        {
+          "brightness_mean": 93.833824,
+          "color_mean": [
+            117.961426,
+            89.916748,
+            61.5896
+          ],
+          "column": 2,
+          "edge_density": 0.576172,
+          "local_contrast": 0.152384,
+          "row": 1
+        },
+        {
+          "brightness_mean": 93.079338,
+          "color_mean": [
+            117.19873,
+            89.16748,
+            60.807617
+          ],
+          "column": 3,
+          "edge_density": 0.564697,
+          "local_contrast": 0.151562,
+          "row": 1
+        },
+        {
+          "brightness_mean": 92.271614,
+          "color_mean": [
+            115.998291,
+            88.39917,
+            60.765869
+          ],
+          "column": 0,
+          "edge_density": 0.588867,
+          "local_contrast": 0.154413,
+          "row": 2
+        },
+        {
+          "brightness_mean": 92.956642,
+          "color_mean": [
+            116.924561,
+            89.056396,
+            61.015869
+          ],
+          "column": 1,
+          "edge_density": 0.586426,
+          "local_contrast": 0.158186,
+          "row": 2
+        },
+        {
+          "brightness_mean": 96.633896,
+          "color_mean": [
+            121.270508,
+            92.641846,
+            63.633545
+          ],
+          "column": 2,
+          "edge_density": 0.618164,
+          "local_contrast": 0.165202,
+          "row": 2
+        },
+        {
+          "brightness_mean": 93.768478,
+          "color_mean": [
+            117.973877,
+            89.822021,
+            61.586182
+          ],
+          "column": 3,
+          "edge_density": 0.59082,
+          "local_contrast": 0.156832,
+          "row": 2
+        },
+        {
+          "brightness_mean": 93.750519,
+          "color_mean": [
+            117.982178,
+            89.778564,
+            61.743408
+          ],
+          "column": 0,
+          "edge_density": 0.560303,
+          "local_contrast": 0.155575,
+          "row": 3
+        },
+        {
+          "brightness_mean": 93.931885,
+          "color_mean": [
+            118.004639,
+            90.005371,
+            61.942627
+          ],
+          "column": 1,
+          "edge_density": 0.584961,
+          "local_contrast": 0.1546,
+          "row": 3
+        },
+        {
+          "brightness_mean": 94.443146,
+          "color_mean": [
+            118.827148,
+            90.461914,
+            62.079346
+          ],
+          "column": 2,
+          "edge_density": 0.58252,
+          "local_contrast": 0.153438,
+          "row": 3
+        },
+        {
+          "brightness_mean": 92.893707,
+          "color_mean": [
+            116.686279,
+            89.008301,
+            61.322266
+          ],
+          "column": 3,
+          "edge_density": 0.600098,
+          "local_contrast": 0.161606,
+          "row": 3
+        }
+      ],
+      "stationarity_score": 0.926355,
+      "target_feature_scale_px": 6,
+      "texture_density_variance": 0.004582
+    },
+    "source_id": "dirt_v04_medium_soil",
+    "status": "accepted",
+    "warnings": []
+  },
+  "version": "0.1"
+}

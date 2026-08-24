@@ -1,0 +1,72 @@
+{
+  "config": {
+    "background_color": "#000000",
+    "background_mode": "color",
+    "background_tolerance": 12,
+    "center_suppression_strength": 0.4,
+    "debug_enabled": false,
+    "dither": "off",
+    "height": 64,
+    "output_root": "experiments\\e2e\\material_source_library_v01\\candidates\\grass\\grass_v08_illustrative\\compile_probe\\_compiler\\variant_05",
+    "palette_budget": 28,
+    "palette_colors": null,
+    "repeat_opt_edge_band": 6,
+    "repeat_opt_enabled": false,
+    "repeat_opt_strength": 0.5,
+    "seam_mode": "off",
+    "seed": 46,
+    "semantic_provider": "rule",
+    "smoothing_enabled": false,
+    "tile_mode": "repeatable",
+    "width": 64,
+    "work_size": 128
+  },
+  "metrics": {
+    "actual_palette_count": 28,
+    "center_dominance_score": 0.064765,
+    "corner_seam_score": 0.026716,
+    "edge_continuity_score": 0.966299,
+    "horizontal_seam_score": 15.5942,
+    "isolated_pixel_count": 122,
+    "micro_cluster_count": 122,
+    "periodicity_risk_score": 0.051641,
+    "repeatability_optimization_applied": false,
+    "vertical_seam_score": 14.1757
+  },
+  "pipeline": [
+    "load",
+    "normalize",
+    "background",
+    "smoothing",
+    "edges",
+    "regions",
+    "structural",
+    "semantic",
+    "ir",
+    "pixelize",
+    "palette",
+    "clusters",
+    "diagonals",
+    "repeatability",
+    "seam",
+    "export"
+  ],
+  "repeatability_after": {
+    "center_dominance_score": 0.064765,
+    "corner_seam_score": 0.026716,
+    "edge_continuity_score": 0.966299,
+    "periodicity_risk_score": 0.051641
+  },
+  "repeatability_before": {
+    "center_dominance_score": 0.064765,
+    "corner_seam_score": 0.026716,
+    "edge_continuity_score": 0.966299,
+    "periodicity_risk_score": 0.051641
+  },
+  "repeatability_optimization": {
+    "applied": false,
+    "enabled": false
+  },
+  "semantic_provider": "rule",
+  "source": "grass:v05"
+}

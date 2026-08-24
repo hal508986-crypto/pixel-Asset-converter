@@ -1,0 +1,225 @@
+{
+  "accepted_for_probe": true,
+  "errors": [],
+  "material_id": "grass",
+  "metrics": {
+    "autocorrelation_peak_risk": 0.033999,
+    "brightness_spatial_variance": 2.5e-05,
+    "center_dominance_score": 0.125918,
+    "color_spatial_variance": 0.223006,
+    "edge_density": 0.101776,
+    "estimated_feature_scale_px": 2.25,
+    "feature_scale_error": 0.4375,
+    "frequency_entropy": 1.539151,
+    "high_frequency_energy": 0.432646,
+    "large_landmark_risk": 0.092067,
+    "lighting_bias_score": 0.09754,
+    "local_contrast_mean": 0.064902,
+    "local_contrast_variance": 2.6e-05,
+    "low_frequency_energy": 0.229403,
+    "low_frequency_pattern_strength": 0.229403,
+    "medium_frequency_energy": 0.337952,
+    "orientation_bias": 0.030166,
+    "patch_grid": 4,
+    "patch_statistics": [
+      {
+        "brightness_mean": 122.580902,
+        "color_mean": [
+          106.519043,
+          136.197021,
+          34.997803
+        ],
+        "column": 0,
+        "edge_density": 0.047852,
+        "local_contrast": 0.06533,
+        "row": 0
+      },
+      {
+        "brightness_mean": 123.020645,
+        "color_mean": [
+          107.281006,
+          136.556885,
+          35.280029
+        ],
+        "column": 1,
+        "edge_density": 0.042725,
+        "local_contrast": 0.060849,
+        "row": 0
+      },
+      {
+        "brightness_mean": 123.556183,
+        "color_mean": [
+          107.849365,
+          137.102783,
+          35.616211
+        ],
+        "column": 2,
+        "edge_density": 0.054932,
+        "local_contrast": 0.066773,
+        "row": 0
+      },
+      {
+        "brightness_mean": 124.048332,
+        "color_mean": [
+          108.742432,
+          137.467285,
+          36.192383
+        ],
+        "column": 3,
+        "edge_density": 0.064941,
+        "local_contrast": 0.071191,
+        "row": 0
+      },
+      {
+        "brightness_mean": 122.490524,
+        "color_mean": [
+          106.529053,
+          136.115234,
+          34.526855
+        ],
+        "column": 0,
+        "edge_density": 0.065674,
+        "local_contrast": 0.067999,
+        "row": 1
+      },
+      {
+        "brightness_mean": 122.311035,
+        "color_mean": [
+          106.594727,
+          135.8479,
+          34.495605
+        ],
+        "column": 1,
+        "edge_density": 0.051514,
+        "local_contrast": 0.063227,
+        "row": 1
+      },
+      {
+        "brightness_mean": 122.417831,
+        "color_mean": [
+          106.495605,
+          136.016602,
+          34.595459
+        ],
+        "column": 2,
+        "edge_density": 0.047119,
+        "local_contrast": 0.063613,
+        "row": 1
+      },
+      {
+        "brightness_mean": 122.875885,
+        "color_mean": [
+          107.175049,
+          136.378906,
+          35.350098
+        ],
+        "column": 3,
+        "edge_density": 0.052246,
+        "local_contrast": 0.06598,
+        "row": 1
+      },
+      {
+        "brightness_mean": 122.605942,
+        "color_mean": [
+          106.774902,
+          136.19751,
+          34.586426
+        ],
+        "column": 0,
+        "edge_density": 0.043945,
+        "local_contrast": 0.064919,
+        "row": 2
+      },
+      {
+        "brightness_mean": 122.630508,
+        "color_mean": [
+          107.187012,
+          136.098877,
+          34.690186
+        ],
+        "column": 1,
+        "edge_density": 0.042725,
+        "local_contrast": 0.063793,
+        "row": 2
+      },
+      {
+        "brightness_mean": 122.793678,
+        "color_mean": [
+          107.491211,
+          136.171387,
+          35.336182
+        ],
+        "column": 2,
+        "edge_density": 0.045898,
+        "local_contrast": 0.060705,
+        "row": 2
+      },
+      {
+        "brightness_mean": 123.292557,
+        "color_mean": [
+          108.089355,
+          136.666504,
+          35.580078
+        ],
+        "column": 3,
+        "edge_density": 0.045654,
+        "local_contrast": 0.064949,
+        "row": 2
+      },
+      {
+        "brightness_mean": 123.015938,
+        "color_mean": [
+          107.65332,
+          136.45459,
+          35.131836
+        ],
+        "column": 0,
+        "edge_density": 0.048096,
+        "local_contrast": 0.064961,
+        "row": 3
+      },
+      {
+        "brightness_mean": 122.851166,
+        "color_mean": [
+          107.964355,
+          136.120117,
+          35.24707
+        ],
+        "column": 1,
+        "edge_density": 0.049805,
+        "local_contrast": 0.062403,
+        "row": 3
+      },
+      {
+        "brightness_mean": 123.179413,
+        "color_mean": [
+          108.164307,
+          136.494629,
+          35.494873
+        ],
+        "column": 2,
+        "edge_density": 0.056641,
+        "local_contrast": 0.065446,
+        "row": 3
+      },
+      {
+        "brightness_mean": 123.417343,
+        "color_mean": [
+          108.470215,
+          136.719971,
+          35.657227
+        ],
+        "column": 3,
+        "edge_density": 0.054443,
+        "local_contrast": 0.066294,
+        "row": 3
+      }
+    ],
+    "stationarity_score": 0.972103,
+    "target_feature_scale_px": 4,
+    "texture_density_variance": 0.00056
+  },
+  "source_id": "grass_v03_uniform_light",
+  "status": "accepted",
+  "warnings": []
+}

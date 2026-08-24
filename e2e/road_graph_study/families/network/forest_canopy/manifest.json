@@ -1,0 +1,3107 @@
+{
+  "base_material": "forest_canopy",
+  "config": {
+    "center": 0.5,
+    "debug_enabled": true,
+    "output_root": "e2e\\road_graph_study\\families\\network\\forest_canopy",
+    "palette_budget": 24,
+    "pixelize": true,
+    "seed": 42,
+    "source_size": 256,
+    "topologies": [
+      "N",
+      "E",
+      "S",
+      "W",
+      "NS",
+      "EW",
+      "NE",
+      "NW",
+      "SE",
+      "SW",
+      "NES",
+      "NEW",
+      "NSW",
+      "ESW",
+      "NESW"
+    ],
+    "variants": 3,
+    "width_ratio": 0.22
+  },
+  "family_id": "dirt_road_forest_canopy",
+  "kind": "network",
+  "tiles": [
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "N",
+          "role": "network_connector"
+        },
+        "orientation": "N",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "n_v00",
+      "topology": "N",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "N",
+          "role": "network_connector"
+        },
+        "orientation": "N",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "n_v01",
+      "topology": "N",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "N",
+          "role": "network_connector"
+        },
+        "orientation": "N",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "n_v02",
+      "topology": "N",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "E",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "E",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "e_v00",
+      "topology": "E",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "E",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "E",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "e_v01",
+      "topology": "E",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "E",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "E",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "e_v02",
+      "topology": "E",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "S",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "S",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "s_v00",
+      "topology": "S",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "S",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "S",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "s_v01",
+      "topology": "S",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "S",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "S",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "s_v02",
+      "topology": "S",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "W",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "W",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "w_v00",
+      "topology": "W",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "W",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "W",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "w_v01",
+      "topology": "W",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "W",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "W",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "w_v02",
+      "topology": "W",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "orientation": "NS",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ns_v00",
+      "topology": "NS",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "orientation": "NS",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ns_v01",
+      "topology": "NS",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "orientation": "NS",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NS",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ns_v02",
+      "topology": "NS",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "EW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "ew_v00",
+      "topology": "EW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "EW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "ew_v01",
+      "topology": "EW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "EW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "EW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "ew_v02",
+      "topology": "EW",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "orientation": "NE",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ne_v00",
+      "topology": "NE",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "orientation": "NE",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ne_v01",
+      "topology": "NE",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NE",
+          "role": "network_connector"
+        },
+        "orientation": "NE",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "ne_v02",
+      "topology": "NE",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        },
+        "orientation": "NW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nw_v00",
+      "topology": "NW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        },
+        "orientation": "NW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nw_v01",
+      "topology": "NW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        },
+        "orientation": "NW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nw_v02",
+      "topology": "NW",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SE",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "se_v00",
+      "topology": "SE",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SE",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "se_v01",
+      "topology": "SE",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SE",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SE",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "se_v02",
+      "topology": "SE",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "sw_v00",
+      "topology": "SW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "sw_v01",
+      "topology": "SW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "SW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "SW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "sw_v02",
+      "topology": "SW",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "orientation": "NES",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "nes_v00",
+      "topology": "NES",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "orientation": "NES",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "nes_v01",
+      "topology": "NES",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "orientation": "NES",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NES",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        }
+      },
+      "tile_id": "nes_v02",
+      "topology": "NES",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        },
+        "orientation": "NEW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "new_v00",
+      "topology": "NEW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        },
+        "orientation": "NEW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "new_v01",
+      "topology": "NEW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        },
+        "orientation": "NEW",
+        "south": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NEW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "new_v02",
+      "topology": "NEW",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        },
+        "orientation": "NSW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nsw_v00",
+      "topology": "NSW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        },
+        "orientation": "NSW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nsw_v01",
+      "topology": "NSW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        },
+        "orientation": "NSW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NSW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nsw_v02",
+      "topology": "NSW",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "ESW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "esw_v00",
+      "topology": "ESW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "ESW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "esw_v01",
+      "topology": "ESW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [],
+          "feature_center": null,
+          "feature_type": null,
+          "feature_width": null,
+          "material": "forest_canopy",
+          "materials": [
+            "forest_canopy"
+          ],
+          "orientation": null,
+          "role": "surface"
+        },
+        "orientation": "ESW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "ESW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "esw_v02",
+      "topology": "ESW",
+      "variant": 2
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "orientation": "NESW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nesw_v00",
+      "topology": "NESW",
+      "variant": 0
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "orientation": "NESW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nesw_v01",
+      "topology": "NESW",
+      "variant": 1
+    },
+    {
+      "family": "dirt_road_forest_canopy",
+      "material_a": null,
+      "material_b": null,
+      "metadata": {
+        "mask_type": "structure_first",
+        "road_center": 0.5,
+        "road_width": 0.22
+      },
+      "semantic_contract": {
+        "east": {
+          "connects_to": [
+            "east"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "north": {
+          "connects_to": [
+            "north"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "orientation": "NESW",
+        "south": {
+          "connects_to": [
+            "south"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        },
+        "west": {
+          "connects_to": [
+            "west"
+          ],
+          "feature_center": 0.5,
+          "feature_type": "road",
+          "feature_width": 0.22,
+          "material": "dirt_road",
+          "materials": [
+            "dirt_road"
+          ],
+          "orientation": "NESW",
+          "role": "network_connector"
+        }
+      },
+      "tile_id": "nesw_v02",
+      "topology": "NESW",
+      "variant": 2
+    }
+  ]
+}

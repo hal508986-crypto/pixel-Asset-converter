@@ -1,0 +1,109 @@
+{
+  "artifacts": {
+    "root": "e2e\\pixel_hierarchy_study\\tiles\\grass_forest\\structured",
+    "source": "e2e\\pixel_hierarchy_study\\tiles\\grass_forest\\structured\\source_composite.png",
+    "tile": "e2e\\pixel_hierarchy_study\\tiles\\grass_forest\\structured\\tile.png"
+  },
+  "compiler": {
+    "compiler_metrics": {
+      "actual_palette_count": 9,
+      "center_dominance_score": 0.080195,
+      "corner_seam_score": 0.0,
+      "edge_continuity_score": 1.0,
+      "horizontal_seam_score": 0.0,
+      "isolated_pixel_count": 11,
+      "micro_cluster_count": 11,
+      "periodicity_risk_score": 0.048117,
+      "repeatability_optimization_applied": true,
+      "vertical_seam_score": 0.0
+    },
+    "final_path": "e2e\\pixel_hierarchy_study\\tiles\\grass_forest\\structured\\compiler\\final.png",
+    "pixelized": true,
+    "shared_palette": true
+  },
+  "hierarchy_mode": "structured",
+  "material": "grass_to_forest",
+  "metrics": {
+    "map": {},
+    "scores": {
+      "hierarchy_quality": 0.750017,
+      "map_readability": 0.75,
+      "noise_risk": 0.030909,
+      "overall": 0.719954,
+      "semantic_fitness": 0.592229,
+      "tile_quality": 0.784859
+    },
+    "tile": {
+      "boundary_clarity": 0.154381,
+      "boundary_clarity_score": 0.154381,
+      "cluster_count": 66,
+      "clutter_risk_score": 0.111237,
+      "contact_shadow_readability": 0.0,
+      "contrast_fragmentation_penalty": 0.030396,
+      "depth_readability_score": 0.536561,
+      "edge_continuity_score": 1.0,
+      "failure_penalty": 0.006079,
+      "frequency_entropy": 0.695394,
+      "hierarchy_quality_score": 0.750017,
+      "high_frequency_energy": 0.050609,
+      "high_frequency_noise_risk": 0.030909,
+      "isolated_pixel_ratio": 0.002441,
+      "lighting_consistency_score": 0.893326,
+      "low_frequency_energy": 0.866316,
+      "major_cluster_mean_size": 284.461538,
+      "major_mass_preservation_score": 1.0,
+      "medium_cluster_mean_size": 18.529412,
+      "medium_cluster_structure_score": 0.802751,
+      "medium_frequency_energy": 0.083075,
+      "micro_cluster_ratio": 0.020264,
+      "noise_inflation_penalty": 0.0,
+      "palette_usage": 9,
+      "plane_separation_score": 0.574445,
+      "readability_score": 0.839064,
+      "semantic_fitness_score": 0.592229,
+      "semantic_role": "transition",
+      "shading_layer_count": 4,
+      "shading_layer_score": 0.75,
+      "shape_degradation_penalty": 0.0,
+      "silhouette_clarity": 0.592229,
+      "single_tile_score": 0.784859,
+      "target": "grass_forest",
+      "topology_clarity": 0.592229,
+      "transition_band_score": 1.0,
+      "visual_hierarchy_score": 0.756096
+    }
+  },
+  "profile": {
+    "contact_shadow_strength": 0.12,
+    "depth_cue_strength": 0.24,
+    "hierarchy_mode": "structured",
+    "highlight_strength": 0.14,
+    "major_cluster_scale": "medium",
+    "major_mass_strength": 0.9,
+    "material": "grass_to_forest",
+    "medium_cluster_strength": 0.68,
+    "micro_detail_level": 0.3,
+    "micro_detail_strength": 0.16,
+    "name": "grass_forest_structured",
+    "preferred_density": "balanced",
+    "preferred_frequency": "low_to_medium",
+    "semantic_role": "transition",
+    "shading_layers": 3,
+    "shading_strength": 0.28,
+    "silhouette_priority": 0.4,
+    "texture_strength": 0.42,
+    "topology_priority": 0.15,
+    "transition_band_emphasis": 0.9
+  },
+  "render": {
+    "boundary": 0.5,
+    "materials": [
+      "grass",
+      "forest_canopy"
+    ],
+    "orientation": "EW",
+    "renderer": "transition_boundary"
+  },
+  "semantic_role": "transition",
+  "target": "grass_forest"
+}

@@ -1,0 +1,70 @@
+{
+  "family": "dirt_road_forest_canopy",
+  "material_a": null,
+  "material_b": null,
+  "metadata": {
+    "mask_type": "structure_first",
+    "road_center": 0.5,
+    "road_width": 0.22
+  },
+  "semantic_contract": {
+    "east": {
+      "connects_to": [],
+      "feature_center": null,
+      "feature_type": null,
+      "feature_width": null,
+      "material": "forest_canopy",
+      "materials": [
+        "forest_canopy"
+      ],
+      "orientation": null,
+      "role": "surface"
+    },
+    "north": {
+      "connects_to": [
+        "north"
+      ],
+      "feature_center": 0.5,
+      "feature_type": "road",
+      "feature_width": 0.22,
+      "material": "dirt_road",
+      "materials": [
+        "dirt_road"
+      ],
+      "orientation": "NSW",
+      "role": "network_connector"
+    },
+    "orientation": "NSW",
+    "south": {
+      "connects_to": [
+        "south"
+      ],
+      "feature_center": 0.5,
+      "feature_type": "road",
+      "feature_width": 0.22,
+      "material": "dirt_road",
+      "materials": [
+        "dirt_road"
+      ],
+      "orientation": "NSW",
+      "role": "network_connector"
+    },
+    "west": {
+      "connects_to": [
+        "west"
+      ],
+      "feature_center": 0.5,
+      "feature_type": "road",
+      "feature_width": 0.22,
+      "material": "dirt_road",
+      "materials": [
+        "dirt_road"
+      ],
+      "orientation": "NSW",
+      "role": "network_connector"
+    }
+  },
+  "tile_id": "nsw_v02",
+  "topology": "NSW",
+  "variant": 2
+}

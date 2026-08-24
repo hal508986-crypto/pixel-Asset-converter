@@ -1,0 +1,66 @@
+{
+  "artifacts": {
+    "map": null,
+    "root": "e2e\\pixel_grammar_study\\tiles\\tree_object\\balanced",
+    "source": "e2e\\pixel_grammar_study\\tiles\\tree_object\\balanced\\source_composite.png",
+    "tile": "e2e\\pixel_grammar_study\\tiles\\tree_object\\balanced\\tile.png"
+  },
+  "compiler": {
+    "compiler_metrics": {
+      "actual_palette_count": 10,
+      "center_dominance_score": null,
+      "corner_seam_score": null,
+      "edge_continuity_score": null,
+      "horizontal_seam_score": null,
+      "isolated_pixel_count": 22,
+      "micro_cluster_count": 22,
+      "periodicity_risk_score": null,
+      "repeatability_optimization_applied": false,
+      "vertical_seam_score": null
+    },
+    "final_path": "e2e\\pixel_grammar_study\\tiles\\tree_object\\balanced\\compiler\\final.png",
+    "pixelized": true,
+    "shared_palette": true
+  },
+  "density_level": "balanced",
+  "material": "tree",
+  "metrics": {
+    "grammar_score": 0.746615,
+    "map": {},
+    "tile": {
+      "clutter_risk_score": 0.134661,
+      "edge_continuity_score": 0.970915,
+      "frequency_entropy": 1.045455,
+      "high_frequency_energy": 0.080225,
+      "low_frequency_energy": 0.74631,
+      "medium_frequency_energy": 0.173466,
+      "object_fill_ratio": 0.130859,
+      "palette_usage": 10,
+      "readability_score": 0.799163,
+      "semantic_fitness_score": 0.627956,
+      "semantic_role": "object",
+      "silhouette_clarity_score": 0.314271,
+      "single_tile_score": 0.773591,
+      "target": "tree_object"
+    }
+  },
+  "profile": {
+    "major_cluster_scale": "small",
+    "material": "tree",
+    "micro_detail_level": 0.52,
+    "name": "tree_object_balanced",
+    "preferred_density": "balanced",
+    "preferred_frequency": "medium_to_high",
+    "semantic_role": "object",
+    "shading_strength": 0.55,
+    "silhouette_priority": 0.85,
+    "texture_strength": 0.3,
+    "topology_priority": 0.0,
+    "transition_band_emphasis": 0.0
+  },
+  "render": {
+    "renderer": "study_procedural_object"
+  },
+  "semantic_role": "object",
+  "target": "tree_object"
+}

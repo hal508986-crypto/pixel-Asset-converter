@@ -1,0 +1,514 @@
+[
+  {
+    "id": "grass_v01_uniform_dark",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "fine",
+    "homogeneity": "high",
+    "contrast": "low",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "grass_v02_uniform_mid",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "fine",
+    "homogeneity": "high",
+    "contrast": "medium",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "grass_v03_uniform_light",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "fine",
+    "homogeneity": "medium",
+    "contrast": "low",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "grass_v04_sparse_tufts",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "grass_v05_patchy_mid",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "grass_v06_bright_variation",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "medium",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "grass_v07_dense_tufts",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "grass_v08_illustrative",
+    "material_id": "grass",
+    "material_class": "surface",
+    "feature_scale": "large",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": true,
+    "target_pixel_spec": {
+      "min_px": 2,
+      "preferred_px": 4,
+      "max_px": 8
+    }
+  },
+  {
+    "id": "dirt_v01_fine_compact",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "fine",
+    "homogeneity": "high",
+    "contrast": "low",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "dirt_v02_fine_warm",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "fine",
+    "homogeneity": "high",
+    "contrast": "medium",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "dirt_v03_small_grain",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "dirt_v04_medium_soil",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "medium",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "dirt_v05_dry_variation",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "medium",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "dirt_v06_dark_earth",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "dirt_v07_large_patches",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "large",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "dirt_v08_illustrative",
+    "material_id": "dirt",
+    "material_class": "surface",
+    "feature_scale": "large",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": true,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 6,
+      "max_px": 12
+    }
+  },
+  {
+    "id": "water_v01_calm_uniform",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "fine",
+    "homogeneity": "high",
+    "contrast": "low",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "water_v02_calm_blue",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "high",
+    "contrast": "low",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "water_v03_soft_ripples",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "water_v04_medium_ripples",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "medium",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "water_v05_bright_reflection",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "medium",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "water_v06_dark_depth",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "water_v07_directional_current",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "large",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "horizontal",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "water_v08_scenic_reflection",
+    "material_id": "water",
+    "material_class": "surface",
+    "feature_scale": "large",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": true,
+    "target_pixel_spec": {
+      "min_px": 3,
+      "preferred_px": 5,
+      "max_px": 10
+    }
+  },
+  {
+    "id": "stone_v01_fine_grain",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "fine",
+    "homogeneity": "high",
+    "contrast": "low",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  },
+  {
+    "id": "stone_v02_small_blocks",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "high",
+    "contrast": "medium",
+    "local_variation": "subtle",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  },
+  {
+    "id": "stone_v03_medium_slabs",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "medium",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  },
+  {
+    "id": "stone_v04_irregular_slabs",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "medium",
+    "homogeneity": "medium",
+    "contrast": "high",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  },
+  {
+    "id": "stone_v05_light_masonry",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "medium",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  },
+  {
+    "id": "stone_v06_dark_masonry",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "small",
+    "homogeneity": "medium",
+    "contrast": "high",
+    "local_variation": "moderate",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  },
+  {
+    "id": "stone_v07_large_cracks",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "large",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": false,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  },
+  {
+    "id": "stone_v08_illustrative",
+    "material_id": "stone",
+    "material_class": "surface",
+    "feature_scale": "large",
+    "homogeneity": "low",
+    "contrast": "high",
+    "local_variation": "strong",
+    "directionality": "none",
+    "illustrative": true,
+    "target_pixel_spec": {
+      "min_px": 4,
+      "preferred_px": 7,
+      "max_px": 14
+    }
+  }
+]

@@ -1,0 +1,55 @@
+{
+  "global_style": {
+    "contrast_strength": 0.5,
+    "dithering": "minimal",
+    "edge_strength": 0.6914958834648133,
+    "outline_mode": "selective",
+    "seam_mode": "inspect",
+    "texture_density": 0.27962489426136017
+  },
+  "height": 64,
+  "map_context": null,
+  "palette_budget": 28,
+  "regions": [
+    {
+      "area_ratio": 0.98358154296875,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        86,
+        111,
+        30
+      ],
+      "id": 0,
+      "importance": 1.0,
+      "merge_candidates": [
+        1
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.32449373602867126
+    },
+    {
+      "area_ratio": 0.01641845703125,
+      "discard_micro_detail": true,
+      "dominant_color": [
+        124,
+        152,
+        22
+      ],
+      "id": 1,
+      "importance": 0.38299176692962644,
+      "merge_candidates": [
+        0
+      ],
+      "preserve_edges": true,
+      "preserve_texture": true,
+      "semantic": "grass",
+      "texture_priority": 0.23475605249404907
+    }
+  ],
+  "tile_mode": "repeatable",
+  "tile_type": "grass",
+  "version": "0.1",
+  "width": 64
+}

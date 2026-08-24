@@ -3,6 +3,16 @@
 SRPG用の高解像度画像を、意味・領域・境界を優先して64×64のMAPタイルへ再構成するMVPです。
 単純な縮小ではなく、次の決定論的パイプラインを通します。
 
+## 設計記録・作業引き継ぎ
+
+- [作業ハンドオフ](docs/HANDOFF.md)
+- [ADR-0001: MAP-first Compiler](docs/adr/0001-map-first-compiler-experiment.md)
+- [ADR-0002: Surface / Network / Transition](docs/adr/0002-surface-network-transition-semantic-edge-contract.md)
+- [ADR-0003: Logical MAP-first Map Visual Bake](docs/adr/0003-map-visual-bake.md)
+
+現在は、再利用可能な汎用Tileset経路と、Logical MAPを先に確定して一枚絵を生成する
+MAP専用Visual経路を並行して検証しています。
+
 ```text
 load → normalize → background → smoothing → edges → SLIC regions
 → structural/semantic analysis → Tile IR → region-aware pixelize

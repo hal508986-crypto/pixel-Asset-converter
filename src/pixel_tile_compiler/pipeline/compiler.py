@@ -19,6 +19,8 @@ from pixel_tile_compiler.io.loader import load_image
 from pixel_tile_compiler.ir.builder import build_tile_ir
 from pixel_tile_compiler.ir.schema import MapContext
 from pixel_tile_compiler.ir.validator import validate_tile_ir
+from pixel_tile_compiler.pixelizer.character import add_edge_margin, add_outline, nearest_pixelize
+from pixel_tile_compiler.pixelizer.color_conditioning import apply_color_conditioning
 from pixel_tile_compiler.pixelizer.palette import palette_preview, quantize_palette
 from pixel_tile_compiler.pixelizer.spatial import region_aware_pixelize
 from pixel_tile_compiler.preprocess.background import apply_background
@@ -89,6 +91,47 @@ def _palette_count(image: Image.Image) -> int:
     return len({pixel[:3] for pixel in image.convert("RGBA").getdata() if pixel[3] != 0})
 
 
+def _outline_rgba(color: str) -> tuple[int, int, int, int] | None:
+    if color == "off":
+        return None
+    if color == "black":
+        return (0, 0, 0, 255)
+    if color == "white":
+        return (255, 255, 255, 255)
+    raise ValueError("outline_color must be off, black, or white")
+
+
+def _pixelize_source(
+    loaded: Image.Image,
+    smooth: Image.Image,
+    region_map: np.ndarray,
+    ir,
+    config: CompilerConfig,
+) -> Image.Image:
+    """Select the spatial pixelizer without changing the analysis contract."""
+    if config.pixelization_mode == "nearest":
+        margin_input = add_edge_margin(loaded)
+        nearest_input = apply_background(
+            margin_input,
+            mode=config.background_mode,
+            color=config.background_color,
+            tolerance=config.background_tolerance,
+        )
+        return nearest_pixelize(nearest_input, (config.width, config.height))
+    return region_aware_pixelize(smooth, region_map, ir)
+
+
+def _clean_pixelized(
+    image: Image.Image,
+    config: CompilerConfig,
+) -> tuple[Image.Image, ClusterMetrics]:
+    """Keep artist-defined character clusters while retaining terrain cleanup."""
+    if config.pixelization_mode == "nearest":
+        return image.convert("RGBA"), ClusterMetrics()
+    cleaned, cluster_metrics = cleanup_pixel_clusters(image, min_cluster_size=2)
+    return cleanup_diagonals(cleaned), cluster_metrics
+
+
 class PixelTileCompiler:
     """Compile one source image into a 64x64 SRPG map tile and artifacts."""
 
@@ -140,15 +183,18 @@ class PixelTileCompiler:
         if map_context is not None:
             ir = ir.model_copy(update={"map_context": map_context})
         ir = validate_tile_ir(ir)
-        raw_pixelized = region_aware_pixelize(smooth, region_map, ir)
-        quantized = quantize_palette(
-            raw_pixelized,
-            budget=config.palette_budget,
-            seed=config.seed,
-            palette_colors=config.palette_colors,
-        )
-        cleaned, cluster_metrics = cleanup_pixel_clusters(quantized, min_cluster_size=2)
-        cleaned = cleanup_diagonals(cleaned)
+        raw_pixelized = _pixelize_source(loaded, smooth, region_map, ir, config)
+        color_conditioned = apply_color_conditioning(raw_pixelized, config.color_conditioning)
+        if config.quantize_enabled:
+            quantized = quantize_palette(
+                color_conditioned,
+                budget=config.palette_budget,
+                seed=config.seed,
+                palette_colors=config.palette_colors,
+            )
+        else:
+            quantized = raw_pixelized.convert("RGBA")
+        cleaned, cluster_metrics = _clean_pixelized(quantized, config)
         repeatability_before = measure_repeatability(cleaned, tile_mode=config.tile_mode, edge_band=config.repeat_opt_edge_band)
         repeatability_applied = bool(config.tile_mode == "repeatable" and config.repeat_opt_enabled)
         if repeatability_applied:
@@ -164,6 +210,9 @@ class PixelTileCompiler:
             cluster_metrics = optimized_cluster_metrics
         else:
             final = cleaned
+        outline_color = _outline_rgba(config.outline_color)
+        if outline_color is not None:
+            final = add_outline(final, outline_color)
         repeatability_after = measure_repeatability(final, tile_mode=config.tile_mode, edge_band=config.repeat_opt_edge_band)
         seam: SeamMetrics = measure_seams(final, tile_mode=config.tile_mode)
         metrics = CompilationMetrics(
@@ -187,11 +236,14 @@ class PixelTileCompiler:
                 "04_regions": _region_preview(region_map),
                 "05_palette_preview": palette_preview(quantized),
                 "06_raw_pixelized": raw_pixelized,
+                "06_color_conditioned": color_conditioned,
                 "07_cluster_cleaned": cleaned,
                 "08_repeat_optimized": final,
                 "08_tile_preview": make_tiled_preview(final),
                 "09_tile_preview": make_tiled_preview(final),
             }
+            if outline_color is not None:
+                debug_images["10_outline"] = final
             for name, image in debug_images.items():
                 debug_paths[name] = save_png(image, output_dir / "debug" / f"{name}.png")
 
@@ -224,9 +276,11 @@ class PixelTileCompiler:
                 "semantic",
                 "ir",
                 "pixelize",
+                "color_conditioning",
                 "palette",
                 "clusters",
                 "diagonals",
+                "outline",
                 "repeatability",
                 "seam",
                 "export",

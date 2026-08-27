@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from pixel_tile_compiler.config import CompilerConfig
+from pixel_tile_compiler.config import ColorConditioningConfig, CompilerConfig
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 
 
@@ -39,6 +39,30 @@ def test_pipeline_exports_required_artifacts_and_is_deterministic(tmp_path: Path
     }
     assert (first.final_path.parent / "baseline_nearest.png").exists()
     assert (first.final_path.parent / "baseline_bicubic_quantized.png").exists()
+
+
+def test_pipeline_applies_color_conditioning_before_palette(tmp_path: Path):
+    source = tmp_path / "forest.png"
+    create_source(source)
+
+    result = PixelTileCompiler().compile(
+        source,
+        CompilerConfig(
+            output_root=tmp_path / "out",
+            quantize_enabled=False,
+            color_conditioning=ColorConditioningConfig(
+                brightness_scale=1.08,
+                saturation_scale=0.85,
+                saturation_cap=0.75,
+            ),
+        ),
+    )
+
+    raw = Image.open(result.debug_paths["06_raw_pixelized"])
+    conditioned = Image.open(result.debug_paths["06_color_conditioned"])
+    assert raw.getchannel("A").tobytes() == conditioned.getchannel("A").tobytes()
+    assert raw.tobytes() != conditioned.tobytes()
+    assert "color_conditioning" in result.metadata["pipeline"]
 
 
 def test_pipeline_falls_back_when_semantic_provider_fails(tmp_path: Path):

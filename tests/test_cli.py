@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from PIL import Image
@@ -15,6 +16,37 @@ def test_cli_compile_creates_output(tmp_path: Path):
 
     assert result.exit_code == 0, result.stdout
     assert (output / "final.png").exists()
+
+
+def test_cli_compile_accepts_character_profile_options(tmp_path: Path):
+    source = tmp_path / "character.png"
+    Image.new("RGBA", (64, 64), (40, 120, 200, 255)).save(source)
+    output = tmp_path / "character-output"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile",
+            str(source),
+            "--output",
+            str(output),
+            "--palette",
+            "32",
+            "--tile-mode",
+            "object",
+            "--pixelization",
+            "nearest",
+            "--outline",
+            "black",
+            "--no-repeat-opt",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["config"]["pixelization_mode"] == "nearest"
+    assert metadata["config"]["outline_color"] == "black"
+    assert Image.open(output / "final.png").size == (64, 64)
 
 
 def test_cli_compile_map_creates_three_way_experiment(tmp_path: Path):

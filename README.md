@@ -40,6 +40,16 @@ pixel-tile gui
 
 出力ディレクトリには `final.png`、`ir.json`、`metadata.json`、baseline 2種、debug画像を保存します。入力画像は変更しません。repeatable tileでは `08_repeat_optimized.png` と `09_tile_preview.png` が追加され、metadataに `periodicity_risk_score`、`center_dominance_score`、`edge_continuity_score`、`corner_seam_score` を記録します。
 
+### キャラクター用ピクセル化
+
+キャラクターやオブジェクトの細部を残したい場合は、region-aware経路とは別に最近傍縮小経路を選べます。
+
+```powershell
+pixel-tile compile character.png --output output/character --palette 32 --tile-mode object --pixelization nearest --outline black --no-repeat-opt
+```
+
+`--pixelization nearest` は入力画像を直接64×64へ最近傍縮小します。可視ピクセルが入力キャンバス端に接している場合は、その側だけ透明な2px余白を補ってから縮小し、頭頂や輪郭が端で詰まるのを防ぎます。`--outline black` または `--outline white` は透過部分の外側1pxだけに輪郭を追加します。輪郭を含む最終画像はRGBA PNGとして保存されます。既定値の `region` と `outline=off` は従来のMAPタイル経路のままです。
+
 ### Repeatability optimization
 
 `tile_mode=repeatable` かつ `repeat_opt_enabled=true` のときだけ、palette-preservingな後処理を行います。左右・上下端をwrap-awareに対応させ、既存paletteから端の対応色を選び、中心dominant clusterの外周だけを弱めます。blurや補間、新しいalpha値は使いません。

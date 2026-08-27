@@ -1,10 +1,9 @@
 # Pixel Tile Compiler 作業ハンドオフ
 
-最終更新: 2026-08-24
+最終更新: 2026-08-27
 
-この文書は、次のセッションが最初に読む作業引き継ぎである。今回の目的は、
-Logical MAPを先に完成させ、その意匠を元にMAP全体の画像を生成し、必要に応じて
-64×64へ分割する実験を小さく開始すること。
+この文書は、次のセッションが最初に読む作業引き継ぎである。MAP全体の画像生成・分割実験に加え、
+キャラクター画像を抽出して64×64のピクセルアートへコンパイルする実験の現在地と再現手順も記録する。
 
 ## 1. 現在地
 
@@ -131,3 +130,101 @@ cell_size、crop policy、generator/model、request ID、seed（提供される�
 
 このハンドオフ作成時点では、MAP EditorからVisual Intentを取り込む実装、実画像生成Adapterとの接続、
 MAP専用一枚絵のE2E、Human Reviewは未検証である。文書の存在を実装完了や品質保証と解釈しない。
+
+## 9. キャラクター・ピクセルアート化実験（2026-08-27）
+
+### 9.1 目的と判断
+
+高精細な元絵をそのまま64×64へ縮小する方法も採用候補だが、キャラクター用コンパイラーでは、
+輪郭・色数・細部を制御しながら抽象化することで、元絵の画風が変わってもゲーム内で並べたときの違和感を抑えられる。
+現時点のユーザー判断は「ドット絵として十分成立する。高精細版も用途によっては採用候補」である。
+
+### 9.2 固定したコンパイル設定
+
+キャラクター／オブジェクトはMAP用のregion-aware経路と分け、次の設定を使う。
+
+```text
+width=64, height=64
+palette_budget=32
+tile_mode=object
+semantic_provider=rule
+seam_mode=inspect
+repeat_opt_enabled=false
+dither=off
+background_mode=alpha
+pixelization_mode=nearest
+outline_color=black
+work_size=256
+smoothing_enabled=true
+seed=42
+debug_enabled=false
+quantize_enabled=true
+```
+
+`nearest`は細部保持を優先した最近傍縮小で、透過背景を維持する。入力キャンバス端に可視ピクセルが接している場合は、
+接している側だけ2pxの透明余白を追加してから縮小する。黒輪郭は可視領域の外側1pxへ追加する。
+32色未満では細部の欠落が目立ちやすく、現在は32色を基準とする。
+
+### 9.3 シート分割の再現手順
+
+1. 入力シートをRGBAで読み、alpha `>32`を可視ピクセルとして8近傍連結成分を求める。
+2. 面積20,000以上の主成分だけを採用し、各成分の外接矩形で切り出す。隣接キャラを固定セルの矩形で巻き込まない。
+3. 切り出した成分を最大辺60pxになるよう最近傍で縮小し、64×64透明キャンバスの中央へ配置する。
+4. 各64×64画像を`PixelTileCompiler`へ渡し、`final.png`を採用候補とする。
+5. `overview_4x_nearest.png`で俯瞰確認し、各`final.png`の寸法・透過・輪郭端切れを検証する。
+
+4×4シートでは、キャラごとの上端位置が異なるため、主成分のY座標だけで並べ替えない。画像のセル位置（行・列）で順序を確定する。
+
+### 9.4 現在の生成済み成果物
+
+生成物はリポジトリ外のGoogle Drive配下に保存している。生成元シート、分割済み64×64入力、コンパイル済み出力を分け、
+前回版を上書きしない。
+
+```text
+G:\マイドライブ\習作\モック\asset\pixelart-compiler-output\
+├─ character-source-recut-v2
+├─ character-compiled-v4
+├─ アリアx16-source-recut-v1
+├─ アリアx16-compiled-v1
+├─ コミリアx8_ミリオx8-source-recut-v2
+├─ コミリアx8_ミリオx8-compiled-v2
+├─ レサルドx4_トルクスx4_プルディアx4_プロビオx4-source-recut-v1
+└─ レサルドx4_トルクスx4_プルディアx4_プロビオx4-compiled-v1
+```
+
+現行の正本は次の`64x64`配下にある。正本へ入れるのはコンパイル済み`final.png`のみで、debug・metadata・比較画像は入れない。
+
+```text
+G:\マイドライブ\習作\モック\asset\64x64\
+├─ 汎用キャラ          82枚
+├─ アリア              16枚
+├─ コミリア             8枚
+├─ ミリオ               8枚
+├─ レサルド             4枚
+├─ トルクス             4枚
+├─ プルディア           4枚
+└─ プロビオ             4枚
+```
+
+合計130枚。各正本PNGは64×64、alpha値は`0/255`のみ。今回のキャラクター追加分も、出力元`final.png`とのSHA-256一致を確認してから正本へコピーした。
+
+### 9.5 実装上の入口
+
+- `src/pixel_tile_compiler/pixelizer/character.py`: 最近傍縮小、端余白、輪郭
+- `src/pixel_tile_compiler/config.py`: `pixelization_mode`、`outline_color`、色条件設定
+- `src/pixel_tile_compiler/pipeline/compiler.py`: キャラクター経路の選択と最終輪郭
+- `src/pixel_tile_compiler/cli.py`: `compile`の`--pixelization nearest`、`--outline black|white`
+- `tests/test_character_pixelizer.py`: キャラクター経路、透過、端余白、輪郭のテスト
+
+CLIで単体を再現する場合の最小例：
+
+```powershell
+pixel-tile compile character.png --output output/character --palette 32 --tile-mode object --pixelization nearest --outline black --no-repeat-opt
+```
+
+### 9.6 次回の運用
+
+- 新しいキャラシートも、まず`pixelart-compiler-output`へ`source-recut-vN`／`compiled-vN`として出す。
+- 俯瞰で採用状態を確認してから、ユーザーが明示した場合だけ`64x64`へ`final.png`を追加する。
+- 元絵の切断位置が不自然な場合は、コンパイラーで補正せず元シートを直して再コンパイルする。
+- 画風の比較では、正本候補の64×64版と高精細絵の直接縮小版を別軸として扱う。

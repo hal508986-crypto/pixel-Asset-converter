@@ -7,3 +7,7 @@ dist/
 /output/
 !Output/
 !Output/**
+
+# E2E experiments are reproducible local outputs; keep existing tracked fixtures,
+# but do not add new generated E2E directories and assets by default.
+/e2e/*

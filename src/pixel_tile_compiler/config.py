@@ -10,6 +10,7 @@ DitherMode = Literal["off", "minimal", "ordered"]
 SeamMode = Literal["off", "inspect", "correct"]
 PixelizationMode = Literal["region", "nearest"]
 OutlineColor = Literal["off", "black", "white"]
+CompilerPurpose = Literal["terrain", "character"]
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,9 @@ class CompilerConfig:
     background_tolerance: int = 12
     pixelization_mode: PixelizationMode = "region"
     outline_color: OutlineColor = "off"
+    character_frame_width: int = 54
+    character_frame_height: int = 54
+    character_bottom_margin: int = 7
     work_size: int = 256
     smoothing_enabled: bool = True
     seed: int = 42
@@ -77,6 +81,15 @@ class CompilerConfig:
             raise ValueError("pixelization_mode must be region or nearest")
         if self.outline_color not in {"off", "black", "white"}:
             raise ValueError("outline_color must be off, black, or white")
+        if self.character_frame_width < 1 or self.character_frame_height < 1:
+            raise ValueError("character frame dimensions must be positive")
+        if self.character_bottom_margin < 0:
+            raise ValueError("character_bottom_margin must be non-negative")
+        outline_width = 1 if self.outline_color != "off" else 0
+        if self.character_frame_width + outline_width * 2 > self.width:
+            raise ValueError("character_frame_width does not fit the output canvas")
+        if self.character_frame_height + outline_width * 2 + self.character_bottom_margin > self.height:
+            raise ValueError("character frame and bottom margin do not fit the output canvas")
         if not 0.0 <= self.repeat_opt_strength <= 1.0:
             raise ValueError("repeat_opt_strength must be between 0 and 1")
         if self.repeat_opt_edge_band < 1:
@@ -123,3 +136,22 @@ class MapCompilerConfig:
     def output_size(self) -> tuple[int, int]:
         """Return the reconstructed MAP size in pixels."""
         return self.columns * self.tile_size, self.rows * self.tile_size
+
+
+def compiler_config_for_purpose(purpose: CompilerPurpose, **overrides: Any) -> CompilerConfig:
+    """Build the shared CLI/GUI configuration for terrain or character work."""
+    if purpose not in {"terrain", "character"}:
+        raise ValueError("purpose must be terrain or character")
+    if purpose == "character":
+        overrides.update(
+            {
+                "tile_mode": "object",
+                "repeat_opt_enabled": False,
+                "dither": "off",
+                "background_mode": "auto",
+                "pixelization_mode": "nearest",
+                "outline_color": "off",
+                "smoothing_enabled": False,
+            }
+        )
+    return CompilerConfig(**overrides)

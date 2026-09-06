@@ -4,6 +4,7 @@ from PIL import Image
 
 from pixel_tile_compiler.config import ColorConditioningConfig, CompilerConfig
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+from pixel_tile_compiler.preprocess.background import apply_background
 
 
 def create_source(path: Path) -> None:
@@ -101,6 +102,51 @@ def test_pipeline_preserves_binary_alpha_and_supports_flat_background(tmp_path: 
 
     assert alpha_values <= {0, 255}
     assert 0 in alpha_values
+
+
+def test_background_removes_only_outer_connected_color_and_preserves_inner_white() -> None:
+    image = Image.new("RGBA", (32, 32), (255, 255, 255, 255))
+    for x in range(8, 24):
+        image.putpixel((x, 8), (200, 40, 40, 255))
+        image.putpixel((x, 23), (200, 40, 40, 255))
+    for y in range(8, 24):
+        image.putpixel((8, y), (200, 40, 40, 255))
+        image.putpixel((23, y), (200, 40, 40, 255))
+
+    result = apply_background(image, mode="auto", tolerance=0)
+
+    assert result.getpixel((0, 0))[3] == 0
+    assert result.getpixel((16, 16))[3] == 255
+    assert result.getpixel((16, 16))[:3] == (255, 255, 255)
+
+
+def test_background_modes_never_unmask_existing_transparent_pixels() -> None:
+    image = Image.new("RGBA", (3, 3), (255, 255, 255, 0))
+    image.putpixel((1, 1), (200, 40, 40, 255))
+
+    result = apply_background(image, mode="color", color="#FFFFFF", tolerance=0)
+
+    assert result.getpixel((0, 0))[3] == 0
+    assert result.getpixel((1, 1))[3] == 255
+
+
+def test_background_auto_removes_an_outer_connected_checkerboard() -> None:
+    image = Image.new("RGBA", (16, 16), (244, 244, 244, 255))
+    for block_y in range(0, 16, 4):
+        for block_x in range(0, 16, 4):
+            color = (242, 242, 242, 255) if (block_x // 4 + block_y // 4) % 2 else (244, 244, 244, 255)
+            for y in range(block_y, block_y + 4):
+                for x in range(block_x, block_x + 4):
+                    image.putpixel((x, y), color)
+    for y in range(5, 11):
+        for x in range(5, 11):
+            image.putpixel((x, y), (220, 50, 50, 255))
+
+    result = apply_background(image, mode="auto", tolerance=12)
+
+    assert result.getpixel((0, 0))[3] == 0
+    assert result.getpixel((3, 3))[3] == 0
+    assert result.getpixel((5, 5))[3] == 255
 
 
 def test_pipeline_reports_repeatability_metrics_and_debug_stages(tmp_path: Path):

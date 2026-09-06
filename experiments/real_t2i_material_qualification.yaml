@@ -1,0 +1,31 @@
+study:
+  materials:
+    - grass
+    - dirt
+    - water
+    - stone
+  real_candidates_per_material: 8
+  compiled_variants_per_source: 8
+generation:
+  real_t2i_required: true
+  fallback_adapter: false
+normalization:
+  working_size: 1024
+compile_probe:
+  variants: 8
+  shared_palette: true
+  palette_budget: 28
+map_probe:
+  width: 10
+  height: 10
+human_review:
+  blind: true
+  auto_promote_without_review: false
+analysis:
+  variance_decomposition: true
+  source_effect_ratio: true
+  correlations: true
+  compiler_sensitivity: true
+seed: 42
+output: ../e2e/real_t2i_material_qualification
+library_root: ../material_library

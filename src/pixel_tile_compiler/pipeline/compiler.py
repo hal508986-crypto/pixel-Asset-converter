@@ -19,7 +19,7 @@ from pixel_tile_compiler.io.loader import load_image
 from pixel_tile_compiler.ir.builder import build_tile_ir
 from pixel_tile_compiler.ir.schema import MapContext
 from pixel_tile_compiler.ir.validator import validate_tile_ir
-from pixel_tile_compiler.pixelizer.character import add_edge_margin, add_outline, nearest_pixelize
+from pixel_tile_compiler.pixelizer.character import add_outline, fit_character_to_canvas, nearest_pixelize
 from pixel_tile_compiler.pixelizer.color_conditioning import apply_color_conditioning
 from pixel_tile_compiler.pixelizer.palette import palette_preview, quantize_palette
 from pixel_tile_compiler.pixelizer.spatial import region_aware_pixelize
@@ -102,7 +102,7 @@ def _outline_rgba(color: str) -> tuple[int, int, int, int] | None:
 
 
 def _pixelize_source(
-    loaded: Image.Image,
+    background_resolved: Image.Image,
     smooth: Image.Image,
     region_map: np.ndarray,
     ir,
@@ -110,14 +110,16 @@ def _pixelize_source(
 ) -> Image.Image:
     """Select the spatial pixelizer without changing the analysis contract."""
     if config.pixelization_mode == "nearest":
-        margin_input = add_edge_margin(loaded)
-        nearest_input = apply_background(
-            margin_input,
-            mode=config.background_mode,
-            color=config.background_color,
-            tolerance=config.background_tolerance,
-        )
-        return nearest_pixelize(nearest_input, (config.width, config.height))
+        if config.tile_mode == "object":
+            fitted = fit_character_to_canvas(
+                background_resolved,
+                canvas_size=(config.width, config.height),
+                frame_size=(config.character_frame_width, config.character_frame_height),
+                bottom_margin=config.character_bottom_margin,
+                outline_width=1 if config.outline_color != "off" else 0,
+            )
+            return nearest_pixelize(fitted, (config.width, config.height))
+        return nearest_pixelize(background_resolved, (config.width, config.height))
     return region_aware_pixelize(smooth, region_map, ir)
 
 
@@ -154,13 +156,13 @@ class PixelTileCompiler:
         debug_paths: dict[str, Path] = {}
 
         loaded = image.convert("RGBA").copy()
-        normalized = normalize_image(loaded, work_size=config.work_size)
-        normalized = apply_background(
-            normalized,
+        background_resolved = apply_background(
+            loaded,
             mode=config.background_mode,
             color=config.background_color,
             tolerance=config.background_tolerance,
         )
+        normalized = normalize_image(background_resolved, work_size=config.work_size)
         smooth = smooth_image(normalized, enabled=config.smoothing_enabled)
         edges = detect_edges(smooth)
         region_map = generate_region_map(smooth, seed=config.seed)
@@ -183,14 +185,26 @@ class PixelTileCompiler:
         if map_context is not None:
             ir = ir.model_copy(update={"map_context": map_context})
         ir = validate_tile_ir(ir)
-        raw_pixelized = _pixelize_source(loaded, smooth, region_map, ir, config)
+        raw_pixelized = _pixelize_source(background_resolved, smooth, region_map, ir, config)
         color_conditioned = apply_color_conditioning(raw_pixelized, config.color_conditioning)
+        outline_color = _outline_rgba(config.outline_color)
+        quantize_budget = config.palette_budget
+        quantize_palette_colors = config.palette_colors
+        if outline_color is not None:
+            outline_rgb = outline_color[:3]
+            if quantize_palette_colors is None:
+                quantize_budget = max(1, config.palette_budget - 1)
+            elif outline_rgb not in quantize_palette_colors:
+                if len(quantize_palette_colors) < config.palette_budget:
+                    quantize_palette_colors = (*quantize_palette_colors, outline_rgb)
+                else:
+                    quantize_palette_colors = (*quantize_palette_colors[:-1], outline_rgb)
         if config.quantize_enabled:
             quantized = quantize_palette(
                 color_conditioned,
-                budget=config.palette_budget,
+                budget=quantize_budget,
                 seed=config.seed,
-                palette_colors=config.palette_colors,
+                palette_colors=quantize_palette_colors,
             )
         else:
             quantized = raw_pixelized.convert("RGBA")
@@ -210,7 +224,6 @@ class PixelTileCompiler:
             cluster_metrics = optimized_cluster_metrics
         else:
             final = cleaned
-        outline_color = _outline_rgba(config.outline_color)
         if outline_color is not None:
             final = add_outline(final, outline_color)
         repeatability_after = measure_repeatability(final, tile_mode=config.tile_mode, edge_band=config.repeat_opt_edge_band)
@@ -259,6 +272,7 @@ class PixelTileCompiler:
             "config": config.as_dict(),
             "semantic_provider": provider_name,
             "metrics": asdict(metrics),
+            "palette_budget_scope": "visible_rgb",
             "repeatability_before": asdict(repeatability_before),
             "repeatability_after": asdict(repeatability_after),
             "repeatability_optimization": {
@@ -267,8 +281,8 @@ class PixelTileCompiler:
             },
             "pipeline": [
                 "load",
-                "normalize",
                 "background",
+                "normalize",
                 "smoothing",
                 "edges",
                 "regions",

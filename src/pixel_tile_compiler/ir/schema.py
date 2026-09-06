@@ -61,7 +61,7 @@ class TileIR(BaseModel):
     height: Literal[64] = 64
     tile_type: str
     tile_mode: Literal["repeatable", "directional", "object"]
-    palette_budget: int = Field(ge=4, le=32)
+    palette_budget: int = Field(ge=4, le=64)
     global_style: GlobalStyle
     regions: list[RegionIR]
     map_context: MapContext | None = None

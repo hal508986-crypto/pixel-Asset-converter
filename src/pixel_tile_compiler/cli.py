@@ -5,7 +5,7 @@ from typing import Optional
 
 import typer
 
-from pixel_tile_compiler.config import CompilerConfig, MapCompilerConfig
+from pixel_tile_compiler.config import CompilerConfig, MapCompilerConfig, compiler_config_for_purpose
 from pixel_tile_compiler.map.compiler import MapExperimentRunner
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 from pixel_tile_compiler.tileset.compiler import TilesetSourceCompiler
@@ -26,6 +26,27 @@ from pixel_tile_compiler.transition_network.river_study import (
 from pixel_tile_compiler.pixel_grammar import PixelGrammarStudyRunner, load_pixel_grammar_config
 from pixel_tile_compiler.pixel_hierarchy import PixelHierarchyStudyRunner, load_pixel_hierarchy_config
 from pixel_tile_compiler.material_library import MaterialLibraryRunner, load_material_library_config
+from pixel_tile_compiler.material_library.real_qualification import (
+    RealMaterialQualificationRunner,
+    import_material_review,
+    import_real_material_sources,
+    load_real_qualification_config,
+)
+from pixel_tile_compiler.palette_study import (
+    PaletteBudgetStudyRunner,
+    import_palette_review,
+    load_palette_budget_config,
+)
+from pixel_tile_compiler.mixed_palette_study import (
+    MixedMaterialPaletteArchitectureStudyRunner,
+    import_mixed_palette_review,
+    load_mixed_palette_config,
+)
+from pixel_tile_compiler.asset.pipeline import process_generated_sheet, validate_asset_package
+from pixel_tile_compiler.generation.adapter import GenerationUnavailableError, UnconfiguredImageGenerationAdapter
+from pixel_tile_compiler.generation.pipeline import GenerationFirstPipeline
+from pixel_tile_compiler.generation.request_compiler import GenerationRequestCompiler
+from pixel_tile_compiler.generation.spec import TilesetSpec
 
 app = typer.Typer(help="SRPG用64x64ピクセルアートMAPタイルコンパイラ")
 
@@ -34,6 +55,7 @@ app = typer.Typer(help="SRPG用64x64ピクセルアートMAPタイルコンパ�
 def compile(
     source: Path = typer.Argument(..., exists=True, readable=True, help="入力画像PNG/JPEG/WebP"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="出力ディレクトリ"),
+    purpose: str = typer.Option("terrain", "--purpose", help="用途: terrain/character"),
     palette: int = typer.Option(16, "--palette", min=4, max=64, help="パレット上限"),
     tile_mode: str = typer.Option("repeatable", "--tile-mode", help="repeatable/directional/object"),
     semantic: str = typer.Option("rule", "--semantic", help="rule/mcp"),
@@ -50,7 +72,8 @@ def compile(
     """入力画像を64x64のMAPタイルへ変換します。"""
     output_dir = output or (Path("output") / source.stem)
     try:
-        config = CompilerConfig(
+        config = compiler_config_for_purpose(
+            purpose,  # type: ignore[arg-type]
             output_root=output_dir,
             palette_budget=palette,
             tile_mode=tile_mode,  # type: ignore[arg-type]
@@ -283,6 +306,181 @@ def build_material_library(
     typer.echo(f"完了: {result.output_root}")
     typer.echo(f"library: {result.library_root}")
     typer.echo(f"ランキング: {result.output_root / 'summary' / 'source_ranking.json'}")
+
+
+@app.command("qualify-real-material-sources")
+def qualify_real_material_sources(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Real t2i Material Qualification YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """実t2i Sourceだけを対象にMaterial品質支配性を検証します。"""
+    try:
+        study_config = load_real_qualification_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = RealMaterialQualificationRunner().run(study_config)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"状態: {result.status}")
+    typer.echo(f"出力: {result.output_root}")
+    if result.missing_sources:
+        typer.echo(f"不足Source: {', '.join(result.missing_sources)}")
+
+
+@app.command("import-real-material-sources")
+def import_real_material_sources_command(
+    study: Path = typer.Option(..., "--study", exists=True, file_okay=False, help="Real t2i Qualification studyディレクトリ"),
+    input_root: Path = typer.Option(..., "--input", exists=True, file_okay=False, help="生成済みPNGを含む入力ディレクトリ"),
+    generator: str = typer.Option(..., "--generator", help="生成器名"),
+    model: str = typer.Option("unknown", "--model", help="モデル名"),
+) -> None:
+    """生成済みPNGをraw immutable Sourceとして取り込みます。"""
+    try:
+        result = import_real_material_sources(study, input_root, generator, model)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"取り込み: {result['count']}件")
+
+
+@app.command("import-material-review")
+def import_material_review_command(
+    study: Path = typer.Option(..., "--study", exists=True, file_okay=False, help="Real t2i Qualification studyディレクトリ"),
+    csv_file: Path = typer.Option(..., "--csv", exists=True, readable=True, help="Blind Review記入済みCSV"),
+) -> None:
+    """Blind Review CSVをMaterial Source Cardへ取り込みます。"""
+    try:
+        result = import_material_review(study, csv_file)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"人間評価取り込み: {result['human_reviews_imported']}件")
+    typer.echo(f"Gate calibration: {result['gate_calibration']}")
+
+
+@app.command("study-palette-budget")
+def study_palette_budget(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Palette Budget Study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """固定Real t2i SourceでPalette Budget / Rampを比較します。"""
+    try:
+        study_config = load_palette_budget_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = PaletteBudgetStudyRunner().run(study_config)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"状態: {result.status}")
+    typer.echo(f"出力: {result.output_root}")
+    typer.echo(f"比較board: {result.output_root / 'summary' / 'comparison_board.png'}")
+
+
+@app.command("import-palette-review")
+def import_palette_review_command(
+    study: Path = typer.Option(..., "--study", exists=True, file_okay=False, help="Palette Budget Studyディレクトリ"),
+    csv_file: Path = typer.Option(..., "--csv", exists=True, readable=True, help="記入済みPalette Review CSV"),
+) -> None:
+    """Blind Palette Review CSVを条件成果物へ取り込みます。"""
+    try:
+        result = import_palette_review(study, csv_file)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"人間評価取り込み: {result['human_reviews_imported']}件")
+    typer.echo("Palette Profileの自動昇格: 実施していません")
+
+
+@app.command("study-mixed-palette-architecture")
+def study_mixed_palette_architecture(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Mixed Palette Architecture Study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """固定Mixed MAPでPalette Architectureを比較します。"""
+    try:
+        study_config = load_mixed_palette_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = MixedMaterialPaletteArchitectureStudyRunner().run(study_config)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"状態: {result.status}")
+    typer.echo(f"出力: {result.output_root}")
+    typer.echo(f"比較board: {result.output_root / 'summary' / 'comparison_board.png'}")
+
+
+@app.command("import-mixed-palette-review")
+def import_mixed_palette_review_command(
+    study: Path = typer.Option(..., "--study", exists=True, file_okay=False, help="Mixed Palette Architecture Studyディレクトリ"),
+    csv_file: Path = typer.Option(..., "--csv", exists=True, readable=True, help="記入済みMixed Palette Review CSV"),
+) -> None:
+    """Mixed MAPのBlind Review CSVを条件成果物へ取り込みます。"""
+    try:
+        result = import_mixed_palette_review(study, csv_file)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"人間評価取り込み: {result['human_reviews_imported']}件")
+    typer.echo("Palette Architectureの自動昇格: 実施していません")
+
+
+@app.command("compile-generation-request")
+def compile_generation_request(
+    spec: Path = typer.Option(..., "--spec", exists=True, readable=True, help="TilesetSpec JSON"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="GenerationRequest JSONの出力先"),
+) -> None:
+    """TilesetSpecを正本として画像生成Request JSONを生成します。"""
+    try:
+        tileset_spec = TilesetSpec.from_json_file(spec)
+        request = GenerationRequestCompiler().compile(tileset_spec)
+        if output is None:
+            typer.echo(request.model_dump_json(indent=2))
+        else:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(request.model_dump_json(indent=2) + "\n", encoding="utf-8")
+            typer.echo(f"出力: {output}")
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command("process-generated-sheet")
+def process_generated_sheet_command(
+    spec: Path = typer.Option(..., "--spec", exists=True, readable=True, help="TilesetSpec JSON"),
+    image: Path = typer.Option(..., "--image", exists=True, readable=True, help="生成済みSheet PNG"),
+    output: Path = typer.Option(..., "--output", "-o", help="Asset Package出力ディレクトリ"),
+) -> None:
+    """生成済みSheetを等分割・64x64化してAsset Packageにします。"""
+    try:
+        result = process_generated_sheet(TilesetSpec.from_json_file(spec), image, output)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"状態: {result.validation['status']}")
+    typer.echo(f"manifest: {result.manifest_path}")
+    typer.echo(f"validation: {result.validation_path}")
+
+
+@app.command("validate-tileset")
+def validate_tileset_command(
+    package: Path = typer.Argument(..., exists=True, file_okay=False, help="Asset Packageディレクトリ"),
+) -> None:
+    """既存Asset Packageのmanifest・Tile寸法・ファイル存在を検証します。"""
+    result = validate_asset_package(package)
+    typer.echo(f"状態: {result['status']}")
+    for issue in result.get("issues", []):
+        typer.echo(f"問題: {issue}")
+    if result["status"] == "rejected":
+        raise typer.Exit(code=1)
+
+
+@app.command("generate-tileset")
+def generate_tileset_command(
+    spec: Path = typer.Option(..., "--spec", exists=True, readable=True, help="TilesetSpec JSON"),
+    output: Path = typer.Option(..., "--output", "-o", help="Asset Package出力ディレクトリ"),
+) -> None:
+    """ImageGenerationAdapter経由でSheet生成からAsset Package化まで行います。"""
+    try:
+        tileset_spec = TilesetSpec.from_json_file(spec)
+        GenerationFirstPipeline().run(tileset_spec, output, UnconfiguredImageGenerationAdapter())
+    except GenerationUnavailableError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
 
 
 @app.command()

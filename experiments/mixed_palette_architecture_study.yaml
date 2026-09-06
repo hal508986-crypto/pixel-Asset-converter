@@ -1,0 +1,45 @@
+study:
+  tile_size: 64
+  variants: 1
+  materials:
+    - grass
+    - dirt
+    - water
+    - stone
+  # Minimum fair-budget round. The larger Core/shade matrix is deferred until
+  # this board has been inspected.
+  conditions:
+    - condition_id: global_24
+      kind: global
+      global_budget: 24
+      budget_axis: fixed_global
+    - condition_id: per_material_6x4
+      kind: per_material
+      per_material_budget: 6
+      budget_axis: fixed_global
+    - condition_id: semantic_ramp_6shade
+      kind: semantic_ramp
+      semantic_shades: 6
+      budget_axis: fixed_global
+    - condition_id: shared_core4_material5
+      kind: shared_core
+      shared_core_size: 4
+      material_shades: 5
+      budget_axis: fixed_global
+
+source:
+  real_study_root: ../e2e/real_t2i_material_qualification
+  freeze_source: true
+  selections:
+    grass: grass_real_05
+    dirt: dirt_real_02
+    water: water_real_01
+    stone: stone_real_05
+
+map:
+  width: 10
+  height: 10
+
+dithering: off
+seed: 42
+output: ../e2e/mixed_palette_architecture_study

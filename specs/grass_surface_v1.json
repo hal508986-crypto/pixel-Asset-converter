@@ -1,0 +1,286 @@
+{
+  "version": "1",
+  "tileset_id": "grass_surface_v1",
+  "tile_size_px": 64,
+  "grid_columns": 4,
+  "grid_rows": 4,
+  "art_direction": {
+    "style_id": "handheld_tactical_rpg_v1",
+    "perspective": "top-down orthographic",
+    "visual_rules": [
+      "top-down orthographic",
+      "chunky coherent clusters",
+      "controlled color",
+      "no photographic noise",
+      "invisible grid"
+    ],
+    "palette_direction": "controlled color with readable value separation"
+  },
+  "materials": {
+    "grass": {
+      "material_id": "grass",
+      "feature_scale": "medium",
+      "palette_hints": [
+        "dark green",
+        "mid green",
+        "yellow green highlight"
+      ],
+      "accepted_visual_vocabulary": [
+        "grass clusters",
+        "subtle blades",
+        "small tonal variation"
+      ],
+      "generation_rules": [
+        "same grass base across all cells",
+        "variation stays inside cells",
+        "shared edges remain safe"
+      ]
+    }
+  },
+  "shared_edge_contract": {
+    "edge_id": "grass_shared_surface_edge",
+    "role": "surface",
+    "shared_edge_rule": "outer edge remains the same grass base without a visible grid line",
+    "safe_zone_ratio": 0.08,
+    "forbidden_artifacts": [
+      "strong grid line",
+      "gutter",
+      "text"
+    ]
+  },
+  "network_contracts": {},
+  "tiles": [
+    {
+      "id": "grass_surface_00_00",
+      "cell": [
+        0,
+        0
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "low"
+    },
+    {
+      "id": "grass_surface_00_01",
+      "cell": [
+        1,
+        0
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_00_02",
+      "cell": [
+        2,
+        0
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_00_03",
+      "cell": [
+        3,
+        0
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "low"
+    },
+    {
+      "id": "grass_surface_01_00",
+      "cell": [
+        0,
+        1
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_01_01",
+      "cell": [
+        1,
+        1
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_01_02",
+      "cell": [
+        2,
+        1
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "low"
+    },
+    {
+      "id": "grass_surface_01_03",
+      "cell": [
+        3,
+        1
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_02_00",
+      "cell": [
+        0,
+        2
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_02_01",
+      "cell": [
+        1,
+        2
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "low"
+    },
+    {
+      "id": "grass_surface_02_02",
+      "cell": [
+        2,
+        2
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_02_03",
+      "cell": [
+        3,
+        2
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_03_00",
+      "cell": [
+        0,
+        3
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "low"
+    },
+    {
+      "id": "grass_surface_03_01",
+      "cell": [
+        1,
+        3
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_03_02",
+      "cell": [
+        2,
+        3
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "medium"
+    },
+    {
+      "id": "grass_surface_03_03",
+      "cell": [
+        3,
+        3
+      ],
+      "semantic": "surface",
+      "material": "grass",
+      "network": null,
+      "connectors": [],
+      "description": "grass surface tile with interior-only variation and shared edge-safe base",
+      "variation_strength": "low"
+    }
+  ],
+  "generation": {
+    "adapter": "mcp",
+    "generator": "image_generation",
+    "model": null,
+    "requested_width": 1024,
+    "requested_height": 1024,
+    "max_attempts": 3,
+    "seed": 42,
+    "negative_constraints": [
+      "text",
+      "labels",
+      "border",
+      "gutter",
+      "visible grid",
+      "photographic noise"
+    ]
+  },
+  "postprocess": {
+    "crop_policy": "center",
+    "normalize_mode": "nearest",
+    "style_regularization_enabled": false,
+    "style_regularization_palette_budget": null,
+    "style_regularization_cluster_cleanup": false
+  }
+}

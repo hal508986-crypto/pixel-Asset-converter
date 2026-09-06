@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from PIL import Image, ImageChops, ImageEnhance
@@ -20,7 +21,7 @@ class CompileProbeResult:
     pixel_tile_paths: tuple[Path, ...]
     map_path: Path
     metrics_path: Path
-    metrics: dict[str, float]
+    metrics: dict[str, Any]
 
 
 def run_compile_probe(
@@ -82,7 +83,7 @@ def run_compile_probe(
     palette_usage = max((int(item["palette_usage"]) for item in tile_metrics), default=0)
     compile_score = max(0.0, min(1.0, average_tile_score))
     map_score = max(0.0, min(1.0, float(map_metrics["map_readability_score"])))
-    metrics: dict[str, float] = {
+    metrics: dict[str, Any] = {
         "palette_usage": palette_usage,
         "compile_readability_score": round(float(np.mean([float(item["readability_score"]) for item in tile_metrics])), 6),
         "compile_semantic_fitness_score": round(float(np.mean([float(item["semantic_fitness_score"]) for item in tile_metrics])), 6),
@@ -95,6 +96,12 @@ def run_compile_probe(
         "map_fitness_score": round(map_score, 6),
         "variants": variants,
         "palette_budget": palette_budget,
+        "variant_compile_fitness_scores": [
+            round(float(item["single_tile_score"]), 6) for item in tile_metrics
+        ],
+        "variant_readability_scores": [
+            round(float(item["readability_score"]), 6) for item in tile_metrics
+        ],
     }
     metrics["grammar_score"] = grammar_score(tile_metrics[0], map_metrics) if tile_metrics else 0.0
     metrics_path = save_json(metrics, root / "metrics.json")

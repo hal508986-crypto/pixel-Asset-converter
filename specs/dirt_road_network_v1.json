@@ -1,0 +1,368 @@
+{
+  "version": "1",
+  "tileset_id": "dirt_road_network_v1",
+  "tile_size_px": 64,
+  "grid_columns": 4,
+  "grid_rows": 4,
+  "art_direction": {
+    "style_id": "handheld_tactical_rpg_v1",
+    "perspective": "top-down orthographic",
+    "visual_rules": [
+      "top-down orthographic",
+      "road connector centers align to exact cell edges",
+      "chunky readable road shape",
+      "same dirt material across all topologies",
+      "invisible grid"
+    ],
+    "palette_direction": "controlled color with readable value separation"
+  },
+  "materials": {
+    "grass": {
+      "material_id": "grass",
+      "feature_scale": "medium",
+      "palette_hints": [
+        "green"
+      ],
+      "accepted_visual_vocabulary": [],
+      "generation_rules": []
+    },
+    "dirt": {
+      "material_id": "dirt",
+      "feature_scale": "medium",
+      "palette_hints": [
+        "warm earth",
+        "brown",
+        "ochre"
+      ],
+      "accepted_visual_vocabulary": [
+        "compact dirt",
+        "subtle stones",
+        "controlled edge"
+      ],
+      "generation_rules": [
+        "road body is continuous",
+        "no text or arrows",
+        "connector width is stable"
+      ]
+    }
+  },
+  "shared_edge_contract": {
+    "edge_id": "road_network_edge",
+    "role": "network_connector",
+    "shared_edge_rule": "road connectors meet the center of the requested edge and continue cleanly",
+    "safe_zone_ratio": 0.08,
+    "forbidden_artifacts": [
+      "strong grid line",
+      "gutter",
+      "text"
+    ]
+  },
+  "network_contracts": {
+    "road": {
+      "network_id": "road",
+      "network_type": "road",
+      "allowed_topologies": [
+        "EMPTY",
+        "N",
+        "E",
+        "S",
+        "W",
+        "NS",
+        "EW",
+        "NE",
+        "NW",
+        "SE",
+        "SW",
+        "NES",
+        "NEW",
+        "NSW",
+        "ESW",
+        "NESW"
+      ],
+      "forbidden_topologies": [],
+      "connector_width_ratio": 0.22,
+      "connector_rule": "road body reaches every listed connector and no unlisted edge"
+    }
+  },
+  "tiles": [
+    {
+      "id": "road_empty",
+      "cell": [
+        0,
+        0
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [],
+      "description": "road network tile for topology EMPTY",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_n",
+      "cell": [
+        1,
+        0
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N"
+      ],
+      "description": "road network tile for topology N",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_e",
+      "cell": [
+        2,
+        0
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "E"
+      ],
+      "description": "road network tile for topology E",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_s",
+      "cell": [
+        3,
+        0
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "S"
+      ],
+      "description": "road network tile for topology S",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_w",
+      "cell": [
+        0,
+        1
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "W"
+      ],
+      "description": "road network tile for topology W",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_ns",
+      "cell": [
+        1,
+        1
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N",
+        "S"
+      ],
+      "description": "road network tile for topology NS",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_ew",
+      "cell": [
+        2,
+        1
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "E",
+        "W"
+      ],
+      "description": "road network tile for topology EW",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_ne",
+      "cell": [
+        3,
+        1
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N",
+        "E"
+      ],
+      "description": "road network tile for topology NE",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_nw",
+      "cell": [
+        0,
+        2
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N",
+        "W"
+      ],
+      "description": "road network tile for topology NW",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_se",
+      "cell": [
+        1,
+        2
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "S",
+        "E"
+      ],
+      "description": "road network tile for topology SE",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_sw",
+      "cell": [
+        2,
+        2
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "S",
+        "W"
+      ],
+      "description": "road network tile for topology SW",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_nes",
+      "cell": [
+        3,
+        2
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N",
+        "E",
+        "S"
+      ],
+      "description": "road network tile for topology NES",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_new",
+      "cell": [
+        0,
+        3
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N",
+        "E",
+        "W"
+      ],
+      "description": "road network tile for topology NEW",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_nsw",
+      "cell": [
+        1,
+        3
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N",
+        "S",
+        "W"
+      ],
+      "description": "road network tile for topology NSW",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_esw",
+      "cell": [
+        2,
+        3
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "E",
+        "S",
+        "W"
+      ],
+      "description": "road network tile for topology ESW",
+      "variation_strength": "low"
+    },
+    {
+      "id": "road_nesw",
+      "cell": [
+        3,
+        3
+      ],
+      "semantic": "network",
+      "material": "dirt",
+      "network": "road",
+      "connectors": [
+        "N",
+        "E",
+        "S",
+        "W"
+      ],
+      "description": "road network tile for topology NESW",
+      "variation_strength": "low"
+    }
+  ],
+  "generation": {
+    "adapter": "mcp",
+    "generator": "image_generation",
+    "model": null,
+    "requested_width": 1024,
+    "requested_height": 1024,
+    "max_attempts": 3,
+    "seed": 42,
+    "negative_constraints": [
+      "text",
+      "labels",
+      "arrows",
+      "visible grid",
+      "gutter",
+      "disconnected road"
+    ]
+  },
+  "postprocess": {
+    "crop_policy": "center",
+    "normalize_mode": "nearest",
+    "style_regularization_enabled": false,
+    "style_regularization_palette_budget": null,
+    "style_regularization_cluster_cleanup": false
+  }
+}

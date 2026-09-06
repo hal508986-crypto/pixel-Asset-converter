@@ -49,6 +49,28 @@ def test_cli_compile_accepts_character_profile_options(tmp_path: Path):
     assert Image.open(output / "final.png").size == (64, 64)
 
 
+def test_cli_compile_character_purpose_uses_shared_character_defaults(tmp_path: Path):
+    source = tmp_path / "character-purpose.png"
+    image = Image.new("RGBA", (128, 128), (255, 255, 255, 255))
+    for y in range(24, 104):
+        for x in range(44, 84):
+            image.putpixel((x, y), (60, 120, 220, 255))
+    image.save(source)
+    output = tmp_path / "character-purpose-output"
+
+    result = CliRunner().invoke(
+        app,
+        ["compile", str(source), "--output", str(output), "--purpose", "character", "--palette", "16"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["config"]["tile_mode"] == "object"
+    assert metadata["config"]["pixelization_mode"] == "nearest"
+    assert metadata["config"]["repeat_opt_enabled"] is False
+    assert metadata["config"]["dither"] == "off"
+
+
 def test_cli_compile_map_creates_three_way_experiment(tmp_path: Path):
     source = tmp_path / "map.png"
     image = Image.new("RGBA", (256, 320), (80, 140, 60, 255))

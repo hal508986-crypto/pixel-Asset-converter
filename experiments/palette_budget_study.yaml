@@ -1,0 +1,76 @@
+study:
+  tile_size: 64
+  materials:
+    - grass
+    - dirt
+    - water
+    - stone
+  palette_budgets:
+    - true_color
+    - 64
+    - 32
+    - 24
+    - 16
+    - 12
+    - 8
+  palette_modes:
+    - global_free
+    - per_material
+    - semantic_ramp
+  mode_budgets:
+    global_free:
+      - true_color
+      - 64
+      - 32
+      - 24
+      - 16
+      - 12
+      - 8
+    per_material:
+      - 24
+      - 16
+      - 12
+    semantic_ramp:
+      - 32
+      - 24
+      - 16
+      - 12
+      - 8
+
+source:
+  real_study_root: ../e2e/real_t2i_material_qualification
+  freeze_source: true
+  selections:
+    grass: grass_real_05
+    dirt: dirt_real_02
+    water: water_real_01
+    stone: stone_real_05
+
+compile:
+  variants: 8
+  dithering: off
+
+map_probe:
+  width: 10
+  height: 10
+  conditions:
+    - mode: global_free
+      budget: 24
+    - mode: semantic_ramp
+      budget: 16
+
+# First pass intentionally defers Road/River/Object semantic probes until the
+# single-tile results have been inspected.  The runner keeps this branch in
+# the manifest so the next condition round can be added without changing the
+# source freeze contract.
+semantic_probe:
+  materials:
+    - dirt
+    - water
+    - stone
+  conditions:
+    - mode: global_free
+      budget: 24
+
+seed: 42
+output: ../e2e/palette_budget_study

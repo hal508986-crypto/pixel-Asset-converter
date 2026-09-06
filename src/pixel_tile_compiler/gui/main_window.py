@@ -16,12 +16,13 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QPushButton,
     QCheckBox,
+    QComboBox,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
-from pixel_tile_compiler.config import CompilerConfig
+from pixel_tile_compiler.config import compiler_config_for_purpose
 from pixel_tile_compiler.gui.canvas import CanvasState
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 
@@ -77,8 +78,12 @@ class MainWindow(QMainWindow):
         self.tile_preview = QLabel("3×3タイル")
         self.status = QLabel("準備完了")
         self.metrics = QLabel("継ぎ目・周期メトリクス")
+        self.purpose = QComboBox()
+        self.purpose.addItem("地形", userData="terrain")
+        self.purpose.addItem("キャラクター", userData="character")
+        self.purpose.currentIndexChanged.connect(self._update_purpose_controls)
         self.palette = QSpinBox()
-        self.palette.setRange(4, 32)
+        self.palette.setRange(4, 64)
         self.palette.setValue(16)
         self.repeat_opt = QCheckBox("繰り返しタイル最適化")
         self.repeat_opt.setChecked(True)
@@ -90,6 +95,7 @@ class MainWindow(QMainWindow):
         compile_button = QPushButton("コンパイル")
         compile_button.clicked.connect(self.compile_image)
         form = QFormLayout()
+        form.addRow("用途", self.purpose)
         form.addRow("パレット", self.palette)
         form.addRow(self.repeat_opt)
         form.addRow(open_button)
@@ -118,6 +124,13 @@ class MainWindow(QMainWindow):
         wrapper = QWidget()
         wrapper.setLayout(outer)
         self.setCentralWidget(wrapper)
+        self._update_purpose_controls()
+
+    def _update_purpose_controls(self) -> None:
+        is_character = self.purpose.currentData() == "character"
+        if is_character:
+            self.repeat_opt.setChecked(False)
+        self.repeat_opt.setEnabled(not is_character)
 
     def open_image(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "画像を開く", "", "画像 (*.png *.jpg *.jpeg *.webp)")
@@ -133,7 +146,8 @@ class MainWindow(QMainWindow):
         output = Path("output") / self.source_path.stem
         result = PixelTileCompiler().compile(
             self.source_path,
-            CompilerConfig(
+            compiler_config_for_purpose(
+                self.purpose.currentData(),
                 output_root=output,
                 palette_budget=self.palette.value(),
                 repeat_opt_enabled=self.repeat_opt.isChecked(),
@@ -153,7 +167,8 @@ class MainWindow(QMainWindow):
                     f"上下継ぎ目 {result.metrics.vertical_seam_score}",
                     f"周期リスク {result.metrics.periodicity_risk_score}",
                     f"中心集中 {result.metrics.center_dominance_score}",
+                    f"可視RGB {result.metrics.actual_palette_count}色",
                 ]
             )
         )
-        self.status.setText(f"完了: {result.metrics.actual_palette_count}色")
+        self.status.setText(f"完了: 可視RGB {result.metrics.actual_palette_count}色")

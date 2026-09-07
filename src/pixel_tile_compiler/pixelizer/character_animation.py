@@ -9,7 +9,6 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from shutil import copyfile
 from typing import Literal
-from uuid import uuid4
 
 import numpy as np
 from PIL import Image
@@ -446,6 +445,17 @@ class CharacterAnimationCompileResult:
     detection_overlay_path: Path | None
 
 
+_MANAGED_ANIMATION_OUTPUTS = (
+    "aligned_sheet.png",
+    "bbox_report.json",
+    "compiled",
+    "compiled_sheet.png",
+    "compiled_sheet_8x.png",
+    "detection_overlay.png",
+    "final_frames",
+)
+
+
 def compile_character_animation_sheet(
     source: Path,
     output_root: Path,
@@ -586,24 +596,46 @@ def _rewrite_staged_metadata_paths(staging_root: Path, output_root: Path) -> Non
 
 
 def _replace_output_root(staging_root: Path, output_root: Path) -> None:
-    """Swap a complete staged artifact set in while retaining rollback on rename failure."""
-    backup_root: Path | None = None
-    if output_root.exists():
-        backup_root = output_root.with_name(
-            f".{output_root.name or 'output'}.previous-{uuid4().hex}"
+    """Replace compiler-owned artifacts while preserving unrelated user files."""
+    output_was_missing = not output_root.exists()
+    output_root.mkdir(parents=True, exist_ok=True)
+    backup_root = Path(
+        tempfile.mkdtemp(
+            prefix=f".{output_root.name or 'output'}.previous-",
+            dir=str(output_root.parent.resolve()),
         )
-        output_root.rename(backup_root)
+    )
+    moved_old: list[tuple[Path, Path]] = []
+    installed: list[Path] = []
     try:
-        staging_root.rename(output_root)
+        for name in _MANAGED_ANIMATION_OUTPUTS:
+            destination = output_root / name
+            staged = staging_root / name
+            if destination.exists() or destination.is_symlink():
+                backup = backup_root / name
+                destination.rename(backup)
+                moved_old.append((destination, backup))
+            if staged.exists() or staged.is_symlink():
+                staged.rename(destination)
+                installed.append(destination)
     except BaseException:
-        if backup_root is not None and backup_root.exists() and not output_root.exists():
-            backup_root.rename(output_root)
+        for destination in reversed(installed):
+            _remove_output_path(destination)
+        for destination, backup in reversed(moved_old):
+            if backup.exists() or backup.is_symlink():
+                backup.rename(destination)
+        if output_was_missing and output_root.exists() and not any(output_root.iterdir()):
+            output_root.rmdir()
         raise
-    if backup_root is not None:
-        if backup_root.is_dir():
-            shutil.rmtree(backup_root, ignore_errors=True)
-        else:
-            backup_root.unlink(missing_ok=True)
+    finally:
+        shutil.rmtree(backup_root, ignore_errors=True)
+
+
+def _remove_output_path(path: Path) -> None:
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path, ignore_errors=True)
+    elif path.exists() or path.is_symlink():
+        path.unlink(missing_ok=True)
 
 
 def _relocate_compile_result(

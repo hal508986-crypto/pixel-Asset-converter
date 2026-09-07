@@ -217,27 +217,35 @@ def _grid_boundaries(bands: tuple[Band, ...], extent: int) -> tuple[Band, ...]:
     )
 
 
+def _mask_crosses_boundary(mask: np.ndarray, boundary: int, *, axis: int) -> bool:
+    """Return whether an 8-connected visible component crosses one grid boundary."""
+    if axis == 0:
+        before = mask[:, boundary - 1]
+        after = mask[:, boundary]
+    else:
+        before = mask[boundary - 1, :]
+        after = mask[boundary, :]
+    return bool(
+        np.any(before & after)
+        or np.any(before[:-1] & after[1:])
+        or np.any(before[1:] & after[:-1])
+    )
+
+
 def _grid_boundary_issues(
-    detected_bands: tuple[Band, ...],
+    mask: np.ndarray,
     grid_bands: tuple[Band, ...],
     *,
+    axis: int,
     axis_name: str,
 ) -> tuple[str, ...]:
-    """Reject equal windows whose internal boundary cuts through detected content."""
+    """Reject equal windows whose internal boundary cuts through visible content."""
     issues: list[str] = []
     for grid_band in grid_bands[1:]:
         boundary = grid_band[0]
-        crossing_band = next(
-            (
-                band
-                for band in detected_bands
-                if band[0] < boundary < band[1]
-            ),
-            None,
-        )
-        if crossing_band is not None:
+        if _mask_crosses_boundary(mask, boundary, axis=axis):
             issues.append(
-                f"{axis_name}方向の等分境界{boundary}pxが可視帯{crossing_band}を横切ります"
+                f"{axis_name}方向の等分境界{boundary}pxが可視maskを横切ります"
             )
     return tuple(issues)
 
@@ -415,8 +423,8 @@ def _auto_grid(
     content_boxes = _cell_boxes(x_bands, y_bands) if columns and rows else ()
     grid_x_bands = _grid_boundaries(x_bands, source.width)
     grid_y_bands = _grid_boundaries(y_bands, source.height)
-    issues.extend(_grid_boundary_issues(x_bands, grid_x_bands, axis_name="X"))
-    issues.extend(_grid_boundary_issues(y_bands, grid_y_bands, axis_name="Y"))
+    issues.extend(_grid_boundary_issues(mask, grid_x_bands, axis=0, axis_name="X"))
+    issues.extend(_grid_boundary_issues(mask, grid_y_bands, axis=1, axis_name="Y"))
     boxes = _cell_boxes(grid_x_bands, grid_y_bands) if columns and rows else ()
     cells = _make_cells(
         source,

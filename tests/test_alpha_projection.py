@@ -67,6 +67,21 @@ def test_alpha_gap_auto_rejects_equal_boundary_that_crosses_visible_band() -> No
         split_sprite_sheet(image, mode="alpha_gap_auto")
 
 
+def test_alpha_gap_auto_rejects_equal_boundary_that_crosses_thin_connected_decoration() -> None:
+    image = Image.new("RGBA", (64, 20), (0, 0, 0, 0))
+    color = (80, 140, 220, 255)
+    for y in range(5, 15):
+        for x in range(10, 20):
+            image.putpixel((x, y), color)
+        for x in range(40, 50):
+            image.putpixel((x, y), color)
+    for x in range(19, 37):
+        image.putpixel((x, 10), color)
+
+    with pytest.raises(ValueError, match="境界"):
+        split_sprite_sheet(image, mode="alpha_gap_auto")
+
+
 def test_fixed_grid_report_contains_cells_and_overlay() -> None:
     result = split_sprite_sheet(_grid_sheet(2, 2), mode="fixed_grid", columns=2, rows=2)
 

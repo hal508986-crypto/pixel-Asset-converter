@@ -150,6 +150,8 @@ def test_compile_character_animation_removes_stale_renamed_frames_on_rerun(tmp_p
     )
     assert len(first.final_frame_paths) == 2
     assert first.final_frame_paths[1].exists()
+    user_notes = output / "user_notes.txt"
+    user_notes.write_text("keep this file", encoding="utf-8")
 
     one_frame = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
     for y in range(3, 15):
@@ -166,6 +168,7 @@ def test_compile_character_animation_removes_stale_renamed_frames_on_rerun(tmp_p
     assert second.final_frame_paths[0].exists()
     assert not (output / "final_frames" / "F2_final.png").exists()
     assert not (output / "compiled" / "F2" / "final.png").exists()
+    assert user_notes.read_text(encoding="utf-8") == "keep this file"
 
 
 def test_compile_character_animation_failure_preserves_previous_success_output(tmp_path: Path) -> None:

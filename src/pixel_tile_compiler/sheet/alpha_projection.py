@@ -24,6 +24,7 @@ class SpriteSheetCell:
     row: int
     column: int
     source_box: SourceBox
+    content_box: SourceBox
     visible_pixel_count: int
     occupied_ratio: float
     valid: bool
@@ -34,6 +35,7 @@ class SpriteSheetCell:
             "row": self.row,
             "column": self.column,
             "source_box": list(self.source_box),
+            "content_box": list(self.content_box),
             "width": self.source_box[2] - self.source_box[0],
             "height": self.source_box[3] - self.source_box[1],
             "visible_pixel_count": self.visible_pixel_count,
@@ -201,6 +203,20 @@ def _cell_boxes(
     )
 
 
+def _grid_boundaries(bands: tuple[Band, ...], extent: int) -> tuple[Band, ...]:
+    """Turn detected band counts into equal source windows without moving pixels."""
+    if not bands:
+        return ()
+    count = len(bands)
+    return tuple(
+        (
+            round(index * extent / count),
+            round((index + 1) * extent / count),
+        )
+        for index in range(count)
+    )
+
+
 def _make_cells(
     source: Image.Image,
     boxes: tuple[SourceBox, ...],
@@ -210,6 +226,7 @@ def _make_cells(
     remove_small_components: bool,
     min_component_area_px: int,
     require_nonempty_each_cell: bool,
+    content_boxes: tuple[SourceBox, ...] | None = None,
 ) -> tuple[SpriteSheetCell, ...]:
     cells: list[SpriteSheetCell] = []
     for index, box in enumerate(boxes):
@@ -229,6 +246,7 @@ def _make_cells(
                 row=row,
                 column=column,
                 source_box=box,
+                content_box=content_boxes[index] if content_boxes is not None else box,
                 visible_pixel_count=visible_count,
                 occupied_ratio=visible_count / area,
                 valid=visible_count > 0 or not require_nonempty_each_cell,
@@ -295,6 +313,7 @@ def _fixed_grid(
         remove_small_components=remove_small_components,
         min_component_area_px=min_component_area_px,
         require_nonempty_each_cell=require_nonempty_each_cell,
+        content_boxes=tuple(boxes),
     )
     issues = tuple(
         f"セル{cell.index + 1}が空です"
@@ -368,7 +387,10 @@ def _auto_grid(
 
     columns = len(x_bands)
     rows = len(y_bands)
-    boxes = _cell_boxes(x_bands, y_bands) if columns and rows else ()
+    content_boxes = _cell_boxes(x_bands, y_bands) if columns and rows else ()
+    grid_x_bands = _grid_boundaries(x_bands, source.width)
+    grid_y_bands = _grid_boundaries(y_bands, source.height)
+    boxes = _cell_boxes(grid_x_bands, grid_y_bands) if columns and rows else ()
     cells = _make_cells(
         source,
         boxes,
@@ -377,14 +399,15 @@ def _auto_grid(
         remove_small_components=remove_small_components,
         min_component_area_px=min_component_area_px,
         require_nonempty_each_cell=require_nonempty_each_cell,
+        content_boxes=content_boxes,
     )
     if any(not cell.valid for cell in cells):
         issues.append("検出したセルに空のセルがあります")
     if issues:
         raise ValueError("alpha_gap_autoの検出に失敗しました: " + "; ".join(issues))
 
-    max_width = max(end - start for start, end in x_bands)
-    max_height = max(end - start for start, end in y_bands)
+    max_width = max(end - start for start, end in grid_x_bands)
+    max_height = max(end - start for start, end in grid_y_bands)
     frames: list[Image.Image] = []
     for box in boxes:
         cropped = source.crop(box)

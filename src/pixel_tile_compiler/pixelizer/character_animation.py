@@ -462,6 +462,7 @@ def compile_character_animation_sheet(
     with Image.open(source) as opened:
         prepared = prepare_character_animation_sheet(opened, config)
     output_root.mkdir(parents=True, exist_ok=True)
+    _clear_stale_animation_outputs(output_root)
     aligned_sheet_path = save_png(prepared.output_sheet, output_root / "aligned_sheet.png")
     report_path = save_json(prepared.report_as_dict(), output_root / "bbox_report.json")
     detection_overlay_path = None
@@ -520,6 +521,25 @@ def compile_character_animation_sheet(
         preview_8x_path,
         detection_overlay_path,
     )
+
+
+def _clear_stale_animation_outputs(output_root: Path) -> None:
+    """Remove only compiler-owned frame PNGs that exceed the current frame count."""
+    final_frames_root = output_root / "final_frames"
+    if final_frames_root.exists():
+        for path in final_frames_root.glob("F*_final.png"):
+            if path.is_file():
+                path.unlink()
+
+    compiled_root = output_root / "compiled"
+    if not compiled_root.exists():
+        return
+    for frame_root in compiled_root.iterdir():
+        if not frame_root.is_dir() or not frame_root.name.startswith("F") or not frame_root.name[1:].isdigit():
+            continue
+        final_path = frame_root / "final.png"
+        if final_path.is_file():
+            final_path.unlink()
 
 
 __all__ = [

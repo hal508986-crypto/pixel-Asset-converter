@@ -53,7 +53,7 @@ pixel-tile compile character.png --output output/character --palette 32 --tile-m
 
 ### 待機アニメーションSheetの共通トリミング
 
-キャラクターアニメーションSheetは、GUIまたはCLIで分割方式を選べます。`fixed_grid` は列数・行数を明示する確実な方式、`alpha_gap_auto` はアルファ射影と透明ガターから列・行を推定する方式、`hybrid` は自動推定に失敗した場合だけ指定グリッドへフォールバックする方式です。分割後は、フレームごとに個別trim・中央配置せず、全フレームの可視bboxから共通bboxと共通倍率を決めてから、水平中央・足元アンカーで配置します。
+キャラクターアニメーションSheetは、GUIまたはCLIで分割方式を選べます。`fixed_grid` は列数・行数を明示する確実な方式、`alpha_gap_auto` はアルファ射影と透明ガターから列・行を推定する方式、`hybrid` は自動推定に失敗した場合だけ指定グリッドへフォールバックする方式です。自動分割では検出用の可視帯と保存用の等分グリッドを分け、元Sheet内の共通座標を保ったまま切り出します。細い装飾を検出用の空帯判定で捨てないため、分割後も全フレームの可視bboxから共通bboxと共通倍率を決めて、水平中央・足元アンカーで配置します。
 
 ```powershell
 pixel-tile compile-character-animation character_idle_sheet.png `

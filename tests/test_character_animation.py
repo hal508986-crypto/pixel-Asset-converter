@@ -129,3 +129,39 @@ def test_compile_character_animation_collects_renamed_final_frames(tmp_path: Pat
     assert all(path.exists() for path in result.final_frame_paths)
     assert result.detection_overlay_path is not None
     assert result.detection_overlay_path.exists()
+
+
+def test_compile_character_animation_removes_stale_renamed_frames_on_rerun(tmp_path: Path) -> None:
+    source = tmp_path / "idle-sheet.png"
+    sheet = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    for frame in range(2):
+        left = frame * 20 + 5
+        for y in range(3, 15):
+            for x in range(left, left + 8):
+                sheet.putpixel((x, y), (80, 140, 220, 255))
+    sheet.save(source)
+    output = tmp_path / "output"
+
+    first = compile_character_animation_sheet(
+        source,
+        output,
+        config=CharacterAnimationConfig(frame_count=2),
+    )
+    assert len(first.final_frame_paths) == 2
+    assert first.final_frame_paths[1].exists()
+
+    one_frame = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
+    for y in range(3, 15):
+        for x in range(5, 13):
+            one_frame.putpixel((x, y), (80, 140, 220, 255))
+    one_frame.save(source)
+    second = compile_character_animation_sheet(
+        source,
+        output,
+        config=CharacterAnimationConfig(frame_count=1),
+    )
+
+    assert len(second.final_frame_paths) == 1
+    assert second.final_frame_paths[0].exists()
+    assert not (output / "final_frames" / "F2_final.png").exists()
+    assert not (output / "compiled" / "F2" / "final.png").exists()

@@ -290,7 +290,7 @@ class RiverNetworkRenderer:
             CompilerConfig(
                 output_root=output_root,
                 palette_budget=self.spec.palette_budget,
-                tile_mode="repeatable",
+                tile_mode="directional",
                 seed=self.spec.seed,
                 debug_enabled=self.spec.debug_enabled,
             ),

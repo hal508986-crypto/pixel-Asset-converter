@@ -421,7 +421,7 @@ class RoadGraphStudyRunner:
             CompilerConfig(
                 output_root=output_root,
                 palette_budget=config.palette_budget,
-                tile_mode="repeatable",
+                tile_mode="directional",
                 seed=config.seed,
                 debug_enabled=config.debug_enabled,
             ),

@@ -272,7 +272,7 @@ class MapCompiler:
         *,
         columns: int = 4,
         rows: int = 5,
-        tile_mode: str = "repeatable",
+        tile_mode: str = "directional",
         seed: int = 42,
     ) -> Image.Image:
         """Compile only the central tile while using its surrounding MAP context."""

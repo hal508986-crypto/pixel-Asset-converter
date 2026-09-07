@@ -35,6 +35,7 @@ pixel-tile compile source.png --output output/source --palette 16 --tile-mode re
 pixel-tile compile source.png --output output/source-off --tile-mode repeatable --no-repeat-opt
 pixel-tile compile-map map.png --output e2e/map_context_test --cols 4 --rows 5 --palette 24 --context 1 --shared-palette
 pixel-tile build-tileset assets/source/grass_master.png --output experiment/grass_tileset --variants 12 --edge-types 3 --palette 24 --map-cols 10 --map-rows 10
+pixel-tile compile-generated-sheet --spec specs/grass_surface_v1.json --image sheet.png --output e2e/compiled-sheet --palette 16
 pixel-tile gui
 ```
 
@@ -73,6 +74,12 @@ context_compiled.png  周辺context + shared palette + 境界補正
 ### Tileset Source Compiler実験
 
 `build-tileset` は1枚のMaterial Exemplarから、高解像度Source Tile群を作り、既存の `PixelTileCompiler` で64×64へ変換します。patch metadata、quiltのdebug、edge strip、Source Tile、pixel tile、契約付き10×10 MAP、A/B/C比較画像、metricsを同じ実験ディレクトリへ保存します。現在のmaterialは `grass` と `forest_canopy` に対応します。
+
+### Generated Sheet → 64pxコンパイル経路
+
+`process-generated-sheet` は従来どおり分割・最近傍正規化だけを行います。`compile-generated-sheet` は明示的な別経路で、元Sheetの高解像度セルを保存したまま `PixelTileCompiler` へ渡し、全セル共通palette・`directional`設定で64×64へ変換します。manifestにはセルID・行列・切り出し領域・入力/出力hashを記録し、`validation/report.json` は接続ID、入力マスク、最終PNGを別々に検査します。
+
+`surface` と `network` の構造契約だけが初回自動検査の対象です。`transition` など未対応のsemantic roleは未検証のまま採用扱いにせず拒否します。検査が通っても、画風・境界の自然さ・MAPとしての読みやすさは人手確認が必要です。
 
 ```text
 grass_master.png

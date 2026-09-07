@@ -48,7 +48,7 @@ from pixel_tile_compiler.character_study import (
     load_character_study_config,
     load_native_resolution_study_config,
 )
-from pixel_tile_compiler.asset.pipeline import process_generated_sheet, validate_asset_package
+from pixel_tile_compiler.asset.pipeline import compile_generated_sheet, process_generated_sheet, validate_asset_package
 from pixel_tile_compiler.generation.adapter import GenerationUnavailableError, UnconfiguredImageGenerationAdapter
 from pixel_tile_compiler.generation.pipeline import GenerationFirstPipeline
 from pixel_tile_compiler.generation.request_compiler import GenerationRequestCompiler
@@ -122,7 +122,7 @@ def compile_map(
     palette: int = typer.Option(24, "--palette", min=16, max=32, help="共有palette上限（16/24/32）"),
     context: int = typer.Option(1, "--context", min=0, help="周辺contextのtile幅"),
     shared_palette: bool = typer.Option(True, "--shared-palette/--no-shared-palette", help="MAP全体paletteを共有"),
-    tile_mode: str = typer.Option("repeatable", "--tile-mode", help="repeatable/directional/object"),
+    tile_mode: str = typer.Option("directional", "--tile-mode", help="repeatable/directional/object"),
 ) -> None:
     """高解像度MAPをA/B/C方式で64x64 tileへコンパイルします。"""
     output_dir = output or (Path("e2e") / "map_context_test")
@@ -504,6 +504,31 @@ def process_generated_sheet_command(
     except (OSError, ValueError, RuntimeError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(f"状態: {result.validation['status']}")
+    typer.echo(f"manifest: {result.manifest_path}")
+    typer.echo(f"validation: {result.validation_path}")
+
+
+@app.command("compile-generated-sheet")
+def compile_generated_sheet_command(
+    spec: Path = typer.Option(..., "--spec", exists=True, readable=True, help="TilesetSpec JSON"),
+    image: Path = typer.Option(..., "--image", exists=True, readable=True, help="高解像度の生成済みSheet PNG"),
+    output: Path = typer.Option(..., "--output", "-o", help="コンパイル済みAsset Package出力ディレクトリ"),
+    palette: int = typer.Option(16, "--palette", min=4, max=64, help="共有palette上限"),
+    debug: bool = typer.Option(False, "--debug/--no-debug", help="各セルのデバッグ画像を保存"),
+) -> None:
+    """高解像度セルをPixelTileCompilerへ渡して64x64 packageにします。"""
+    try:
+        result = compile_generated_sheet(
+            TilesetSpec.from_json_file(spec),
+            image,
+            output,
+            palette_budget=palette,
+            debug_enabled=debug,
+        )
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"状態: {result.validation['status']}")
+    typer.echo(f"map: {result.map_path}")
     typer.echo(f"manifest: {result.manifest_path}")
     typer.echo(f"validation: {result.validation_path}")
 

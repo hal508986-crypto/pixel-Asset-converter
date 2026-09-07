@@ -114,7 +114,7 @@ class NetworkTileCompiler:
             CompilerConfig(
                 output_root=output_root,
                 palette_budget=self.config.palette_budget,
-                tile_mode="repeatable",
+                tile_mode="directional",
                 seed=self.config.seed,
                 debug_enabled=self.config.debug_enabled,
             ),

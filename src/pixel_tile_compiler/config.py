@@ -165,7 +165,7 @@ class MapCompilerConfig:
     context_margin_tiles: int = 1
     shared_palette_enabled: bool = True
     global_palette_budget: int = 24
-    tile_mode: TileMode = "repeatable"
+    tile_mode: TileMode = "directional"
     semantic_provider: SemanticMode = "rule"
     seed: int = 42
     debug_enabled: bool = True

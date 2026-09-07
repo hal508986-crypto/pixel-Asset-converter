@@ -177,7 +177,7 @@ class TilesetSourceCompiler:
                 output_root=artifact_root,
                 palette_budget=config.palette_budget,
                 palette_colors=shared_palette,
-                tile_mode="repeatable",
+                tile_mode="directional",
                 seed=tile.spec.seed,
                 debug_enabled=config.debug_enabled,
             )

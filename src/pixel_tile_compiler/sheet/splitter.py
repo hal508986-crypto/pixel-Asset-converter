@@ -28,6 +28,49 @@ class GridSplitResult:
 
 
 class GridSplitter:
+    def extract_source_cells(
+        self,
+        image: Image.Image,
+        columns: int,
+        rows: int,
+        crop_policy: CropPolicy = "center",
+    ) -> tuple[SplitTile, ...]:
+        """Extract logical cells without resizing them.
+
+        This is the source-preserving counterpart to :meth:`split`.  Callers
+        that need compiler analysis must use these cells before any 64px
+        normalization so high-resolution structure is still available.
+        """
+
+        report = validate_sheet_structure(image, columns, rows)
+        if report.status == "rejected":
+            raise ValueError("sheet rejected: " + "; ".join(report.issues))
+        normalized = normalize_sheet(image, columns, rows, crop_policy)
+        cell_width = normalized.image.width // columns
+        cell_height = normalized.image.height // rows
+        return tuple(
+            SplitTile(
+                row=row,
+                column=column,
+                image=normalized.image.crop(
+                    (
+                        column * cell_width,
+                        row * cell_height,
+                        (column + 1) * cell_width,
+                        (row + 1) * cell_height,
+                    )
+                ),
+                source_box=(
+                    normalized.crop_box[0] + column * cell_width,
+                    normalized.crop_box[1] + row * cell_height,
+                    normalized.crop_box[0] + (column + 1) * cell_width,
+                    normalized.crop_box[1] + (row + 1) * cell_height,
+                ),
+            )
+            for row in range(rows)
+            for column in range(columns)
+        )
+
     def split(
         self,
         image: Image.Image,

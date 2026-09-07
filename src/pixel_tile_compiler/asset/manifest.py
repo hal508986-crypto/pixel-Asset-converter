@@ -18,6 +18,11 @@ class AssetTileRecord(BaseModel):
     material: str | None = None
     network: str | None = None
     connectors: tuple[str, ...] = ()
+    source_box: tuple[int, int, int, int] | None = None
+    source_sha256: str | None = None
+    final_sha256: str | None = None
+    palette_count: int | None = None
+    alpha_values: tuple[int, ...] = ()
 
 
 class TilesetManifest(BaseModel):

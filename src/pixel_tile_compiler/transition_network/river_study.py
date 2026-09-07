@@ -407,7 +407,7 @@ def _river_contract_for_tile(base_contract, cell, width):
 def _pixelize_if_enabled(config, image, output_root, source_name):
     if not config.pixelize:
         return None
-    result = PixelTileCompiler().compile_image(image, CompilerConfig(output_root=output_root, palette_budget=config.palette_budget, tile_mode="repeatable", seed=config.seed, debug_enabled=config.debug_enabled), source_name=source_name)
+    result = PixelTileCompiler().compile_image(image, CompilerConfig(output_root=output_root, palette_budget=config.palette_budget, tile_mode="directional", seed=config.seed, debug_enabled=config.debug_enabled), source_name=source_name)
     return Image.open(result.final_path).convert("RGBA").copy()
 
 

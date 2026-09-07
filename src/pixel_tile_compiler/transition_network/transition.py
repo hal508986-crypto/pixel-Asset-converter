@@ -6,7 +6,6 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from PIL import Image
-
 from pixel_tile_compiler.config import CompilerConfig
 from pixel_tile_compiler.io.exporter import save_json, save_png
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
@@ -62,6 +61,7 @@ class TransitionTileCompiler:
         second_image = _fit(source_b, self.config.source_size)
         tiles: list[SemanticTile] = []
         ordered = ((material_a, first_image, material_b, second_image), (material_b, second_image, material_a, first_image))
+        validation_reports: list[dict[str, object]] = []
         for first, first_material_image, second, second_material_image in ordered:
             for orientation in ("NS", "EW"):
                 for variant in range(self.config.variants):
@@ -90,6 +90,17 @@ class TransitionTileCompiler:
                     save_png(Image.fromarray(mask.astype("uint8") * 255, mode="L"), root / "masks" / f"{tile_id}.png")
                     if pixel_image is not None:
                         save_png(pixel_image, root / "pixel_tiles" / f"{tile_id}.png")
+                        from pixel_tile_compiler.asset.acceptance import validate_masked_transition_tile
+
+                        validation = validate_masked_transition_tile(
+                            source_image,
+                            pixel_image,
+                            mask,
+                            orientation,
+                            palette_budget=self.config.palette_budget,
+                        )
+                        validation_reports.append({"tile_id": tile_id, **validation})
+                        save_json(validation, root / "validation" / f"{tile_id}.json")
                     tiles.append(tile)
         save_json(
             {
@@ -101,6 +112,15 @@ class TransitionTileCompiler:
             },
             root / "manifest.json",
         )
+        if validation_reports:
+            save_json(
+                {
+                    "status": "accepted" if all(report["status"] == "accepted" for report in validation_reports) else "rejected",
+                    "adoption_status": "provisional_not_approved",
+                    "tiles": validation_reports,
+                },
+                root / "validation" / "report.json",
+            )
         return TransitionBuildResult(family_id, root, tuple(tiles))
 
     def build_network_handoff(
@@ -118,7 +138,7 @@ class TransitionTileCompiler:
             CompilerConfig(
                 output_root=output_root,
                 palette_budget=self.config.palette_budget,
-                tile_mode="repeatable",
+                tile_mode="directional",
                 seed=self.config.seed,
                 debug_enabled=self.config.debug_enabled,
             ),

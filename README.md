@@ -77,9 +77,9 @@ context_compiled.png  周辺context + shared palette + 境界補正
 
 ### Generated Sheet → 64pxコンパイル経路
 
-`process-generated-sheet` は従来どおり分割・最近傍正規化だけを行います。`compile-generated-sheet` は明示的な別経路で、元Sheetの高解像度セルを保存したまま `PixelTileCompiler` へ渡し、全セル共通palette・`directional`設定で64×64へ変換します。manifestにはセルID・行列・切り出し領域・入力/出力hashを記録し、`validation/report.json` は接続ID、入力マスク、最終PNGを別々に検査します。
+`process-generated-sheet` は従来どおり分割・最近傍正規化だけを行います。`compile-generated-sheet` は明示的な別経路で、元Sheetの高解像度セルを保存したまま `PixelTileCompiler` へ渡し、全セル共通palette・`directional`設定で64×64へ変換します。manifestにはセルID・行列・切り出し領域・入力/出力hashを記録し、`validation/report.json` は接続ID、入力マスク、最終PNGを別々に検査します。`surface` の `shared_edge_contract` は `validation_mode: exact_rgb` を明示した場合だけ、全順序対・両方向の完成PNG境界を検査します。
 
-`surface` と `network` の構造契約だけが初回自動検査の対象です。`transition` など未対応のsemantic roleは未検証のまま採用扱いにせず拒否します。検査が通っても、画風・境界の自然さ・MAPとしての読みやすさは人手確認が必要です。
+`surface` と `network` の構造契約だけが初回自動検査の対象です。契約が不足している場合や共有辺が不一致の場合は、未検証のまま採用扱いにせず拒否します。`transition` など未対応のsemantic roleも同様です。検査が通っても、画風・境界の自然さ・MAPとしての読みやすさは人手確認が必要です。
 
 ```text
 grass_master.png

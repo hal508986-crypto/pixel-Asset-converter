@@ -58,6 +58,7 @@ def build_grass_surface_spec(tileset_id: str = "grass_surface_v1") -> TilesetSpe
             edge_id="grass_shared_surface_edge",
             role="surface",
             shared_edge_rule="outer edge remains the same grass base without a visible grid line",
+            validation_mode="exact_rgb",
         ),
         tiles=tiles,
         generation=GenerationSpec(
@@ -126,6 +127,7 @@ def generate_network_tileset_spec(
                 allowed_topologies=tuple(topology.value for topology in (NetworkTopology.EMPTY, *_ROAD_TOPOLOGIES)),
                 connector_width_ratio=0.22,
                 connector_rule="road body reaches every listed connector and no unlisted edge",
+                empty_tile_rule="uniform_background",
             )
         },
         tiles=tiles,

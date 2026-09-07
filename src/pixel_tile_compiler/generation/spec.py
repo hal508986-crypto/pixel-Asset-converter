@@ -54,6 +54,7 @@ class EdgeContract(_ContractModel):
     shared_edge_rule: str = "same base material continues across the cell edge"
     safe_zone_ratio: float = Field(default=0.08, ge=0.0, le=0.5)
     forbidden_artifacts: tuple[str, ...] = ("strong grid line", "gutter", "text")
+    validation_mode: Literal["exact_rgb"] | None = None
 
 
 class NetworkContract(_ContractModel):
@@ -63,6 +64,7 @@ class NetworkContract(_ContractModel):
     forbidden_topologies: tuple[str, ...] = ()
     connector_width_ratio: float = Field(default=0.22, gt=0.0, le=1.0)
     connector_rule: str = "connectors meet the exact cell edge center"
+    empty_tile_rule: Literal["uniform_background"] | None = None
 
     @field_validator("allowed_topologies")
     @classmethod

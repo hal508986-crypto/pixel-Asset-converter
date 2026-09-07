@@ -531,6 +531,8 @@ def compile_generated_sheet_command(
     typer.echo(f"map: {result.map_path}")
     typer.echo(f"manifest: {result.manifest_path}")
     typer.echo(f"validation: {result.validation_path}")
+    if result.validation["status"] == "rejected":
+        raise typer.Exit(code=1)
 
 
 @app.command("validate-tileset")

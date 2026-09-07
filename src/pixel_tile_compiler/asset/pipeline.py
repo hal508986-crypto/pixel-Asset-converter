@@ -296,6 +296,7 @@ def compile_generated_sheet(
         final_images,
         spec.network_contracts,
         palette_budget=palette_budget,
+        shared_edge_contract=spec.shared_edge_contract,
     )
     validation.update(
         {
@@ -340,6 +341,7 @@ def compile_generated_sheet(
         "crop_policy": spec.postprocess.crop_policy,
         "normalization_mode_for_split_only_comparison": spec.postprocess.normalize_mode,
         "shared_palette": {"enabled": True, "budget": palette_budget, "colors": [list(color) for color in shared_palette]},
+        "shared_edge_contract": spec.shared_edge_contract.model_dump(mode="json") if spec.shared_edge_contract else None,
         "compiler": {
             "tile_mode": "directional",
             "repeat_opt_enabled": False,
@@ -417,6 +419,7 @@ def validate_asset_package(output_root: Path) -> dict[str, object]:
                 final_images,
                 spec.network_contracts,
                 palette_budget=palette_budget,
+                shared_edge_contract=spec.shared_edge_contract,
             )
             if gate["status"] != "accepted":
                 issues.append("compiled tile contract gate rejected the package")

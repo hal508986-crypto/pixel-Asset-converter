@@ -561,8 +561,13 @@ class TerrainBatchWindow(QMainWindow):
         if self.table.rowCount():
             row = current if select_current and 0 <= current < self.table.rowCount() else max(0, min(current, self.table.rowCount() - 1))
             self.table.setCurrentCell(row, 1)
+            self._refresh_selected_row_detail()
         self.batch_info.setText(f"{len(self.batch.items)}件 / {'読み取り専用' if self.batch.read_only else '保存可能'}")
         self._update_actions()
+
+    def _refresh_selected_row_detail(self) -> None:
+        """Refresh detail and previews even when the current cell did not change."""
+        self._on_current_row_changed(self.table.currentRow())
 
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
         if self.batch is None or self._running or item.column() != 0:

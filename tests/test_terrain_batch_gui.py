@@ -124,6 +124,52 @@ def test_batch_window_runs_initial_and_fixed_actions_offscreen(tmp_path: Path, m
         window.close()
 
 
+def test_batch_completion_refreshes_selected_preview_without_row_switch(tmp_path: Path, monkeypatch) -> None:
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.terrain_batch_window import TerrainBatchWindow
+
+    app = QApplication.instance() or QApplication([])
+    source = tmp_path / "terrain.png"
+    _source(source)
+    service = TerrainBatchService()
+    batch = service.create_batch(
+        [source],
+        CompilerConfig(output_root=tmp_path / "unused", debug_enabled=False),
+        output_root=tmp_path / "batches",
+    )
+    window = TerrainBatchWindow(service=service)
+    window.set_batch(batch)
+
+    def wait_for_idle() -> None:
+        deadline = time.monotonic() + 10
+        while window._running and time.monotonic() < deadline:
+            app.processEvents()
+        assert window._running is False
+
+    try:
+        window.run_initial()
+        wait_for_idle()
+        initial = batch.items[0].latest_success
+        assert initial is not None
+        assert window.final_preview.path == initial.final_path
+
+        window.set_reference_from_selection()
+        window.run_fixed()
+        wait_for_idle()
+        fixed = batch.items[0].latest_success
+        assert fixed is not None
+        assert fixed.phase == "fixed"
+        assert window.final_preview.path == fixed.final_path
+    finally:
+        if window._thread is not None:
+            window._thread.quit()
+            window._thread.wait(2000)
+        window.close()
+
+
 def test_batch_initial_run_uses_settings_changed_after_images_were_added(tmp_path: Path, monkeypatch) -> None:
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")

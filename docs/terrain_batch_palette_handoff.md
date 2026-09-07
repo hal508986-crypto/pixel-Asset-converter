@@ -23,6 +23,11 @@
 
 回帰テストでは、8色・領域設定への変更反映、固定再変換での前回条件維持、統一前後finalの切替、一覧スウォッチの色とRGB/HEX表示を確認する。
 
+## 追加査読指摘への修正
+
+- 変換完了時に一覧を再構築しても、同じセルの選択変更シグナルに依存せず、現在行の詳細・元絵・比較finalを明示的に再適用する。初回変換と固定パレット再変換のどちらでも、切替操作なしに最新finalを表示する。
+- 回帰テスト `test_batch_completion_refreshes_selected_preview_without_row_switch` で、初回・固定再変換の完了後に選択行を切り替えず最新finalがプレビューへ反映されることを確認する。
+
 ## 実装上の契約
 
 - 初期値は `元絵を保持` (`nearest`)、24色、繰り返し最適化無効。
@@ -93,7 +98,7 @@ py -3.10 -m compileall -q src scripts tests
 git diff --check
 ```
 
-結果: focused regression `29 passed in 4.89s`、full suite `247 passed in 94.24s`、compileall成功、`git diff --check`成功。
+結果: focused regression `33 passed in 6.26s`、full suite `251 passed in 95.58s`、compileall成功、`git diff --check`成功。
 
 追加テストは、透明RGB除外、実使用色の順序、固定色の部分集合、4色未満の基準、原画再入力、hash不一致、条件不足、スナップショット不変、run衝突防止、失敗継続、中止、旧manifestの読み取り専用・final色抽出、GUIの操作状態を含む。
 
@@ -106,4 +111,4 @@ git diff --check
 - 小さいウィンドウ幅、DPI倍率、長い日本語ファイル名でボタンと比較欄が隠れないことを確認する。
 - palette.jsonを移動・再読込した場合の運用UIは、現段階では読み取りと履歴保存の範囲である。
 
-この作業ではcommit/pushを行っていない。既存の別作業の変更と既存の生成画像は保全している。
+既存の別作業の変更（未追跡の `unused/` を含む）と既存の生成画像は保全している。

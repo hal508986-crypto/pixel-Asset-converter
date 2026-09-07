@@ -9,6 +9,7 @@ from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
     align_character_frames,
     analyze_frame_alpha,
+    compile_character_animation_sheet,
     prepare_character_animation_sheet,
 )
 
@@ -99,3 +100,32 @@ def test_compiler_can_preserve_pre_aligned_character_frames(tmp_path: Path) -> N
     )
 
     assert Image.open(result.final_path).getchannel("A").getbbox() == (8, 4, 16, 12)
+
+
+def test_compile_character_animation_collects_renamed_final_frames(tmp_path: Path) -> None:
+    source = tmp_path / "idle-sheet.png"
+    sheet = Image.new("RGBA", (80, 20), (0, 0, 0, 0))
+    for frame in range(4):
+        left = frame * 20 + 5
+        for y in range(3, 15):
+            for x in range(left, left + 8):
+                sheet.putpixel((x, y), (80, 140, 220, 255))
+    sheet.save(source)
+
+    result = compile_character_animation_sheet(
+        source,
+        tmp_path / "output",
+        config=CharacterAnimationConfig(frame_count=4),
+        debug_enabled=True,
+    )
+
+    assert [path.name for path in result.final_frame_paths] == [
+        "F1_final.png",
+        "F2_final.png",
+        "F3_final.png",
+        "F4_final.png",
+    ]
+    assert all(path.parent.name == "final_frames" for path in result.final_frame_paths)
+    assert all(path.exists() for path in result.final_frame_paths)
+    assert result.detection_overlay_path is not None
+    assert result.detection_overlay_path.exists()

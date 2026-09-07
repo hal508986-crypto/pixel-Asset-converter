@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import Path
+from shutil import copyfile
 from typing import Literal
 
 import numpy as np
 from PIL import Image
 
 from pixel_tile_compiler.io.exporter import save_json, save_png
-from pixel_tile_compiler.sheet.normalizer import normalize_sheet
+from pixel_tile_compiler.sheet.alpha_projection import (
+    SplitMode,
+    alpha_occupancy_mask,
+    split_sprite_sheet,
+)
 
 
 @dataclass(frozen=True)
@@ -69,6 +74,9 @@ class CharacterAnimationConfig:
     """Deterministic preparation settings for a horizontal character sheet."""
 
     frame_count: int = 4
+    split_mode: SplitMode = "fixed_grid"
+    grid_columns: int | None = None
+    grid_rows: int | None = None
     canvas_size: tuple[int, int] = (64, 64)
     fit_within: tuple[int, int] = (54, 54)
     bottom_margin: int = 6
@@ -80,10 +88,21 @@ class CharacterAnimationConfig:
     anchor_x: Literal["center"] = "center"
     anchor_y: Literal["foot"] = "foot"
     outline_width: int = 0
+    empty_column_threshold: int = 2
+    empty_row_threshold: int = 2
+    min_gutter_width_px: int = 2
+    max_cell_size_variance_ratio: float = 1.25
+    require_nonempty_each_cell: bool = True
 
     def __post_init__(self) -> None:
         if self.frame_count < 1:
             raise ValueError("frame_count must be positive")
+        if self.split_mode not in {"fixed_grid", "alpha_gap_auto", "hybrid"}:
+            raise ValueError("split_mode must be fixed_grid, alpha_gap_auto, or hybrid")
+        if self.grid_columns is not None and self.grid_columns < 1:
+            raise ValueError("grid_columns must be positive")
+        if self.grid_rows is not None and self.grid_rows < 1:
+            raise ValueError("grid_rows must be positive")
         if min(self.canvas_size) < 1 or min(self.fit_within) < 1:
             raise ValueError("canvas_size and fit_within must be positive")
         if self.bottom_margin < 0:
@@ -96,10 +115,26 @@ class CharacterAnimationConfig:
             raise ValueError("padding_px must be non-negative")
         if self.outline_width < 0:
             raise ValueError("outline_width must be non-negative")
+        if self.empty_column_threshold < 0 or self.empty_row_threshold < 0:
+            raise ValueError("empty band thresholds must be non-negative")
+        if self.min_gutter_width_px < 1:
+            raise ValueError("min_gutter_width_px must be positive")
+        if self.max_cell_size_variance_ratio < 1.0:
+            raise ValueError("max_cell_size_variance_ratio must be at least 1")
+        if self.remainder_policy not in {"center_crop", "error"}:
+            raise ValueError("remainder_policy must be center_crop or error")
         if self.fit_within[0] + self.outline_width * 2 > self.canvas_size[0]:
             raise ValueError("fit width does not fit canvas with outline")
         if self.fit_within[1] + self.outline_width * 2 + self.bottom_margin > self.canvas_size[1]:
             raise ValueError("fit height and bottom margin do not fit canvas with outline")
+
+    @property
+    def grid_size(self) -> tuple[int, int]:
+        """Return the explicit grid used by fixed mode and hybrid fallback."""
+        return (
+            self.grid_columns if self.grid_columns is not None else self.frame_count,
+            self.grid_rows if self.grid_rows is not None else 1,
+        )
 
 
 @dataclass(frozen=True)
@@ -141,6 +176,8 @@ class CharacterAnimationResult:
     crop_box: tuple[int, int, int, int]
     normalized_sheet_size: tuple[int, int]
     config: CharacterAnimationConfig
+    split_report: dict[str, object] = field(default_factory=dict)
+    detection_overlay: Image.Image | None = None
 
     @property
     def output_sheet(self) -> Image.Image:
@@ -171,6 +208,7 @@ class CharacterAnimationResult:
                 report.as_dict(union_bbox=self.union_bbox, scale=self.scale, config=self.config)
                 for report in self.frame_reports
             ],
+            "sprite_sheet_split": self.split_report,
         }
 
 
@@ -181,56 +219,16 @@ def split_horizontal_sheet(
     remainder_policy: Literal["center_crop", "error"] = "center_crop",
 ) -> tuple[tuple[Image.Image, ...], tuple[int, int, int, int], tuple[int, int]]:
     """Split a horizontal sheet into equal source cells without resizing them."""
-    source = image.convert("RGBA")
     if frame_count < 1:
         raise ValueError("frame_count must be positive")
-    if source.width % frame_count and remainder_policy == "error":
-        raise ValueError("sheet width must be divisible by frame_count")
-    normalized = normalize_sheet(source, frame_count, 1, crop_policy="center")
-    cell_width = normalized.image.width // frame_count
-    frames = tuple(
-        normalized.image.crop((index * cell_width, 0, (index + 1) * cell_width, normalized.image.height))
-        for index in range(frame_count)
+    result = split_sprite_sheet(
+        image,
+        mode="fixed_grid",
+        columns=frame_count,
+        rows=1,
+        remainder_policy=remainder_policy,
     )
-    return frames, normalized.crop_box, normalized.image.size
-
-
-def _binary_alpha(image: Image.Image, threshold: int) -> np.ndarray:
-    alpha = np.asarray(image.convert("RGBA").getchannel("A"), dtype=np.uint8)
-    return alpha >= threshold
-
-
-def _remove_small_components(mask: np.ndarray, min_area: int) -> tuple[np.ndarray, int]:
-    """Remove 8-connected components smaller than ``min_area``."""
-    if min_area <= 1 or not mask.any():
-        return mask.copy(), 0
-
-    height, width = mask.shape
-    kept = np.zeros_like(mask, dtype=bool)
-    visited = np.zeros_like(mask, dtype=bool)
-    removed_pixels = 0
-    for start_y, start_x in np.argwhere(mask):
-        y0, x0 = int(start_y), int(start_x)
-        if visited[y0, x0]:
-            continue
-        stack = [(y0, x0)]
-        component: list[tuple[int, int]] = []
-        visited[y0, x0] = True
-        while stack:
-            y, x = stack.pop()
-            component.append((y, x))
-            for next_y in range(max(0, y - 1), min(height, y + 2)):
-                for next_x in range(max(0, x - 1), min(width, x + 2)):
-                    if not mask[next_y, next_x] or visited[next_y, next_x]:
-                        continue
-                    visited[next_y, next_x] = True
-                    stack.append((next_y, next_x))
-        if len(component) >= min_area:
-            for y, x in component:
-                kept[y, x] = True
-        else:
-            removed_pixels += len(component)
-    return kept, removed_pixels
+    return result.frames, result.crop_box, result.normalized_size
 
 
 def analyze_frame_alpha(
@@ -246,9 +244,12 @@ def analyze_frame_alpha(
     if min_component_area_px < 1:
         raise ValueError("min_component_area_px must be positive")
     source = image.convert("RGBA")
-    mask = _binary_alpha(source, alpha_threshold)
-    if remove_isolated_components:
-        mask, _ = _remove_small_components(mask, min_component_area_px)
+    mask, _ = alpha_occupancy_mask(
+        source,
+        alpha_threshold=alpha_threshold,
+        remove_small_components=remove_isolated_components,
+        min_component_area_px=min_component_area_px,
+    )
     bbox = None
     if mask.any():
         ys, xs = np.where(mask)
@@ -329,7 +330,16 @@ def align_character_frames(
                 bbox=bbox,
                 visible_pixel_count=_visible_pixel_count(cleaned),
                 removed_isolated_pixel_count=(
-                    int(np.count_nonzero(_binary_alpha(frame, config.alpha_threshold)))
+                    int(
+                        np.count_nonzero(
+                            alpha_occupancy_mask(
+                                frame,
+                                alpha_threshold=config.alpha_threshold,
+                                remove_small_components=False,
+                                min_component_area_px=config.min_component_area_px,
+                            )[0]
+                        )
+                    )
                     - _visible_pixel_count(cleaned)
                 ),
                 status="ready" if bbox is not None else "empty",
@@ -391,22 +401,32 @@ def prepare_character_animation_sheet(
     image: Image.Image,
     config: CharacterAnimationConfig | None = None,
 ) -> CharacterAnimationResult:
-    """Split a horizontal sheet and align all frames against one layout."""
+    """Split a regular sheet and align all frames against one layout."""
     config = config or CharacterAnimationConfig()
-    frames, crop_box, normalized_size = split_horizontal_sheet(
+    columns, rows = config.grid_size
+    split = split_sprite_sheet(
         image,
-        config.frame_count,
+        mode=config.split_mode,
+        columns=columns,
+        rows=rows,
+        alpha_threshold=config.alpha_threshold,
+        remove_small_components=config.remove_isolated_components,
+        min_component_area_px=config.min_component_area_px,
+        empty_column_threshold=config.empty_column_threshold,
+        empty_row_threshold=config.empty_row_threshold,
+        min_gutter_width_px=config.min_gutter_width_px,
+        max_cell_size_variance_ratio=config.max_cell_size_variance_ratio,
+        require_nonempty_each_cell=config.require_nonempty_each_cell,
         remainder_policy=config.remainder_policy,
     )
-    result = align_character_frames(frames, config)
-    return CharacterAnimationResult(
-        result.aligned_frames,
-        result.frame_reports,
-        result.union_bbox,
-        result.scale,
-        crop_box,
-        normalized_size,
-        config,
+    alignment_config = replace(config, frame_count=split.frame_count)
+    result = align_character_frames(split.frames, alignment_config)
+    return replace(
+        result,
+        crop_box=split.crop_box,
+        normalized_sheet_size=split.normalized_size,
+        split_report=split.report_as_dict(),
+        detection_overlay=split.detection_overlay,
     )
 
 
@@ -416,8 +436,10 @@ class CharacterAnimationCompileResult:
     aligned_sheet_path: Path
     report_path: Path
     frame_paths: tuple[Path, ...]
+    final_frame_paths: tuple[Path, ...]
     compiled_sheet_path: Path
     preview_8x_path: Path
+    detection_overlay_path: Path | None
 
 
 def compile_character_animation_sheet(
@@ -442,6 +464,9 @@ def compile_character_animation_sheet(
     output_root.mkdir(parents=True, exist_ok=True)
     aligned_sheet_path = save_png(prepared.output_sheet, output_root / "aligned_sheet.png")
     report_path = save_json(prepared.report_as_dict(), output_root / "bbox_report.json")
+    detection_overlay_path = None
+    if debug_enabled and prepared.detection_overlay is not None:
+        detection_overlay_path = save_png(prepared.detection_overlay, output_root / "detection_overlay.png")
 
     frame_paths: list[Path] = []
     compiler = PixelTileCompiler()
@@ -464,6 +489,14 @@ def compile_character_animation_sheet(
         )
         compiled = compiler.compile_image(frame, compiler_config, source_name=f"{source}::F{index + 1}")
         frame_paths.append(compiled.final_path)
+    final_frames_root = output_root / "final_frames"
+    final_frames_root.mkdir(parents=True, exist_ok=True)
+    final_frame_paths = tuple(
+        final_frames_root / f"F{index + 1}_final.png"
+        for index in range(len(frame_paths))
+    )
+    for frame_path, final_frame_path in zip(frame_paths, final_frame_paths):
+        copyfile(frame_path, final_frame_path)
     compiled_sheet = Image.new(
         "RGBA",
         (config.canvas_size[0] * len(frame_paths), config.canvas_size[1]),
@@ -482,8 +515,10 @@ def compile_character_animation_sheet(
         aligned_sheet_path,
         report_path,
         tuple(frame_paths),
+        final_frame_paths,
         compiled_sheet_path,
         preview_8x_path,
+        detection_overlay_path,
     )
 
 

@@ -43,6 +43,11 @@ GUI_TERRAIN_PIXELIZATION_OPTIONS = (
     ("元絵を保持", "nearest"),
     ("領域を整理", "region"),
 )
+GUI_ANIMATION_SPLIT_OPTIONS = (
+    ("固定グリッド（明示）", "fixed_grid"),
+    ("アルファ自動分割", "alpha_gap_auto"),
+    ("ハイブリッド（推奨）", "hybrid"),
+)
 
 
 def resolve_character_gui_profile(canvas_size: tuple[int, int] = (128, 128)) -> CharacterGuiProfile:
@@ -55,12 +60,16 @@ def resolve_character_gui_profile(canvas_size: tuple[int, int] = (128, 128)) -> 
 
 def resolve_character_animation_gui_profile(
     canvas_size: tuple[int, int] = (128, 128),
+    frame_count: int = 4,
 ) -> CharacterAnimationGuiProfile:
     """Resolve animation layout values proportionally to the selected square canvas."""
+    if frame_count < 1:
+        raise ValueError("animation frame_count must be positive")
     normalized = resolve_character_gui_profile(canvas_size).canvas_size
     width, height = normalized
     return CharacterAnimationGuiProfile(
         canvas_size=normalized,
+        frame_count=frame_count,
         fit_within=(_scale_half_up(54, width, 64), _scale_half_up(54, height, 64)),
         bottom_margin=_scale_half_up(6, height, 64),
     )
@@ -107,13 +116,14 @@ def build_output_path(
         repeat_label = "on" if repeat_opt_enabled else "off"
         variant = f"terrain_64x64_{pixelization_mode}_{int(palette_budget)}c_repeat-{repeat_label}"
     else:
-        raise ValueError("purpose must be character or terrain")
+        raise ValueError("purpose must be character, character_animation, or terrain")
     return root / source.stem / variant
 
 
 __all__ = [
     "CharacterAnimationGuiProfile",
     "CharacterGuiProfile",
+    "GUI_ANIMATION_SPLIT_OPTIONS",
     "GUI_CHARACTER_CANVAS_SIZES",
     "GUI_TERRAIN_PIXELIZATION_OPTIONS",
     "TerrainGuiProfile",

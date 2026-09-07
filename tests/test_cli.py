@@ -50,8 +50,44 @@ def test_cli_compile_character_animation_exports_aligned_sheet_and_report(tmp_pa
     assert Image.open(output / "compiled_sheet.png").size == (256, 64)
     assert Image.open(output / "compiled_sheet_8x.png").size == (2048, 512)
     assert all(Image.open(output / "compiled" / f"F{index}" / "final.png").size == (64, 64) for index in range(1, 5))
+    assert all((output / "final_frames" / f"F{index}_final.png").exists() for index in range(1, 5))
     assert {frame["placed_bbox"]["bottom"] for frame in report["frames"]} == {58}
     assert {frame["clipped"] for frame in report["frames"]} == {False}
+
+
+def test_cli_compile_character_animation_supports_alpha_gap_auto_and_grid_fallback(tmp_path: Path):
+    source = tmp_path / "grid-sheet.png"
+    sheet = Image.new("RGBA", (48, 44), (0, 0, 0, 0))
+    for row in range(2):
+        for column in range(2):
+            left = column * 24 + 5
+            top = row * 22 + 4
+            for y in range(top, top + 10):
+                for x in range(left, left + 8):
+                    sheet.putpixel((x, y), (80, 140, 220, 255))
+    sheet.save(source)
+    output = tmp_path / "grid-output"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile-character-animation",
+            str(source),
+            "--output",
+            str(output),
+            "--split-mode",
+            "alpha_gap_auto",
+            "--debug",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    report = json.loads((output / "bbox_report.json").read_text(encoding="utf-8"))
+    split_report = report["sprite_sheet_split"]
+    assert split_report["columns"] == 2
+    assert split_report["rows"] == 2
+    assert split_report["frame_count"] == 4
+    assert (output / "detection_overlay.png").exists()
 
 
 def test_cli_compile_accepts_character_profile_options(tmp_path: Path):

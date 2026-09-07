@@ -199,3 +199,38 @@ def test_main_window_exposes_character_animation_and_canvas_size_selection(monke
         assert "64×64" in window.auto_profile.text()
     finally:
         window.close()
+
+
+def test_main_window_exposes_animation_split_modes_and_fixed_grid_controls(monkeypatch):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        app.processEvents()
+        assert [window.animation_split_mode.itemData(index) for index in range(window.animation_split_mode.count())] == [
+            "fixed_grid",
+            "alpha_gap_auto",
+            "hybrid",
+        ]
+        assert window.animation_columns.isVisible()
+        assert window.animation_rows.isVisible()
+
+        window.animation_split_mode.setCurrentIndex(window.animation_split_mode.findData("alpha_gap_auto"))
+        app.processEvents()
+        assert window.animation_columns.isHidden()
+        assert window.animation_rows.isHidden()
+
+        window.animation_split_mode.setCurrentIndex(window.animation_split_mode.findData("hybrid"))
+        app.processEvents()
+        assert window.animation_columns.isVisible()
+        assert window.animation_rows.isVisible()
+    finally:
+        window.close()

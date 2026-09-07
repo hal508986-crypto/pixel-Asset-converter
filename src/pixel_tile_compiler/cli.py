@@ -119,9 +119,12 @@ def compile(
 
 @app.command("compile-character-animation")
 def compile_character_animation_command(
-    source: Path = typer.Argument(..., exists=True, readable=True, help="横一列のキャラクターアニメーションSheet PNG"),
+    source: Path = typer.Argument(..., exists=True, readable=True, help="キャラクターアニメーションSheet PNG"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="アニメーション出力ディレクトリ"),
-    frames: int = typer.Option(4, "--frames", min=1, help="横一列のフレーム数"),
+    split_mode: str = typer.Option("fixed_grid", "--split-mode", help="fixed_grid/alpha_gap_auto/hybrid"),
+    columns: int = typer.Option(4, "--cols", min=1, help="fixed_gridまたはhybridフォールバック時の列数"),
+    rows: int = typer.Option(1, "--rows", min=1, help="fixed_gridまたはhybridフォールバック時の行数"),
+    frames: Optional[int] = typer.Option(None, "--frames", min=1, help="後方互換: --cols N --rows 1 と同じ"),
     palette: int = typer.Option(24, "--palette", min=4, max=64, help="各フレームのパレット上限"),
     alpha_threshold: int = typer.Option(16, "--alpha-threshold", min=0, max=255, help="可視扱いするアルファ閾値"),
     min_component_area: int = typer.Option(3, "--min-component-area", min=1, help="残す孤立成分の最小面積"),
@@ -130,13 +133,24 @@ def compile_character_animation_command(
     fit_width: int = typer.Option(54, "--fit-width", min=1, help="共通bboxの最大幅"),
     fit_height: int = typer.Option(54, "--fit-height", min=1, help="共通bboxの最大高さ"),
     bottom_margin: int = typer.Option(6, "--bottom-margin", min=0, help="64x64下端から足元までの余白"),
+    empty_column_threshold: int = typer.Option(2, "--empty-column-threshold", min=0, help="空列とみなす可視画素数の上限"),
+    empty_row_threshold: int = typer.Option(2, "--empty-row-threshold", min=0, help="空行とみなす可視画素数の上限"),
+    min_gutter_width: int = typer.Option(2, "--min-gutter-width", min=1, help="境界とみなす透明ガター幅"),
+    max_cell_variance: float = typer.Option(1.25, "--max-cell-variance", min=1.0, help="セル幅・高さの最大ばらつき比"),
+    require_nonempty: bool = typer.Option(True, "--require-nonempty/--allow-empty", help="検出セルを空にしない"),
     remainder_policy: str = typer.Option("center_crop", "--remainder-policy", help="center_crop/error"),
     character_detail: str = typer.Option("balanced", "--character-detail", help="sparse/balanced/detailed"),
     outline: str = typer.Option("off", "--outline", help="off/black/white"),
     debug: bool = typer.Option(False, "--debug/--no-debug", help="各フレームのデバッグ画像を保存"),
 ) -> None:
-    """横一列のキャラクター待機アニメーションを共通配置で64x64化します。"""
+    """キャラクターアニメーションSheetを分割し、共通配置で64x64化します。"""
     output_dir = output or (Path("output") / f"{source.stem}_animation")
+    if split_mode not in {"fixed_grid", "alpha_gap_auto", "hybrid"}:
+        raise typer.BadParameter("split_modeはfixed_grid、alpha_gap_auto、hybridのいずれかです", param_hint="--split-mode")
+    if frames is not None:
+        if columns != 4 or rows != 1:
+            raise typer.BadParameter("--framesは--cols/--rowsと併用できません", param_hint="--frames")
+        columns, rows = frames, 1
     if remainder_policy not in {"center_crop", "error"}:
         raise typer.BadParameter("remainder_policyはcenter_cropまたはerrorです", param_hint="--remainder-policy")
     if character_detail not in {"sparse", "balanced", "detailed"}:
@@ -148,13 +162,21 @@ def compile_character_animation_command(
             source,
             output_dir,
             config=CharacterAnimationConfig(
-                frame_count=frames,
+                frame_count=columns * rows,
+                split_mode=split_mode,  # type: ignore[arg-type]
+                grid_columns=columns,
+                grid_rows=rows,
                 fit_within=(fit_width, fit_height),
                 bottom_margin=bottom_margin,
                 alpha_threshold=alpha_threshold,
                 remove_isolated_components=remove_isolated,
                 min_component_area_px=min_component_area,
                 padding_px=padding,
+                empty_column_threshold=empty_column_threshold,
+                empty_row_threshold=empty_row_threshold,
+                min_gutter_width_px=min_gutter_width,
+                max_cell_size_variance_ratio=max_cell_variance,
+                require_nonempty_each_cell=require_nonempty,
                 remainder_policy=remainder_policy,  # type: ignore[arg-type]
                 outline_width=1 if outline != "off" else 0,
             ),
@@ -170,6 +192,9 @@ def compile_character_animation_command(
     typer.echo(f"出力Sheet: {result.compiled_sheet_path}")
     typer.echo(f"8倍プレビュー: {result.preview_8x_path}")
     typer.echo(f"bboxレポート: {result.report_path}")
+    typer.echo(f"final集約: {result.final_frame_paths[0].parent}")
+    if result.detection_overlay_path is not None:
+        typer.echo(f"分割確認画像: {result.detection_overlay_path}")
     for frame_path in result.frame_paths:
         typer.echo(f"フレーム: {frame_path}")
 

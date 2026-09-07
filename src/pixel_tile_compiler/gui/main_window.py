@@ -29,6 +29,7 @@ from pixel_tile_compiler.config import CanvasSpec, compiler_config_for_purpose
 from pixel_tile_compiler.gui.canvas import CanvasState, ZOOMS
 from pixel_tile_compiler.gui.input import first_supported_image_path
 from pixel_tile_compiler.gui.policy import (
+    GUI_ANIMATION_SPLIT_OPTIONS,
     GUI_TERRAIN_PIXELIZATION_OPTIONS,
     build_output_path,
     resolve_character_animation_gui_profile,
@@ -250,6 +251,21 @@ class MainWindow(QMainWindow):
         self.canvas_size.addItem("128 × 128（推奨）", userData=(128, 128))
         self.canvas_size.addItem("64 × 64", userData=(64, 64))
         self.canvas_size.currentIndexChanged.connect(self._update_canvas_selection)
+        self.animation_split_mode = QComboBox()
+        for label, mode in GUI_ANIMATION_SPLIT_OPTIONS:
+            self.animation_split_mode.addItem(label, userData=mode)
+        self.animation_split_mode_label = QLabel("アニメーション分割方式")
+        self.animation_columns = QSpinBox()
+        self.animation_columns.setRange(1, 64)
+        self.animation_columns.setValue(4)
+        self.animation_columns_label = QLabel("分割列数")
+        self.animation_rows = QSpinBox()
+        self.animation_rows.setRange(1, 64)
+        self.animation_rows.setValue(1)
+        self.animation_rows_label = QLabel("分割行数")
+        self.animation_split_mode.currentIndexChanged.connect(self._update_purpose_controls)
+        self.animation_columns.valueChanged.connect(self._update_purpose_controls)
+        self.animation_rows.valueChanged.connect(self._update_purpose_controls)
         self.auto_profile = QLabel()
         self.palette = QSpinBox()
         self.palette.setRange(4, 64)
@@ -307,6 +323,9 @@ class MainWindow(QMainWindow):
         settings_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         settings_form.addRow("用途", self.purpose)
         settings_form.addRow("論理ピクセル", self.canvas_size)
+        settings_form.addRow(self.animation_split_mode_label, self.animation_split_mode)
+        settings_form.addRow(self.animation_columns_label, self.animation_columns)
+        settings_form.addRow(self.animation_rows_label, self.animation_rows)
         settings_form.addRow("自動最適化", self.auto_profile)
         settings_form.addRow(self.pixelization_mode_label, self.pixelization_mode)
         settings_form.addRow(self.palette_label, self.palette)
@@ -436,7 +455,8 @@ class MainWindow(QMainWindow):
         self.repeat_opt_label.setVisible(not is_character)
         self.repeat_opt.setVisible(not is_character)
         self.terrain_batch_button.setVisible(not is_character)
-        self.secondary_preview_label.setText("アニメーションSheet（8倍）" if is_animation else "繰り返し確認")
+        self.secondary_preview_label.setText("アニメーションシート（8倍）" if is_animation else "繰り返し確認")
+        self._update_animation_split_controls()
         if is_character:
             self.repeat_opt.setCurrentIndex(1)
             self._update_canvas_selection()
@@ -457,10 +477,19 @@ class MainWindow(QMainWindow):
             return
         canvas_size = self.canvas_size.currentData()
         if purpose == "character_animation":
-            profile = resolve_character_animation_gui_profile(canvas_size)
+            columns = self.animation_columns.value()
+            rows = self.animation_rows.value()
+            profile = resolve_character_animation_gui_profile(canvas_size, frame_count=columns * rows)
             self.canvas.set_canvas_size(profile.canvas_size)
+            split_mode = self.animation_split_mode.currentData()
+            if split_mode == "fixed_grid":
+                split_summary = f"{columns}列×{rows}行"
+            elif split_mode == "hybrid":
+                split_summary = f"自動推定（失敗時{columns}列×{rows}行）"
+            else:
+                split_summary = "列・行を自動推定"
             self.auto_profile.setText(
-                f"B24 / {profile.canvas_size[0]}×{profile.canvas_size[1]} / 4フレーム / 共通bbox・足元固定"
+                f"B24 / {profile.canvas_size[0]}×{profile.canvas_size[1]} / {split_summary} / 共通bbox・足元固定"
             )
             self._clear_stale_result(profile.canvas_size)
             return
@@ -470,6 +499,23 @@ class MainWindow(QMainWindow):
             f"B24 / {profile.canvas_size[0]}×{profile.canvas_size[1]} / バランス / 元絵から直接"
         )
         self._clear_stale_result(profile.canvas_size)
+
+    def _update_animation_split_controls(self) -> None:
+        is_animation = self.purpose.currentData() == "character_animation"
+        split_mode = self.animation_split_mode.currentData()
+        show_grid = is_animation and split_mode in {"fixed_grid", "hybrid"}
+        for widget in (self.animation_split_mode_label, self.animation_split_mode):
+            widget.setVisible(is_animation)
+        for widget in (
+            self.animation_columns_label,
+            self.animation_columns,
+            self.animation_rows_label,
+            self.animation_rows,
+        ):
+            widget.setVisible(show_grid)
+        self.animation_split_mode.setEnabled(is_animation)
+        self.animation_columns.setEnabled(show_grid)
+        self.animation_rows.setEnabled(show_grid)
 
     def _clear_stale_result(self, selected_size: tuple[int, int] | None = None) -> None:
         if self._compiled_canvas_size is None:
@@ -539,7 +585,12 @@ class MainWindow(QMainWindow):
             output_root = self._selected_output_root()
             purpose = self.purpose.currentData()
             if purpose == "character_animation":
-                profile = resolve_character_animation_gui_profile(self.canvas_size.currentData())
+                columns = self.animation_columns.value()
+                rows = self.animation_rows.value()
+                profile = resolve_character_animation_gui_profile(
+                    self.canvas_size.currentData(),
+                    frame_count=columns * rows,
+                )
                 width, height = profile.canvas_size
                 output = build_output_path(
                     output_root,
@@ -552,6 +603,9 @@ class MainWindow(QMainWindow):
                     output,
                     config=CharacterAnimationConfig(
                         frame_count=profile.frame_count,
+                        split_mode=self.animation_split_mode.currentData(),  # type: ignore[arg-type]
+                        grid_columns=columns,
+                        grid_rows=rows,
                         canvas_size=profile.canvas_size,
                         fit_within=profile.fit_within,
                         bottom_margin=profile.bottom_margin,
@@ -569,12 +623,13 @@ class MainWindow(QMainWindow):
                     " / ".join(
                         [
                             f"出力 {width}×{height}",
-                            f"4フレーム（{width * 4}×{height} Sheet）",
+                            f"{len(animation.frame_paths)}フレーム（{width * len(animation.frame_paths)}×{height} Sheet）",
+                            f"フレーム集約 {animation.final_frame_paths[0].parent}",
                             f"保存先 {output}",
                         ]
                     )
                 )
-                self.status.setText("完了: 共通bbox・足元アンカーで待機アニメーションを出力しました")
+                self.status.setText("完了: 分割・共通bbox・足元アンカーで待機アニメーションを出力しました")
                 return
             if purpose == "character":
                 profile = resolve_character_gui_profile(self.canvas_size.currentData())

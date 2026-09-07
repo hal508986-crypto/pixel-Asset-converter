@@ -53,17 +53,18 @@ pixel-tile compile character.png --output output/character --palette 32 --tile-m
 
 ### 待機アニメーションSheetの共通トリミング
 
-横一列に並んだキャラクター待機アニメーションは、フレームごとに個別trim・中央配置せず、全フレームの可視bboxから共通bboxと共通倍率を決めてから、水平中央・足元アンカーで64×64へ配置します。半透明ノイズの閾値、孤立成分除去、padding、分割余りの扱いを指定できます。
+キャラクターアニメーションSheetは、GUIまたはCLIで分割方式を選べます。`fixed_grid` は列数・行数を明示する確実な方式、`alpha_gap_auto` はアルファ射影と透明ガターから列・行を推定する方式、`hybrid` は自動推定に失敗した場合だけ指定グリッドへフォールバックする方式です。分割後は、フレームごとに個別trim・中央配置せず、全フレームの可視bboxから共通bboxと共通倍率を決めてから、水平中央・足元アンカーで配置します。
 
 ```powershell
 pixel-tile compile-character-animation character_idle_sheet.png `
   --output output/character_idle_animation `
-  --frames 4 --alpha-threshold 16 --min-component-area 3 `
+  --split-mode hybrid --cols 4 --rows 1 `
+  --alpha-threshold 16 --min-component-area 3 `
   --padding 1 --fit-width 54 --fit-height 54 --bottom-margin 6 `
-  --remainder-policy center_crop --character-detail balanced
+  --min-gutter-width 2 --debug --character-detail balanced
 ```
 
-出力には、共通配置前の `aligned_sheet.png`、減色後の `compiled_sheet.png`、最近傍8倍の `compiled_sheet_8x.png`、各フレームの `compiled/F1/final.png` など、`bbox_report.json` を保存します。`bbox_report.json` には各フレームの可視bbox、union bbox、共通倍率、配置bbox、足元アンカー、クリップ有無を記録します。
+`--frames 4` は従来互換で、`--cols 4 --rows 1` と同じです。出力には、共通配置前の `aligned_sheet.png`、減色後の `compiled_sheet.png`、最近傍8倍の `compiled_sheet_8x.png`、分割確認用の `detection_overlay.png`（`--debug` 時）、各フレームの `compiled/F1/final.png` を保存します。さらに `final_frames/F1_final.png` のように、分割後の `final.png` を1フォルダへリネーム集約します。`bbox_report.json` には各フレームの可視bbox、union bbox、共通倍率、配置bbox、足元アンカー、クリップ有無に加えて、検出モード、行列数、各セル、信頼度、fallback有無を記録します。
 
 ### Repeatability optimization
 

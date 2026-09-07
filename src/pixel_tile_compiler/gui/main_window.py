@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QPushButton,
     QSpinBox,
@@ -26,7 +27,13 @@ from PySide6.QtWidgets import (
 
 from pixel_tile_compiler.config import CanvasSpec, compiler_config_for_purpose
 from pixel_tile_compiler.gui.canvas import CanvasState, ZOOMS
-from pixel_tile_compiler.gui.policy import resolve_character_gui_profile
+from pixel_tile_compiler.gui.input import first_supported_image_path
+from pixel_tile_compiler.gui.policy import (
+    GUI_TERRAIN_PIXELIZATION_OPTIONS,
+    build_output_path,
+    resolve_character_gui_profile,
+    resolve_terrain_gui_profile,
+)
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 
 
@@ -82,6 +89,38 @@ class ImagePreview(QLabel):
         left = (self.width() - scaled.width()) // 2
         top = (self.height() - scaled.height()) // 2
         painter.drawImage(left, top, scaled)
+
+
+class SourceImagePreview(ImagePreview):
+    """Image preview that accepts one supported local image by drag-and-drop."""
+
+    image_dropped = Signal(object)
+
+    def __init__(self, empty_text: str) -> None:
+        super().__init__(empty_text)
+        self.setAcceptDrops(True)
+        self.setToolTip("元絵をここへドロップできます。透明部分は市松模様で表示します")
+
+    @staticmethod
+    def _path_from_event(event) -> Path | None:  # type: ignore[no-untyped-def]
+        if not event.mimeData().hasUrls():
+            return None
+        paths = [url.toLocalFile() for url in event.mimeData().urls() if url.isLocalFile()]
+        return first_supported_image_path(paths)
+
+    def dragEnterEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        if self._path_from_event(event) is None:
+            event.ignore()
+            return
+        event.acceptProposedAction()
+
+    def dropEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        path = self._path_from_event(event)
+        if path is None:
+            event.ignore()
+            return
+        self.image_dropped.emit(path)
+        event.acceptProposedAction()
 
 
 class PixelCanvas(QGraphicsView):
@@ -182,12 +221,21 @@ class MainWindow(QMainWindow):
         self.resize(1440, 860)
         self.source_path: Path | None = None
         self._compiled_canvas_size: tuple[int, int] | None = None
-        self.source_preview = ImagePreview("元絵を読み込んでください")
+        self._terrain_batch_window = None
+        self.default_output_root = Path.cwd() / "output"
+        self.source_preview = SourceImagePreview("元絵を読み込んでください\nまたはここにドロップ")
+        self.source_preview.image_dropped.connect(self.set_source_path)
         self.result_preview = ImagePreview("コンパイル結果")
         self.tile_preview = ImagePreview("タイルプレビュー")
         self.canvas = PixelCanvas()
         self.status = QLabel("元絵を読み込むと始められます")
         self.metrics = QLabel("出力情報はここに表示されます")
+        self.output_root_field = QLineEdit(str(self.default_output_root))
+        self.output_root_field.setToolTip("コンパイル結果を保存するフォルダ")
+        self.output_root_field.setCursorPosition(0)
+        self.output_root_field.textChanged.connect(self._on_output_root_changed)
+        self.output_browse_button = QPushButton("参照...")
+        self.output_browse_button.clicked.connect(self.choose_output_directory)
         self.purpose = QComboBox()
         self.purpose.addItem("キャラクター", userData="character")
         self.purpose.addItem("地形（64×64）", userData="terrain")
@@ -201,10 +249,18 @@ class MainWindow(QMainWindow):
         self.palette.setRange(4, 64)
         self.palette.setValue(24)
         self.palette_label = QLabel("地形palette")
+        self.pixelization_mode = QComboBox()
+        for label, mode in GUI_TERRAIN_PIXELIZATION_OPTIONS:
+            self.pixelization_mode.addItem(label, userData=mode)
+        self.pixelization_mode_label = QLabel("地形の変換方法")
         self.repeat_opt = QComboBox()
         self.repeat_opt.addItem("有効", userData=True)
         self.repeat_opt.addItem("無効", userData=False)
+        self.repeat_opt.setCurrentIndex(1)
         self.repeat_opt_label = QLabel("繰り返し最適化")
+        self.pixelization_mode.currentIndexChanged.connect(self._update_purpose_controls)
+        self.palette.valueChanged.connect(self._on_terrain_setting_changed)
+        self.repeat_opt.currentIndexChanged.connect(self._on_terrain_setting_changed)
         self.zoom = QComboBox()
         for value in ZOOMS:
             self.zoom.addItem(f"{value}×", userData=value)
@@ -231,6 +287,8 @@ class MainWindow(QMainWindow):
         self.compile_button.setObjectName("primaryButton")
         self.compile_button.clicked.connect(self.compile_image)
         self.compile_button.setEnabled(False)
+        self.terrain_batch_button = QPushButton("地形をまとめて変換")
+        self.terrain_batch_button.clicked.connect(self.open_terrain_batch)
 
         source_group = QGroupBox("1. 元絵")
         source_layout = QVBoxLayout(source_group)
@@ -243,9 +301,18 @@ class MainWindow(QMainWindow):
         settings_form.addRow("用途", self.purpose)
         settings_form.addRow("論理ピクセル", self.canvas_size)
         settings_form.addRow("自動最適化", self.auto_profile)
+        settings_form.addRow(self.pixelization_mode_label, self.pixelization_mode)
         settings_form.addRow(self.palette_label, self.palette)
         settings_form.addRow(self.repeat_opt_label, self.repeat_opt)
+        output_row = QWidget()
+        output_row_layout = QHBoxLayout(output_row)
+        output_row_layout.setContentsMargins(0, 0, 0, 0)
+        output_row_layout.setSpacing(6)
+        output_row_layout.addWidget(self.output_root_field, 1)
+        output_row_layout.addWidget(self.output_browse_button)
+        settings_form.addRow("保存先", output_row)
         settings_form.addRow(self.compile_button)
+        settings_form.addRow(self.terrain_batch_button)
 
         controls = QVBoxLayout()
         controls.addWidget(source_group)
@@ -320,7 +387,7 @@ class MainWindow(QMainWindow):
             QLabel { font-size: 14px; }
             QLabel#sectionTitle { font-size: 18px; font-weight: 700; color: #f0c674; }
             QLabel#mutedText { color: #9da6b2; font-size: 12px; }
-            QComboBox, QSpinBox {
+            QComboBox, QSpinBox, QLineEdit {
                 min-height: 32px;
                 border: 1px solid #48515d;
                 border-radius: 5px;
@@ -350,19 +417,29 @@ class MainWindow(QMainWindow):
     def _update_purpose_controls(self) -> None:
         is_character = self.purpose.currentData() == "character"
         self.canvas_size.setEnabled(is_character)
+        self.pixelization_mode.setEnabled(not is_character)
         self.palette.setEnabled(not is_character)
         self.repeat_opt.setEnabled(not is_character)
+        self.pixelization_mode_label.setVisible(not is_character)
+        self.pixelization_mode.setVisible(not is_character)
         self.palette_label.setVisible(not is_character)
         self.palette.setVisible(not is_character)
         self.repeat_opt_label.setVisible(not is_character)
         self.repeat_opt.setVisible(not is_character)
+        self.terrain_batch_button.setVisible(not is_character)
         if is_character:
             self.repeat_opt.setCurrentIndex(1)
             self._update_canvas_selection()
         else:
-            self.auto_profile.setText("地形はMAP契約に合わせて64×64")
+            profile = resolve_terrain_gui_profile(self.pixelization_mode.currentData())
+            self.auto_profile.setText(f"地形は64×64 / {profile.label} / {self.palette.value()}色")
             self.canvas.set_canvas_size((64, 64))
         self._clear_stale_result()
+
+    def _on_terrain_setting_changed(self, _value: object = None) -> None:
+        if self.purpose.currentData() != "terrain":
+            return
+        self._update_purpose_controls()
 
     def _update_canvas_selection(self) -> None:
         if self.purpose.currentData() != "character":
@@ -390,6 +467,40 @@ class MainWindow(QMainWindow):
     def _change_zoom(self) -> None:
         self.canvas.set_zoom(int(self.zoom.currentData()))
 
+    def _selected_output_root(self) -> Path:
+        raw_path = self.output_root_field.text().strip()
+        if not raw_path:
+            raise ValueError("保存先を指定してください")
+        return Path(raw_path).expanduser()
+
+    def _on_output_root_changed(self, _text: str) -> None:
+        if self._compiled_canvas_size is None:
+            return
+        self._clear_stale_result()
+        self.status.setText("保存先を変更しました。再コンパイルしてください")
+
+    def choose_output_directory(self) -> None:
+        current = self.output_root_field.text().strip() or str(self.default_output_root)
+        path = QFileDialog.getExistingDirectory(self, "保存先を選択", current)
+        if not path:
+            return
+        self.output_root_field.setText(path)
+        self.output_root_field.setCursorPosition(0)
+        self._clear_stale_result()
+        self.status.setText("保存先を変更しました。再コンパイルしてください")
+
+    def set_source_path(self, path: Path | str) -> bool:
+        source = first_supported_image_path([path])
+        if source is None:
+            self.status.setText("対応している画像ファイルを指定してください（PNG/JPEG/WebP）")
+            return False
+        self.source_path = source
+        self.source_preview.set_image(source)
+        self._clear_stale_result()
+        self.compile_button.setEnabled(True)
+        self.status.setText(f"元絵を読み込みました: {source.name}")
+        return True
+
     def open_image(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self,
@@ -399,22 +510,24 @@ class MainWindow(QMainWindow):
         )
         if not path:
             return
-        self.source_path = Path(path)
-        self.source_preview.set_image(self.source_path)
-        self._clear_stale_result()
-        self.compile_button.setEnabled(True)
-        self.status.setText(f"元絵を読み込みました: {self.source_path.name}")
+        self.set_source_path(path)
 
     def compile_image(self) -> None:
         if self.source_path is None:
             self.status.setText("先に元絵を読み込んでください")
             return
         try:
+            output_root = self._selected_output_root()
             purpose = self.purpose.currentData()
             if purpose == "character":
                 profile = resolve_character_gui_profile(self.canvas_size.currentData())
                 width, height = profile.canvas_size
-                output = Path("output") / self.source_path.stem / f"character_{width}x{height}_b24"
+                output = build_output_path(
+                    output_root,
+                    self.source_path,
+                    purpose="character",
+                    canvas_size=(width, height),
+                )
                 config = compiler_config_for_purpose(
                     "character",
                     output_root=output,
@@ -425,13 +538,25 @@ class MainWindow(QMainWindow):
                 )
             else:
                 width, height = 64, 64
-                output = Path("output") / self.source_path.stem / "terrain_64x64"
+                terrain_profile = resolve_terrain_gui_profile(self.pixelization_mode.currentData())
+                palette_budget = self.palette.value()
+                repeat_opt_enabled = bool(self.repeat_opt.currentData())
+                output = build_output_path(
+                    output_root,
+                    self.source_path,
+                    purpose="terrain",
+                    canvas_size=(width, height),
+                    pixelization_mode=terrain_profile.pixelization_mode,
+                    palette_budget=palette_budget,
+                    repeat_opt_enabled=repeat_opt_enabled,
+                )
                 config = compiler_config_for_purpose(
                     "terrain",
                     output_root=output,
                     canvas=CanvasSpec(width, height),
-                    palette_budget=self.palette.value(),
-                    repeat_opt_enabled=self.repeat_opt.currentData(),
+                    palette_budget=palette_budget,
+                    pixelization_mode=terrain_profile.pixelization_mode,
+                    repeat_opt_enabled=repeat_opt_enabled,
                     debug_enabled=True,
                 )
             result = PixelTileCompiler().compile(self.source_path, config)
@@ -459,3 +584,18 @@ class MainWindow(QMainWindow):
             self.status.setText("完了: B24をCanvasに合わせて自動適用しました")
         else:
             self.status.setText("完了: 64×64地形タイルを出力しました")
+
+    def open_terrain_batch(self) -> None:
+        """Open the terrain-only batch window without changing single-image behavior."""
+        try:
+            output_root = self._selected_output_root()
+        except ValueError as exc:
+            self.status.setText(f"一括変換を開けませんでした: {exc}")
+            return
+        if self._terrain_batch_window is None:
+            from pixel_tile_compiler.gui.terrain_batch_window import TerrainBatchWindow
+
+            self._terrain_batch_window = TerrainBatchWindow(output_root=output_root)
+        self._terrain_batch_window.show()
+        self._terrain_batch_window.raise_()
+        self._terrain_batch_window.activateWindow()

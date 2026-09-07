@@ -1,5 +1,6 @@
 """Orchestrate the deterministic image-to-tile compilation stages."""
 
+import hashlib
 import logging
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -92,6 +93,25 @@ def _palette_count(image: Image.Image) -> int:
     return len({pixel[:3] for pixel in image.convert("RGBA").getdata() if pixel[3] != 0})
 
 
+def _palette_colors(image: Image.Image) -> list[list[int]]:
+    colors = {
+        tuple(int(channel) for channel in pixel[:3])
+        for pixel in image.convert("RGBA").getdata()
+        if pixel[3] != 0
+    }
+    return [list(color) for color in sorted(colors)]
+
+
+def _source_sha256(source_name: Path | str) -> str | None:
+    source_path = Path(source_name)
+    if not source_path.is_file():
+        return None
+    try:
+        return hashlib.sha256(source_path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
 def _outline_rgba(color: str) -> tuple[int, int, int, int] | None:
     if color == "off":
         return None
@@ -157,6 +177,7 @@ class PixelTileCompiler:
         debug_paths: dict[str, Path] = {}
 
         loaded = image.convert("RGBA").copy()
+        source_hash = _source_sha256(source_name)
         background_resolved = apply_background(
             loaded,
             mode=config.background_mode,
@@ -277,6 +298,11 @@ class PixelTileCompiler:
         )
         metadata: dict[str, Any] = {
             "source": str(source_name),
+            "source_image": {
+                "path": str(source_name),
+                "sha256": source_hash,
+                "dimensions": [int(loaded.width), int(loaded.height)],
+            },
             "config": config.as_dict(),
             "output_canvas": {"width": config.width, "height": config.height},
             "analysis_canvas": {"width": config.work_size, "height": config.work_size},
@@ -300,6 +326,14 @@ class PixelTileCompiler:
             "repeatability_optimization": {
                 "enabled": config.repeat_opt_enabled,
                 "applied": repeatability_applied,
+            },
+            "transformation": {
+                "pixelization_mode": config.pixelization_mode,
+                "palette_budget": config.palette_budget,
+                "actual_palette_count": metrics.actual_palette_count,
+                "palette_colors": _palette_colors(final),
+                "repeat_opt_enabled": config.repeat_opt_enabled,
+                "repeat_opt_applied": repeatability_applied,
             },
             "pipeline": [
                 "load",

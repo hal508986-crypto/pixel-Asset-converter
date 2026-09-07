@@ -5,8 +5,8 @@ __pycache__/
 build/
 dist/
 /output/
-!Output/
-!Output/**
+# Compiler-generated output is local-only. Existing tracked fixtures remain tracked.
+/Output/*
 
 # E2E experiments are reproducible local outputs; keep existing tracked fixtures,
 # but do not add new generated E2E directories and assets by default.

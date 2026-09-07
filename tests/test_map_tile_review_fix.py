@@ -189,6 +189,18 @@ def test_surface_contract_role_mismatch_rejects_the_tileset() -> None:
 
 
 def test_compile_generated_sheet_cli_does_not_succeed_for_rejected_gate(tmp_path) -> None:
+    source = tmp_path / "source.png"
+    sheet = Image.new("RGBA", (256, 256), BACKGROUND)
+    draw = ImageDraw.Draw(sheet)
+    for row in range(4):
+        for column in range(4):
+            color = (20, 100, 20, 255) if (row + column) % 2 == 0 else (230, 230, 20, 255)
+            draw.rectangle(
+                (column * 64, row * 64, column * 64 + 63, row * 64 + 63),
+                fill=color,
+            )
+    sheet.save(source)
+
     result = CliRunner().invoke(
         app,
         [
@@ -196,7 +208,7 @@ def test_compile_generated_sheet_cli_does_not_succeed_for_rejected_gate(tmp_path
             "--spec",
             "specs/grass_surface_v1.json",
             "--image",
-            "e2e/map_tile_review_trial_20260907/source_raw.png",
+            str(source),
             "--output",
             str(tmp_path / "compiled"),
             "--palette",

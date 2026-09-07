@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QProgressBar,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
@@ -305,7 +306,12 @@ class TerrainBatchWindow(QMainWindow):
         root.addWidget(self.status)
         container = QWidget()
         container.setLayout(root)
-        self.setCentralWidget(container)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setWidget(container)
+        self.setCentralWidget(scroll_area)
         self.setStyleSheet(
             """
             QMainWindow, QWidget { background: #1d2127; color: #eef1f5; }

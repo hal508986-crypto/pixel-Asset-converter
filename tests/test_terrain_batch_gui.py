@@ -81,6 +81,31 @@ def test_main_window_shows_batch_entry_only_for_terrain(monkeypatch) -> None:
         window.close()
 
 
+def test_terrain_batch_window_scrolls_to_bottom_actions_in_small_viewport(monkeypatch) -> None:
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication, QScrollArea
+
+    from pixel_tile_compiler.gui.terrain_batch_window import TerrainBatchWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = TerrainBatchWindow()
+    window.resize(640, 480)
+    window.show()
+    app.processEvents()
+    try:
+        scroll_area = window.centralWidget()
+        assert isinstance(scroll_area, QScrollArea)
+        assert scroll_area.verticalScrollBar().maximum() > 0
+
+        scroll_area.verticalScrollBar().setValue(scroll_area.verticalScrollBar().maximum())
+        app.processEvents()
+        bottom = window.cancel_button.mapTo(scroll_area.viewport(), window.cancel_button.rect().bottomLeft())
+        assert 0 <= bottom.y() < scroll_area.viewport().height()
+    finally:
+        window.close()
+
+
 def test_batch_window_runs_initial_and_fixed_actions_offscreen(tmp_path: Path, monkeypatch) -> None:
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")

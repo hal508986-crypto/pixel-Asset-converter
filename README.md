@@ -51,6 +51,20 @@ pixel-tile compile character.png --output output/character --palette 32 --tile-m
 
 `--pixelization nearest` は入力画像を直接64×64へ最近傍縮小します。可視ピクセルが入力キャンバス端に接している場合は、その側だけ透明な2px余白を補ってから縮小し、頭頂や輪郭が端で詰まるのを防ぎます。`--outline black` または `--outline white` は透過部分の外側1pxだけに輪郭を追加します。輪郭を含む最終画像はRGBA PNGとして保存されます。既定値の `region` と `outline=off` は従来のMAPタイル経路のままです。
 
+### 待機アニメーションSheetの共通トリミング
+
+横一列に並んだキャラクター待機アニメーションは、フレームごとに個別trim・中央配置せず、全フレームの可視bboxから共通bboxと共通倍率を決めてから、水平中央・足元アンカーで64×64へ配置します。半透明ノイズの閾値、孤立成分除去、padding、分割余りの扱いを指定できます。
+
+```powershell
+pixel-tile compile-character-animation character_idle_sheet.png `
+  --output output/character_idle_animation `
+  --frames 4 --alpha-threshold 16 --min-component-area 3 `
+  --padding 1 --fit-width 54 --fit-height 54 --bottom-margin 6 `
+  --remainder-policy center_crop --character-detail balanced
+```
+
+出力には、共通配置前の `aligned_sheet.png`、減色後の `compiled_sheet.png`、最近傍8倍の `compiled_sheet_8x.png`、各フレームの `compiled/F1/final.png` など、`bbox_report.json` を保存します。`bbox_report.json` には各フレームの可視bbox、union bbox、共通倍率、配置bbox、足元アンカー、クリップ有無を記録します。
+
 ### Repeatability optimization
 
 `tile_mode=repeatable` かつ `repeat_opt_enabled=true` のときだけ、palette-preservingな後処理を行います。左右・上下端をwrap-awareに対応させ、既存paletteから端の対応色を選び、中心dominant clusterの外周だけを弱めます。blurや補間、新しいalpha値は使いません。

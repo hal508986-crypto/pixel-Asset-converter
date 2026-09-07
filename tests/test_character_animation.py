@@ -1,0 +1,101 @@
+from pathlib import Path
+
+from PIL import Image
+
+from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
+from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+from pixel_tile_compiler.pixelizer.character_animation import (
+    AlphaBoundingBox,
+    CharacterAnimationConfig,
+    align_character_frames,
+    analyze_frame_alpha,
+    prepare_character_animation_sheet,
+)
+
+
+def _frame_with_visible_box(
+    box: tuple[int, int, int, int],
+    *,
+    size: tuple[int, int] = (20, 12),
+) -> Image.Image:
+    image = Image.new("RGBA", size, (0, 0, 0, 0))
+    for y in range(box[1], box[3]):
+        for x in range(box[0], box[2]):
+            image.putpixel((x, y), (80, 140, 220, 255))
+    return image
+
+
+def test_analyze_frame_alpha_thresholds_and_removes_tiny_islands() -> None:
+    image = _frame_with_visible_box((3, 4, 8, 9))
+    image.putpixel((1, 1), (255, 0, 0, 8))
+    image.putpixel((10, 2), (255, 0, 0, 255))
+    image.putpixel((11, 2), (255, 0, 0, 255))
+
+    cleaned, bbox = analyze_frame_alpha(image, alpha_threshold=16, min_component_area_px=3)
+
+    assert bbox == AlphaBoundingBox(3, 4, 8, 9)
+    assert cleaned.getchannel("A").getbbox() == (3, 4, 8, 9)
+    assert set(cleaned.getchannel("A").getdata()) <= {0, 255}
+
+
+def test_align_character_frames_uses_union_scale_and_fixed_foot_baseline() -> None:
+    first = _frame_with_visible_box((4, 2, 9, 8))
+    second = _frame_with_visible_box((5, 1, 11, 9))
+    config = CharacterAnimationConfig(
+        frame_count=2,
+        canvas_size=(32, 32),
+        fit_within=(20, 20),
+        bottom_margin=3,
+        padding_px=1,
+    )
+
+    result = align_character_frames((first, second), config)
+
+    assert result.union_bbox == AlphaBoundingBox(3, 0, 12, 10)
+    assert result.scale == 2.0
+    assert [frame.size for frame in result.aligned_frames] == [(32, 32), (32, 32)]
+    assert [frame.getchannel("A").getbbox()[3] for frame in result.aligned_frames] == [29, 29]
+    assert result.frame_reports[0].bbox == AlphaBoundingBox(4, 2, 9, 8)
+    assert result.frame_reports[1].bbox == AlphaBoundingBox(5, 1, 11, 9)
+
+
+def test_prepare_character_animation_sheet_splits_non_divisible_width_deterministically() -> None:
+    sheet = Image.new("RGBA", (19, 8), (0, 0, 0, 0))
+    config = CharacterAnimationConfig(frame_count=4)
+
+    result = prepare_character_animation_sheet(sheet, config)
+
+    assert result.crop_box == (1, 0, 17, 8)
+    assert len(result.aligned_frames) == 4
+    assert {report.status for report in result.frame_reports} == {"empty"}
+
+
+def test_prepare_character_animation_sheet_can_reject_non_divisible_width() -> None:
+    sheet = Image.new("RGBA", (19, 8), (0, 0, 0, 0))
+
+    try:
+        prepare_character_animation_sheet(sheet, CharacterAnimationConfig(remainder_policy="error"))
+    except ValueError as exc:
+        assert "divisible" in str(exc)
+    else:
+        raise AssertionError("non-divisible sheet width must be rejected in error mode")
+
+
+def test_compiler_can_preserve_pre_aligned_character_frames(tmp_path: Path) -> None:
+    source = _frame_with_visible_box((8, 4, 16, 12), size=(32, 32))
+    result = PixelTileCompiler().compile_image(
+        source,
+        CompilerConfig(
+            output_root=tmp_path / "aligned",
+            canvas=CanvasSpec(32, 32),
+            palette_budget=16,
+            tile_mode="object",
+            pixelization_mode="nearest",
+            character_input_mode="pre_aligned",
+            repeat_opt_enabled=False,
+            smoothing_enabled=False,
+            debug_enabled=False,
+        ),
+    )
+
+    assert Image.open(result.final_path).getchannel("A").getbbox() == (8, 4, 16, 12)

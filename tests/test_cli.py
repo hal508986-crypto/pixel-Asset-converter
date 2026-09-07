@@ -18,6 +18,42 @@ def test_cli_compile_creates_output(tmp_path: Path):
     assert (output / "final.png").exists()
 
 
+def test_cli_compile_character_animation_exports_aligned_sheet_and_report(tmp_path: Path):
+    source = tmp_path / "idle-sheet.png"
+    sheet = Image.new("RGBA", (80, 20), (0, 0, 0, 0))
+    for frame in range(4):
+        left = frame * 20 + 5 + frame % 2
+        for y in range(2 + frame % 2, 16):
+            for x in range(left, left + 8):
+                sheet.putpixel((x, y), (80, 140, 220, 255))
+    sheet.putpixel((frame * 20 + 18, 1), (255, 0, 0, 8))
+    sheet.save(source)
+    output = tmp_path / "idle-output"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile-character-animation",
+            str(source),
+            "--output",
+            str(output),
+            "--frames",
+            "4",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    report = json.loads((output / "bbox_report.json").read_text(encoding="utf-8"))
+    assert report["frame_count"] == 4
+    assert len({frame["scale"] for frame in report["frames"]}) == 1
+    assert Image.open(output / "aligned_sheet.png").size == (256, 64)
+    assert Image.open(output / "compiled_sheet.png").size == (256, 64)
+    assert Image.open(output / "compiled_sheet_8x.png").size == (2048, 512)
+    assert all(Image.open(output / "compiled" / f"F{index}" / "final.png").size == (64, 64) for index in range(1, 5))
+    assert {frame["placed_bbox"]["bottom"] for frame in report["frames"]} == {58}
+    assert {frame["clipped"] for frame in report["frames"]} == {False}
+
+
 def test_cli_compile_accepts_character_profile_options(tmp_path: Path):
     source = tmp_path / "character.png"
     Image.new("RGBA", (64, 64), (40, 120, 200, 255)).save(source)

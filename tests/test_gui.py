@@ -4,6 +4,7 @@ from pixel_tile_compiler.gui.canvas import CanvasState
 from pixel_tile_compiler.gui.input import first_supported_image_path
 from pixel_tile_compiler.gui.policy import (
     build_output_path,
+    resolve_character_animation_gui_profile,
     resolve_character_gui_profile,
     resolve_terrain_gui_profile,
 )
@@ -45,6 +46,19 @@ def test_character_gui_profile_accepts_only_square_experimental_sizes():
         resolve_character_gui_profile((128, 96))
 
 
+def test_character_animation_gui_profile_scales_shared_layout_for_64_and_128():
+    profile_64 = resolve_character_animation_gui_profile((64, 64))
+    profile_128 = resolve_character_animation_gui_profile((128, 128))
+
+    assert profile_64.canvas_size == (64, 64)
+    assert profile_64.frame_count == 4
+    assert profile_64.fit_within == (54, 54)
+    assert profile_64.bottom_margin == 6
+    assert profile_128.canvas_size == (128, 128)
+    assert profile_128.fit_within == (108, 108)
+    assert profile_128.bottom_margin == 12
+
+
 def test_first_supported_image_path_ignores_non_images_and_missing_files(tmp_path):
     unsupported = tmp_path / "notes.txt"
     unsupported.write_text("not an image", encoding="utf-8")
@@ -65,6 +79,13 @@ def test_build_output_path_uses_selected_root_and_source_stem(tmp_path):
         purpose="character",
         canvas_size=(128, 128),
     ) == tmp_path / "compiled" / source.stem / "character_128x128_b24"
+
+    assert build_output_path(
+        tmp_path / "compiled",
+        source,
+        purpose="character_animation",
+        canvas_size=(128, 128),
+    ) == tmp_path / "compiled" / source.stem / "character_animation_128x128_b24"
 
 
 def test_terrain_gui_profile_defaults_to_source_preserving_without_repeat_optimization():
@@ -139,15 +160,42 @@ def test_main_window_exposes_terrain_modes_and_hides_them_for_character(monkeypa
     window.show()
     app.processEvents()
     try:
-        window.purpose.setCurrentIndex(1)
+        window.purpose.setCurrentIndex(window.purpose.findData("terrain"))
         app.processEvents()
         assert window.pixelization_mode.isVisible()
         assert window.pixelization_mode.currentData() == "nearest"
         assert window.pixelization_mode.currentText() == "元絵を保持"
         assert window.repeat_opt.currentData() is False
 
-        window.purpose.setCurrentIndex(0)
+        window.purpose.setCurrentIndex(window.purpose.findData("character"))
         app.processEvents()
         assert window.pixelization_mode.isHidden()
+    finally:
+        window.close()
+
+
+def test_main_window_exposes_character_animation_and_canvas_size_selection(monkeypatch):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        app.processEvents()
+        assert window.canvas_size.isVisible()
+        assert window.canvas_size.currentData() == (128, 128)
+        assert "共通bbox" in window.auto_profile.text()
+        assert window.pixelization_mode.isHidden()
+
+        window.canvas_size.setCurrentIndex(1)
+        app.processEvents()
+        assert window.canvas_size.currentData() == (64, 64)
+        assert "64×64" in window.auto_profile.text()
     finally:
         window.close()

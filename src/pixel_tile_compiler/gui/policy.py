@@ -18,6 +18,18 @@ class CharacterGuiProfile:
 
 
 @dataclass(frozen=True)
+class CharacterAnimationGuiProfile:
+    """The shared-layout animation profile exposed by the GUI."""
+
+    canvas_size: tuple[int, int]
+    frame_count: int = 4
+    fit_within: tuple[int, int] = (54, 54)
+    bottom_margin: int = 6
+    palette_budget: int = 24
+    detail_level: str = "balanced"
+
+
+@dataclass(frozen=True)
 class TerrainGuiProfile:
     """The terrain conversion choices exposed by the GUI."""
 
@@ -39,6 +51,23 @@ def resolve_character_gui_profile(canvas_size: tuple[int, int] = (128, 128)) -> 
     if normalized not in GUI_CHARACTER_CANVAS_SIZES:
         raise ValueError("GUI currently supports only square 64x64 or 128x128 Character canvases")
     return CharacterGuiProfile(canvas_size=normalized)
+
+
+def resolve_character_animation_gui_profile(
+    canvas_size: tuple[int, int] = (128, 128),
+) -> CharacterAnimationGuiProfile:
+    """Resolve animation layout values proportionally to the selected square canvas."""
+    normalized = resolve_character_gui_profile(canvas_size).canvas_size
+    width, height = normalized
+    return CharacterAnimationGuiProfile(
+        canvas_size=normalized,
+        fit_within=(_scale_half_up(54, width, 64), _scale_half_up(54, height, 64)),
+        bottom_margin=_scale_half_up(6, height, 64),
+    )
+
+
+def _scale_half_up(value: int, target: int, reference: int) -> int:
+    return (value * target + reference // 2) // reference
 
 
 def resolve_terrain_gui_profile(pixelization_mode: str = "nearest") -> TerrainGuiProfile:
@@ -65,6 +94,8 @@ def build_output_path(
     width, height = int(canvas_size[0]), int(canvas_size[1])
     if purpose == "character":
         variant = f"character_{width}x{height}_b24"
+    elif purpose == "character_animation":
+        variant = f"character_animation_{width}x{height}_b24"
     elif purpose == "terrain":
         if pixelization_mode is None and palette_budget is None and repeat_opt_enabled is None:
             return root / source.stem / "terrain_64x64"
@@ -81,11 +112,13 @@ def build_output_path(
 
 
 __all__ = [
+    "CharacterAnimationGuiProfile",
     "CharacterGuiProfile",
     "GUI_CHARACTER_CANVAS_SIZES",
     "GUI_TERRAIN_PIXELIZATION_OPTIONS",
     "TerrainGuiProfile",
     "build_output_path",
     "resolve_character_gui_profile",
+    "resolve_character_animation_gui_profile",
     "resolve_terrain_gui_profile",
 ]

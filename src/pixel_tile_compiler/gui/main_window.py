@@ -31,10 +31,15 @@ from pixel_tile_compiler.gui.input import first_supported_image_path
 from pixel_tile_compiler.gui.policy import (
     GUI_TERRAIN_PIXELIZATION_OPTIONS,
     build_output_path,
+    resolve_character_animation_gui_profile,
     resolve_character_gui_profile,
     resolve_terrain_gui_profile,
 )
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+from pixel_tile_compiler.pixelizer.character_animation import (
+    CharacterAnimationConfig,
+    compile_character_animation_sheet,
+)
 
 
 CHECKER_LIGHT = QColor("#d6d9dd")
@@ -238,6 +243,7 @@ class MainWindow(QMainWindow):
         self.output_browse_button.clicked.connect(self.choose_output_directory)
         self.purpose = QComboBox()
         self.purpose.addItem("キャラクター", userData="character")
+        self.purpose.addItem("キャラクター待機アニメーション", userData="character_animation")
         self.purpose.addItem("地形（64×64）", userData="terrain")
         self.purpose.currentIndexChanged.connect(self._update_purpose_controls)
         self.canvas_size = QComboBox()
@@ -258,6 +264,7 @@ class MainWindow(QMainWindow):
         self.repeat_opt.addItem("無効", userData=False)
         self.repeat_opt.setCurrentIndex(1)
         self.repeat_opt_label = QLabel("繰り返し最適化")
+        self.secondary_preview_label = QLabel("繰り返し確認")
         self.pixelization_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.palette.valueChanged.connect(self._on_terrain_setting_changed)
         self.repeat_opt.currentIndexChanged.connect(self._on_terrain_setting_changed)
@@ -344,7 +351,7 @@ class MainWindow(QMainWindow):
         output_layout = QVBoxLayout(output_group)
         output_layout.addWidget(QLabel("コンパイル結果"))
         output_layout.addWidget(self.result_preview)
-        output_layout.addWidget(QLabel("繰り返し確認"))
+        output_layout.addWidget(self.secondary_preview_label)
         output_layout.addWidget(self.tile_preview)
         output_layout.addStretch(1)
         output_panel = QFrame()
@@ -415,7 +422,9 @@ class MainWindow(QMainWindow):
         )
 
     def _update_purpose_controls(self) -> None:
-        is_character = self.purpose.currentData() == "character"
+        purpose = self.purpose.currentData()
+        is_character = purpose in {"character", "character_animation"}
+        is_animation = purpose == "character_animation"
         self.canvas_size.setEnabled(is_character)
         self.pixelization_mode.setEnabled(not is_character)
         self.palette.setEnabled(not is_character)
@@ -427,6 +436,7 @@ class MainWindow(QMainWindow):
         self.repeat_opt_label.setVisible(not is_character)
         self.repeat_opt.setVisible(not is_character)
         self.terrain_batch_button.setVisible(not is_character)
+        self.secondary_preview_label.setText("アニメーションSheet（8倍）" if is_animation else "繰り返し確認")
         if is_character:
             self.repeat_opt.setCurrentIndex(1)
             self._update_canvas_selection()
@@ -442,13 +452,22 @@ class MainWindow(QMainWindow):
         self._update_purpose_controls()
 
     def _update_canvas_selection(self) -> None:
-        if self.purpose.currentData() != "character":
+        purpose = self.purpose.currentData()
+        if purpose not in {"character", "character_animation"}:
             return
         canvas_size = self.canvas_size.currentData()
+        if purpose == "character_animation":
+            profile = resolve_character_animation_gui_profile(canvas_size)
+            self.canvas.set_canvas_size(profile.canvas_size)
+            self.auto_profile.setText(
+                f"B24 / {profile.canvas_size[0]}×{profile.canvas_size[1]} / 4フレーム / 共通bbox・足元固定"
+            )
+            self._clear_stale_result(profile.canvas_size)
+            return
         profile = resolve_character_gui_profile(canvas_size)
         self.canvas.set_canvas_size(profile.canvas_size)
         self.auto_profile.setText(
-            f"B24 / {profile.palette_budget}色 / バランス / 元絵から直接"
+            f"B24 / {profile.canvas_size[0]}×{profile.canvas_size[1]} / バランス / 元絵から直接"
         )
         self._clear_stale_result(profile.canvas_size)
 
@@ -519,6 +538,44 @@ class MainWindow(QMainWindow):
         try:
             output_root = self._selected_output_root()
             purpose = self.purpose.currentData()
+            if purpose == "character_animation":
+                profile = resolve_character_animation_gui_profile(self.canvas_size.currentData())
+                width, height = profile.canvas_size
+                output = build_output_path(
+                    output_root,
+                    self.source_path,
+                    purpose="character_animation",
+                    canvas_size=profile.canvas_size,
+                )
+                animation = compile_character_animation_sheet(
+                    self.source_path,
+                    output,
+                    config=CharacterAnimationConfig(
+                        frame_count=profile.frame_count,
+                        canvas_size=profile.canvas_size,
+                        fit_within=profile.fit_within,
+                        bottom_margin=profile.bottom_margin,
+                    ),
+                    palette_budget=profile.palette_budget,
+                    character_detail_level=profile.detail_level,
+                    debug_enabled=True,
+                )
+                first_frame = animation.frame_paths[0]
+                self.canvas.set_image(first_frame, profile.canvas_size)
+                self._compiled_canvas_size = profile.canvas_size
+                self.result_preview.set_image(first_frame)
+                self.tile_preview.set_image(animation.preview_8x_path)
+                self.metrics.setText(
+                    " / ".join(
+                        [
+                            f"出力 {width}×{height}",
+                            f"4フレーム（{width * 4}×{height} Sheet）",
+                            f"保存先 {output}",
+                        ]
+                    )
+                )
+                self.status.setText("完了: 共通bbox・足元アンカーで待機アニメーションを出力しました")
+                return
             if purpose == "character":
                 profile = resolve_character_gui_profile(self.canvas_size.currentData())
                 width, height = profile.canvas_size

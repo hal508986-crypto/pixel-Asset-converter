@@ -48,6 +48,10 @@ from pixel_tile_compiler.character_study import (
     load_character_study_config,
     load_native_resolution_study_config,
 )
+from pixel_tile_compiler.pixelizer.character_animation import (
+    CharacterAnimationConfig,
+    compile_character_animation_sheet,
+)
 from pixel_tile_compiler.asset.pipeline import compile_generated_sheet, process_generated_sheet, validate_asset_package
 from pixel_tile_compiler.generation.adapter import GenerationUnavailableError, UnconfiguredImageGenerationAdapter
 from pixel_tile_compiler.generation.pipeline import GenerationFirstPipeline
@@ -111,6 +115,63 @@ def compile(
     typer.echo(f"パレット: {result.metrics.actual_palette_count}色")
     if result.metrics.periodicity_risk_score is not None:
         typer.echo(f"周期リスク: {result.metrics.periodicity_risk_score:.3f}")
+
+
+@app.command("compile-character-animation")
+def compile_character_animation_command(
+    source: Path = typer.Argument(..., exists=True, readable=True, help="横一列のキャラクターアニメーションSheet PNG"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="アニメーション出力ディレクトリ"),
+    frames: int = typer.Option(4, "--frames", min=1, help="横一列のフレーム数"),
+    palette: int = typer.Option(24, "--palette", min=4, max=64, help="各フレームのパレット上限"),
+    alpha_threshold: int = typer.Option(16, "--alpha-threshold", min=0, max=255, help="可視扱いするアルファ閾値"),
+    min_component_area: int = typer.Option(3, "--min-component-area", min=1, help="残す孤立成分の最小面積"),
+    remove_isolated: bool = typer.Option(True, "--remove-isolated/--keep-isolated", help="微小な孤立成分を除去"),
+    padding: int = typer.Option(1, "--padding", min=0, help="共通bboxへ追加する入力側余白"),
+    fit_width: int = typer.Option(54, "--fit-width", min=1, help="共通bboxの最大幅"),
+    fit_height: int = typer.Option(54, "--fit-height", min=1, help="共通bboxの最大高さ"),
+    bottom_margin: int = typer.Option(6, "--bottom-margin", min=0, help="64x64下端から足元までの余白"),
+    remainder_policy: str = typer.Option("center_crop", "--remainder-policy", help="center_crop/error"),
+    character_detail: str = typer.Option("balanced", "--character-detail", help="sparse/balanced/detailed"),
+    outline: str = typer.Option("off", "--outline", help="off/black/white"),
+    debug: bool = typer.Option(False, "--debug/--no-debug", help="各フレームのデバッグ画像を保存"),
+) -> None:
+    """横一列のキャラクター待機アニメーションを共通配置で64x64化します。"""
+    output_dir = output or (Path("output") / f"{source.stem}_animation")
+    if remainder_policy not in {"center_crop", "error"}:
+        raise typer.BadParameter("remainder_policyはcenter_cropまたはerrorです", param_hint="--remainder-policy")
+    if character_detail not in {"sparse", "balanced", "detailed"}:
+        raise typer.BadParameter("character_detailはsparse、balanced、detailedのいずれかです", param_hint="--character-detail")
+    if outline not in {"off", "black", "white"}:
+        raise typer.BadParameter("outlineはoff、black、whiteのいずれかです", param_hint="--outline")
+    try:
+        result = compile_character_animation_sheet(
+            source,
+            output_dir,
+            config=CharacterAnimationConfig(
+                frame_count=frames,
+                fit_within=(fit_width, fit_height),
+                bottom_margin=bottom_margin,
+                alpha_threshold=alpha_threshold,
+                remove_isolated_components=remove_isolated,
+                min_component_area_px=min_component_area,
+                padding_px=padding,
+                remainder_policy=remainder_policy,  # type: ignore[arg-type]
+                outline_width=1 if outline != "off" else 0,
+            ),
+            palette_budget=palette,
+            character_detail_level=character_detail,
+            outline_color=outline,
+            debug_enabled=debug,
+        )
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"整列Sheet: {result.aligned_sheet_path}")
+    typer.echo(f"出力Sheet: {result.compiled_sheet_path}")
+    typer.echo(f"8倍プレビュー: {result.preview_8x_path}")
+    typer.echo(f"bboxレポート: {result.report_path}")
+    for frame_path in result.frame_paths:
+        typer.echo(f"フレーム: {frame_path}")
 
 
 @app.command("compile-map")

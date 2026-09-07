@@ -12,6 +12,7 @@ DitherMode = Literal["off", "minimal", "ordered"]
 SeamMode = Literal["off", "inspect", "correct"]
 PixelizationMode = Literal["region", "nearest"]
 OutlineColor = Literal["off", "black", "white"]
+CharacterInputMode = Literal["single_frame", "pre_aligned"]
 CompilerPurpose = Literal["terrain", "character"]
 
 
@@ -71,6 +72,7 @@ class CompilerConfig:
     character_frame_width: int | None = None
     character_frame_height: int | None = None
     character_bottom_margin: int | None = None
+    character_input_mode: CharacterInputMode = "single_frame"
     character_detail_level: CharacterDetailLevel = "detailed"
     work_size: int = 256
     smoothing_enabled: bool = True
@@ -101,6 +103,8 @@ class CompilerConfig:
             raise ValueError("pixelization_mode must be region or nearest")
         if self.outline_color not in {"off", "black", "white"}:
             raise ValueError("outline_color must be off, black, or white")
+        if self.character_input_mode not in {"single_frame", "pre_aligned"}:
+            raise ValueError("character_input_mode must be single_frame or pre_aligned")
         if self.character_detail_level not in {"sparse", "balanced", "detailed"}:
             raise ValueError("character_detail_level must be sparse, balanced, or detailed")
         if self.character_frame_width is not None and self.character_frame_width < 1:

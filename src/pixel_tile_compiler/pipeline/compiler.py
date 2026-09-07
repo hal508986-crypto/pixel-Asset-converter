@@ -132,6 +132,8 @@ def _pixelize_source(
     """Select the spatial pixelizer without changing the analysis contract."""
     if config.pixelization_mode == "nearest":
         if config.tile_mode == "object":
+            if config.character_input_mode == "pre_aligned":
+                return nearest_pixelize(background_resolved, config.canvas.size)
             fitted = fit_character_to_canvas(
                 background_resolved,
                 canvas_size=config.canvas.size,

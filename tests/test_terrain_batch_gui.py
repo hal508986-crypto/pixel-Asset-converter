@@ -71,10 +71,10 @@ def test_main_window_shows_batch_entry_only_for_terrain(monkeypatch) -> None:
     window.show()
     app.processEvents()
     try:
-        window.purpose.setCurrentIndex(0)
+        window.purpose.setCurrentIndex(window.purpose.findData("character"))
         app.processEvents()
         assert window.terrain_batch_button.isHidden()
-        window.purpose.setCurrentIndex(1)
+        window.purpose.setCurrentIndex(window.purpose.findData("terrain"))
         app.processEvents()
         assert window.terrain_batch_button.isVisible()
     finally:

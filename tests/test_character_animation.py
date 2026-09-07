@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from PIL import Image
 
 from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
@@ -165,3 +166,33 @@ def test_compile_character_animation_removes_stale_renamed_frames_on_rerun(tmp_p
     assert second.final_frame_paths[0].exists()
     assert not (output / "final_frames" / "F2_final.png").exists()
     assert not (output / "compiled" / "F2" / "final.png").exists()
+
+
+def test_compile_character_animation_failure_preserves_previous_success_output(tmp_path: Path) -> None:
+    source = tmp_path / "idle-sheet.png"
+    sheet = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
+    for y in range(3, 15):
+        for x in range(5, 13):
+            sheet.putpixel((x, y), (80, 140, 220, 255))
+    sheet.save(source)
+    output = tmp_path / "output"
+
+    compile_character_animation_sheet(
+        source,
+        output,
+        config=CharacterAnimationConfig(frame_count=1),
+    )
+    previous_final = output / "final_frames" / "F1_final.png"
+    previous_bytes = previous_final.read_bytes()
+
+    with pytest.raises(ValueError, match="palette_budget"):
+        compile_character_animation_sheet(
+            source,
+            output,
+            config=CharacterAnimationConfig(frame_count=1),
+            palette_budget=3,
+        )
+
+    assert previous_final.exists()
+    assert previous_final.read_bytes() == previous_bytes
+    assert (output / "compiled" / "F1" / "final.png").exists()

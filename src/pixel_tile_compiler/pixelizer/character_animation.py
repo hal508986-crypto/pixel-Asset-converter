@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
+import shutil
+import tempfile
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from shutil import copyfile
 from typing import Literal
+from uuid import uuid4
 
 import numpy as np
 from PIL import Image
@@ -452,17 +456,53 @@ def compile_character_animation_sheet(
     outline_color: str = "off",
     debug_enabled: bool = False,
 ) -> CharacterAnimationCompileResult:
-    """Prepare and compile every animation frame with the shared layout."""
-    from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
-    from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
-
+    """Prepare and compile every animation frame with transactional output replacement."""
     source = Path(source)
     output_root = Path(output_root)
     config = config or CharacterAnimationConfig()
+    output_root.parent.mkdir(parents=True, exist_ok=True)
+    staging_root = Path(
+        tempfile.mkdtemp(
+            prefix=f".{output_root.name or 'output'}.staging-",
+            dir=str(output_root.parent.resolve()),
+        )
+    )
+    try:
+        staged_result = _compile_character_animation_to_root(
+            source,
+            staging_root,
+            config=config,
+            palette_budget=palette_budget,
+            character_detail_level=character_detail_level,
+            outline_color=outline_color,
+            debug_enabled=debug_enabled,
+        )
+        final_result = _relocate_compile_result(staged_result, staging_root, output_root)
+        _rewrite_staged_metadata_paths(staging_root, output_root)
+        _replace_output_root(staging_root, output_root)
+        return final_result
+    finally:
+        if staging_root.exists():
+            shutil.rmtree(staging_root, ignore_errors=True)
+
+
+def _compile_character_animation_to_root(
+    source: Path,
+    output_root: Path,
+    *,
+    config: CharacterAnimationConfig,
+    palette_budget: int,
+    character_detail_level: str,
+    outline_color: str,
+    debug_enabled: bool,
+) -> CharacterAnimationCompileResult:
+    """Write one complete animation artifact set into an empty staging root."""
+    from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
+    from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+
     with Image.open(source) as opened:
         prepared = prepare_character_animation_sheet(opened, config)
     output_root.mkdir(parents=True, exist_ok=True)
-    _clear_stale_animation_outputs(output_root)
     aligned_sheet_path = save_png(prepared.output_sheet, output_root / "aligned_sheet.png")
     report_path = save_json(prepared.report_as_dict(), output_root / "bbox_report.json")
     detection_overlay_path = None
@@ -523,23 +563,68 @@ def compile_character_animation_sheet(
     )
 
 
-def _clear_stale_animation_outputs(output_root: Path) -> None:
-    """Remove only compiler-owned frame PNGs that exceed the current frame count."""
-    final_frames_root = output_root / "final_frames"
-    if final_frames_root.exists():
-        for path in final_frames_root.glob("F*_final.png"):
-            if path.is_file():
-                path.unlink()
+def _replace_staged_value(value: object, old_prefix: str, new_prefix: str) -> object:
+    if isinstance(value, str) and value.startswith(old_prefix):
+        return new_prefix + value[len(old_prefix):]
+    if isinstance(value, list):
+        return [_replace_staged_value(item, old_prefix, new_prefix) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _replace_staged_value(item, old_prefix, new_prefix)
+            for key, item in value.items()
+        }
+    return value
 
-    compiled_root = output_root / "compiled"
-    if not compiled_root.exists():
-        return
-    for frame_root in compiled_root.iterdir():
-        if not frame_root.is_dir() or not frame_root.name.startswith("F") or not frame_root.name[1:].isdigit():
-            continue
-        final_path = frame_root / "final.png"
-        if final_path.is_file():
-            final_path.unlink()
+
+def _rewrite_staged_metadata_paths(staging_root: Path, output_root: Path) -> None:
+    """Keep compiler metadata pointing at the committed output location."""
+    old_prefix = str(staging_root)
+    new_prefix = str(output_root)
+    for metadata_path in staging_root.glob("compiled/F*/metadata.json"):
+        payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+        save_json(_replace_staged_value(payload, old_prefix, new_prefix), metadata_path)
+
+
+def _replace_output_root(staging_root: Path, output_root: Path) -> None:
+    """Swap a complete staged artifact set in while retaining rollback on rename failure."""
+    backup_root: Path | None = None
+    if output_root.exists():
+        backup_root = output_root.with_name(
+            f".{output_root.name or 'output'}.previous-{uuid4().hex}"
+        )
+        output_root.rename(backup_root)
+    try:
+        staging_root.rename(output_root)
+    except BaseException:
+        if backup_root is not None and backup_root.exists() and not output_root.exists():
+            backup_root.rename(output_root)
+        raise
+    if backup_root is not None:
+        if backup_root.is_dir():
+            shutil.rmtree(backup_root, ignore_errors=True)
+        else:
+            backup_root.unlink(missing_ok=True)
+
+
+def _relocate_compile_result(
+    result: CharacterAnimationCompileResult,
+    staging_root: Path,
+    output_root: Path,
+) -> CharacterAnimationCompileResult:
+    def relocate(path: Path | None) -> Path | None:
+        return None if path is None else output_root / path.relative_to(staging_root)
+
+    return replace(
+        result,
+        output_root=output_root,
+        aligned_sheet_path=relocate(result.aligned_sheet_path),
+        report_path=relocate(result.report_path),
+        frame_paths=tuple(relocate(path) for path in result.frame_paths),
+        final_frame_paths=tuple(relocate(path) for path in result.final_frame_paths),
+        compiled_sheet_path=relocate(result.compiled_sheet_path),
+        preview_8x_path=relocate(result.preview_8x_path),
+        detection_overlay_path=relocate(result.detection_overlay_path),
+    )
 
 
 __all__ = [

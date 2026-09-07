@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from PIL import Image
 
 from pixel_tile_compiler.sheet.alpha_projection import split_sprite_sheet
@@ -52,6 +53,18 @@ def test_alpha_gap_auto_rejects_missing_gutters_and_hybrid_falls_back() -> None:
     assert result.detected_mode == "fixed_grid"
     assert result.frame_count == 4
     assert result.fallback_reason
+
+
+def test_alpha_gap_auto_rejects_equal_boundary_that_crosses_visible_band() -> None:
+    image = Image.new("RGBA", (100, 20), (0, 0, 0, 0))
+    for y in range(5, 15):
+        for x in range(10, 20):
+            image.putpixel((x, y), (80, 140, 220, 255))
+        for x in range(45, 55):
+            image.putpixel((x, y), (80, 140, 220, 255))
+
+    with pytest.raises(ValueError, match="境界"):
+        split_sprite_sheet(image, mode="alpha_gap_auto")
 
 
 def test_fixed_grid_report_contains_cells_and_overlay() -> None:

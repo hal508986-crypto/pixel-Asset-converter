@@ -217,6 +217,31 @@ def _grid_boundaries(bands: tuple[Band, ...], extent: int) -> tuple[Band, ...]:
     )
 
 
+def _grid_boundary_issues(
+    detected_bands: tuple[Band, ...],
+    grid_bands: tuple[Band, ...],
+    *,
+    axis_name: str,
+) -> tuple[str, ...]:
+    """Reject equal windows whose internal boundary cuts through detected content."""
+    issues: list[str] = []
+    for grid_band in grid_bands[1:]:
+        boundary = grid_band[0]
+        crossing_band = next(
+            (
+                band
+                for band in detected_bands
+                if band[0] < boundary < band[1]
+            ),
+            None,
+        )
+        if crossing_band is not None:
+            issues.append(
+                f"{axis_name}方向の等分境界{boundary}pxが可視帯{crossing_band}を横切ります"
+            )
+    return tuple(issues)
+
+
 def _make_cells(
     source: Image.Image,
     boxes: tuple[SourceBox, ...],
@@ -390,6 +415,8 @@ def _auto_grid(
     content_boxes = _cell_boxes(x_bands, y_bands) if columns and rows else ()
     grid_x_bands = _grid_boundaries(x_bands, source.width)
     grid_y_bands = _grid_boundaries(y_bands, source.height)
+    issues.extend(_grid_boundary_issues(x_bands, grid_x_bands, axis_name="X"))
+    issues.extend(_grid_boundary_issues(y_bands, grid_y_bands, axis_name="Y"))
     boxes = _cell_boxes(grid_x_bands, grid_y_bands) if columns and rows else ()
     cells = _make_cells(
         source,

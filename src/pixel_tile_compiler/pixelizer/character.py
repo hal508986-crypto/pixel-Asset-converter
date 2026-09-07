@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import NamedTuple
+
 from PIL import Image, ImageFilter, ImageOps
 
 
@@ -10,6 +12,36 @@ def nearest_pixelize(source: Image.Image, size: tuple[int, int] = (64, 64)) -> I
     if size[0] < 1 or size[1] < 1:
         raise ValueError("pixelization size must be positive")
     return source.convert("RGBA").resize(size, Image.Resampling.NEAREST)
+
+
+class CharacterLayout(NamedTuple):
+    """Resolved character frame and bottom anchor in output pixels."""
+
+    frame_width: int
+    frame_height: int
+    bottom_margin: int
+
+
+def resolve_character_layout(
+    canvas: object,
+    *,
+    frame_width: int | None = None,
+    frame_height: int | None = None,
+    bottom_margin: int | None = None,
+) -> CharacterLayout:
+    """Resolve the 64px reference layout for any output canvas."""
+    canvas_size = getattr(canvas, "size", canvas)
+    canvas_width, canvas_height = (int(canvas_size[0]), int(canvas_size[1]))
+    resolved_width = frame_width if frame_width is not None else _scale_half_up(54, canvas_width, 64)
+    resolved_height = frame_height if frame_height is not None else _scale_half_up(54, canvas_height, 64)
+    resolved_bottom = bottom_margin if bottom_margin is not None else _scale_half_up(7, canvas_height, 64)
+    if min(resolved_width, resolved_height) < 1 or resolved_bottom < 0:
+        raise ValueError("character layout dimensions must be valid")
+    return CharacterLayout(resolved_width, resolved_height, resolved_bottom)
+
+
+def _scale_half_up(value: int, target: int, reference: int) -> int:
+    return (value * target + reference // 2) // reference
 
 
 def fit_character_to_canvas(

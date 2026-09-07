@@ -28,7 +28,7 @@ class McpSemanticProvider:
             payload = self.callback(
                 image=image,
                 structural_data=structural_data,
-                prompt=build_prompt(config.tile_mode, config.palette_budget),
+                prompt=build_prompt(config.tile_mode, config.palette_budget, config.canvas.size),
             )
             if isinstance(payload, str):
                 payload = json.loads(payload)

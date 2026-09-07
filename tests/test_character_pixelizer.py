@@ -92,6 +92,7 @@ def test_character_purpose_uses_stable_object_settings() -> None:
     assert config.repeat_opt_enabled is False
     assert config.dither == "off"
     assert config.background_mode == "auto"
+    assert config.character_detail_level == "detailed"
 
 
 def test_terrain_purpose_keeps_existing_defaults() -> None:
@@ -114,6 +115,7 @@ def test_compiler_config_accepts_character_pixelization_and_outline() -> None:
     [
         ({"pixelization_mode": "unknown"}, "pixelization_mode"),
         ({"outline_color": "red"}, "outline_color"),
+        ({"character_detail_level": "noisy"}, "character_detail_level"),
     ],
 )
 def test_compiler_config_rejects_unknown_character_options(kwargs: dict[str, str], message: str) -> None:
@@ -195,6 +197,63 @@ def test_character_mode_keeps_a_safe_transparent_margin_at_source_edge(tmp_path:
     final = Image.open(result.final_path).convert("RGBA")
     assert final.getchannel("A").getbbox() is not None
     assert final.getchannel("A").getbbox()[1] >= 1
+
+
+def test_character_detail_default_is_pixel_identical_to_explicit_detailed(tmp_path: Path) -> None:
+    source = Image.new("RGBA", (96, 96), (0, 0, 0, 0))
+    for y in range(16, 80):
+        for x in range(24, 72):
+            source.putpixel((x, y), (90, 110, 170, 255))
+    source.putpixel((48, 40), (100, 120, 180, 255))
+
+    default = PixelTileCompiler().compile_image(
+        source,
+        compiler_config_for_purpose("character", output_root=tmp_path / "default", palette_budget=24, work_size=64, debug_enabled=False),
+    )
+    explicit = PixelTileCompiler().compile_image(
+        source,
+        compiler_config_for_purpose(
+            "character",
+            output_root=tmp_path / "explicit",
+            palette_budget=24,
+            character_detail_level="detailed",
+            work_size=64,
+            debug_enabled=False,
+        ),
+    )
+
+    assert default.final_path.read_bytes() == explicit.final_path.read_bytes()
+
+
+def test_character_density_changes_rgb_only_and_terrain_ignores_it(tmp_path: Path) -> None:
+    source = Image.new("RGBA", (96, 96), (0, 0, 0, 0))
+    for y in range(16, 80):
+        for x in range(24, 72):
+            source.putpixel((x, y), (90, 110, 170, 255))
+    source.putpixel((48, 40), (100, 120, 180, 255))
+
+    sparse = PixelTileCompiler().compile_image(
+        source,
+        compiler_config_for_purpose("character", output_root=tmp_path / "sparse", palette_budget=24, character_detail_level="sparse", work_size=64, debug_enabled=False),
+    )
+    detailed = PixelTileCompiler().compile_image(
+        source,
+        compiler_config_for_purpose("character", output_root=tmp_path / "detailed", palette_budget=24, work_size=64, debug_enabled=False),
+    )
+    terrain_default = PixelTileCompiler().compile_image(
+        source,
+        CompilerConfig(output_root=tmp_path / "terrain-default", palette_budget=8, work_size=64, debug_enabled=False),
+    )
+    terrain_sparse = PixelTileCompiler().compile_image(
+        source,
+        CompilerConfig(output_root=tmp_path / "terrain-sparse", palette_budget=8, character_detail_level="sparse", work_size=64, debug_enabled=False),
+    )
+
+    sparse_image = Image.open(sparse.final_path).convert("RGBA")
+    detailed_image = Image.open(detailed.final_path).convert("RGBA")
+    assert sparse_image.getchannel("A").tobytes() == detailed_image.getchannel("A").tobytes()
+    assert sparse_image.getchannel("A").getbbox() == detailed_image.getchannel("A").getbbox()
+    assert terrain_default.final_path.read_bytes() == terrain_sparse.final_path.read_bytes()
 
 
 def test_character_mode_fits_high_resolution_input_to_output_frame(tmp_path: Path) -> None:

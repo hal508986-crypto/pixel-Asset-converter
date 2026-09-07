@@ -1,0 +1,15 @@
+study:
+  output_root: ../e2e/character_palette_density_study
+  palette_budgets: [16, 24, 32]
+  detail_levels: [sparse, balanced, detailed]
+  cases:
+    - id: aria_front
+      source: 'G:/マイドライブ/習作/output/imagegen/アリア_MAP駒_64x64_初案/アリア_MAP駒_正面_生成原画_v3.png'
+      review_features: [eyes, side_hair, navy_ribbon, cape, boots]
+  character:
+    frame_width: 54
+    frame_height: 54
+    bottom_margin: 7
+    background_mode: auto
+    outline: off
+  seed: 42

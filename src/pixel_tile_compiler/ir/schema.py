@@ -57,8 +57,8 @@ class TileIR(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     version: str = "0.1"
-    width: Literal[64] = 64
-    height: Literal[64] = 64
+    width: int = Field(default=64, ge=1)
+    height: int = Field(default=64, ge=1)
     tile_type: str
     tile_mode: Literal["repeatable", "directional", "object"]
     palette_budget: int = Field(ge=4, le=64)

@@ -71,6 +71,110 @@ def test_cli_compile_character_purpose_uses_shared_character_defaults(tmp_path: 
     assert metadata["config"]["dither"] == "off"
 
 
+def test_cli_compile_accepts_character_detail_level(tmp_path: Path):
+    source = tmp_path / "character-detail.png"
+    Image.new("RGBA", (64, 64), (40, 120, 200, 255)).save(source)
+    output = tmp_path / "character-detail-output"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile",
+            str(source),
+            "--output",
+            str(output),
+            "--purpose",
+            "character",
+            "--character-detail",
+            "balanced",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["config"]["character_detail_level"] == "balanced"
+    assert metadata["character_detail"]["applied"] is True
+
+
+def test_cli_compile_accepts_native_character_canvas_and_b24(tmp_path: Path):
+    source = tmp_path / "character-native.png"
+    Image.new("RGBA", (128, 128), (0, 0, 0, 0)).save(source)
+    output = tmp_path / "character-native-output"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile",
+            str(source),
+            "--output",
+            str(output),
+            "--purpose",
+            "character",
+            "--width",
+            "128",
+            "--height",
+            "128",
+            "--preset",
+            "b24",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
+    assert Image.open(output / "final.png").size == (128, 128)
+    assert metadata["config"]["palette_budget"] == 24
+    assert metadata["config"]["character_detail_level"] == "balanced"
+
+
+def test_cli_explicit_character_options_override_b24_defaults(tmp_path: Path):
+    source = tmp_path / "character-b24-override.png"
+    Image.new("RGBA", (128, 128), (40, 120, 200, 255)).save(source)
+    output = tmp_path / "character-b24-override-output"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile",
+            str(source),
+            "--output",
+            str(output),
+            "--purpose",
+            "character",
+            "--preset",
+            "b24",
+            "--palette",
+            "32",
+            "--character-detail",
+            "sparse",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["config"]["palette_budget"] == 32
+    assert metadata["config"]["character_detail_level"] == "sparse"
+
+
+def test_cli_rejects_non_64_terrain_canvas(tmp_path: Path):
+    source = tmp_path / "terrain-native.png"
+    Image.new("RGBA", (128, 128), (60, 120, 70, 255)).save(source)
+
+    result = CliRunner().invoke(
+        app,
+        ["compile", str(source), "--purpose", "terrain", "--width", "128", "--height", "128"],
+    )
+
+    assert result.exit_code != 0
+    assert "object/nearest" in result.output
+
+
+def test_cli_help_lists_character_palette_density_study():
+    result = CliRunner().invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "study-character-palette-density" in result.stdout
+
+
 def test_cli_compile_map_creates_three_way_experiment(tmp_path: Path):
     source = tmp_path / "map.png"
     image = Image.new("RGBA", (256, 320), (80, 140, 60, 255))

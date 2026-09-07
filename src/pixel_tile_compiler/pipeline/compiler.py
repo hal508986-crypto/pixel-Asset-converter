@@ -20,6 +20,7 @@ from pixel_tile_compiler.ir.builder import build_tile_ir
 from pixel_tile_compiler.ir.schema import MapContext
 from pixel_tile_compiler.ir.validator import validate_tile_ir
 from pixel_tile_compiler.pixelizer.character import add_outline, fit_character_to_canvas, nearest_pixelize
+from pixel_tile_compiler.pixelizer.character_detail import simplify_character_detail
 from pixel_tile_compiler.pixelizer.color_conditioning import apply_color_conditioning
 from pixel_tile_compiler.pixelizer.palette import palette_preview, quantize_palette
 from pixel_tile_compiler.pixelizer.spatial import region_aware_pixelize
@@ -113,13 +114,13 @@ def _pixelize_source(
         if config.tile_mode == "object":
             fitted = fit_character_to_canvas(
                 background_resolved,
-                canvas_size=(config.width, config.height),
-                frame_size=(config.character_frame_width, config.character_frame_height),
-                bottom_margin=config.character_bottom_margin,
+                canvas_size=config.canvas.size,
+                frame_size=(config.character_layout.frame_width, config.character_layout.frame_height),
+                bottom_margin=config.character_layout.bottom_margin,
                 outline_width=1 if config.outline_color != "off" else 0,
             )
-            return nearest_pixelize(fitted, (config.width, config.height))
-        return nearest_pixelize(background_resolved, (config.width, config.height))
+            return nearest_pixelize(fitted, config.canvas.size)
+        return nearest_pixelize(background_resolved, config.canvas.size)
     return region_aware_pixelize(smooth, region_map, ir)
 
 
@@ -208,7 +209,13 @@ class PixelTileCompiler:
             )
         else:
             quantized = raw_pixelized.convert("RGBA")
-        cleaned, cluster_metrics = _clean_pixelized(quantized, config)
+        character_detail_applied = config.tile_mode == "object"
+        character_detail = (
+            simplify_character_detail(quantized, config.character_detail_level, canvas_size=config.canvas.size)
+            if character_detail_applied
+            else quantized
+        )
+        cleaned, cluster_metrics = _clean_pixelized(character_detail, config)
         repeatability_before = measure_repeatability(cleaned, tile_mode=config.tile_mode, edge_band=config.repeat_opt_edge_band)
         repeatability_applied = bool(config.tile_mode == "repeatable" and config.repeat_opt_enabled)
         if repeatability_applied:
@@ -250,6 +257,7 @@ class PixelTileCompiler:
                 "05_palette_preview": palette_preview(quantized),
                 "06_raw_pixelized": raw_pixelized,
                 "06_color_conditioned": color_conditioned,
+                **({"07_character_detail": character_detail} if character_detail_applied else {}),
                 "07_cluster_cleaned": cleaned,
                 "08_repeat_optimized": final,
                 "08_tile_preview": make_tiled_preview(final),
@@ -262,17 +270,31 @@ class PixelTileCompiler:
 
         final_path = save_png(final, output_dir / "final.png")
         ir_path = save_json(ir.model_dump(mode="json"), output_dir / "ir.json")
-        save_png(generate_baseline_nearest(normalized), output_dir / "baseline_nearest.png")
+        save_png(generate_baseline_nearest(normalized, size=config.canvas.size), output_dir / "baseline_nearest.png")
         save_png(
-            generate_baseline_bicubic_quantized(normalized, config.palette_budget),
+            generate_baseline_bicubic_quantized(normalized, config.palette_budget, size=config.canvas.size),
             output_dir / "baseline_bicubic_quantized.png",
         )
         metadata: dict[str, Any] = {
             "source": str(source_name),
             "config": config.as_dict(),
+            "output_canvas": {"width": config.width, "height": config.height},
+            "analysis_canvas": {"width": config.work_size, "height": config.work_size},
+            "character_layout": {
+                "frame_width": config.character_layout.frame_width,
+                "frame_height": config.character_layout.frame_height,
+                "bottom_margin": config.character_layout.bottom_margin,
+                "reference_canvas": [64, 64],
+            },
+            "native_resolution": config.tile_mode == "object",
             "semantic_provider": provider_name,
             "metrics": asdict(metrics),
-            "palette_budget_scope": "visible_rgb",
+                "palette_budget_scope": "visible_rgb",
+                "character_detail": {
+                    "level": config.character_detail_level,
+                    "applied": character_detail_applied,
+                    "alpha_policy": "preserve_exactly",
+                },
             "repeatability_before": asdict(repeatability_before),
             "repeatability_after": asdict(repeatability_after),
             "repeatability_optimization": {
@@ -292,6 +314,7 @@ class PixelTileCompiler:
                 "pixelize",
                 "color_conditioning",
                 "palette",
+                *(["character_detail"] if character_detail_applied else []),
                 "clusters",
                 "diagonals",
                 "outline",

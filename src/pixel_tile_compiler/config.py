@@ -4,6 +4,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Literal, Optional
 
+from pixel_tile_compiler.pixelizer.character_detail import CharacterDetailLevel
+
 TileMode = Literal["repeatable", "directional", "object"]
 SemanticMode = Literal["rule", "mcp"]
 DitherMode = Literal["off", "minimal", "ordered"]
@@ -11,6 +13,22 @@ SeamMode = Literal["off", "inspect", "correct"]
 PixelizationMode = Literal["region", "nearest"]
 OutlineColor = Literal["off", "black", "white"]
 CompilerPurpose = Literal["terrain", "character"]
+
+
+@dataclass(frozen=True)
+class CanvasSpec:
+    """Final raster dimensions for one standalone image compilation."""
+
+    width: int = 64
+    height: int = 64
+
+    def __post_init__(self) -> None:
+        if self.width < 1 or self.height < 1:
+            raise ValueError("canvas dimensions must be positive")
+
+    @property
+    def size(self) -> tuple[int, int]:
+        return self.width, self.height
 
 
 @dataclass(frozen=True)
@@ -35,8 +53,7 @@ class CompilerConfig:
     """Runtime configuration shared by CLI, GUI, and core pipeline."""
 
     output_root: Path = field(default_factory=lambda: Path("output"))
-    width: int = 64
-    height: int = 64
+    canvas: CanvasSpec = field(default_factory=CanvasSpec)
     palette_budget: int = 16
     tile_mode: TileMode = "repeatable"
     semantic_provider: SemanticMode = "rule"
@@ -51,9 +68,10 @@ class CompilerConfig:
     background_tolerance: int = 12
     pixelization_mode: PixelizationMode = "region"
     outline_color: OutlineColor = "off"
-    character_frame_width: int = 54
-    character_frame_height: int = 54
-    character_bottom_margin: int = 7
+    character_frame_width: int | None = None
+    character_frame_height: int | None = None
+    character_bottom_margin: int | None = None
+    character_detail_level: CharacterDetailLevel = "detailed"
     work_size: int = 256
     smoothing_enabled: bool = True
     seed: int = 42
@@ -64,8 +82,10 @@ class CompilerConfig:
     color_conditioning: ColorConditioningConfig = field(default_factory=ColorConditioningConfig)
 
     def __post_init__(self) -> None:
-        if (self.width, self.height) != (64, 64):
-            raise ValueError("MVP output size is fixed at 64x64")
+        if not isinstance(self.canvas, CanvasSpec):
+            raise ValueError("canvas must be a CanvasSpec")
+        if self.canvas.size != (64, 64) and not (self.tile_mode == "object" and self.pixelization_mode == "nearest"):
+            raise ValueError("non-64 output canvas is currently supported only for object/nearest compilation")
         if not 4 <= self.palette_budget <= 64:
             raise ValueError("palette_budget must be between 4 and 64")
         if self.palette_colors is not None:
@@ -81,14 +101,19 @@ class CompilerConfig:
             raise ValueError("pixelization_mode must be region or nearest")
         if self.outline_color not in {"off", "black", "white"}:
             raise ValueError("outline_color must be off, black, or white")
-        if self.character_frame_width < 1 or self.character_frame_height < 1:
-            raise ValueError("character frame dimensions must be positive")
-        if self.character_bottom_margin < 0:
+        if self.character_detail_level not in {"sparse", "balanced", "detailed"}:
+            raise ValueError("character_detail_level must be sparse, balanced, or detailed")
+        if self.character_frame_width is not None and self.character_frame_width < 1:
+            raise ValueError("character_frame_width must be positive")
+        if self.character_frame_height is not None and self.character_frame_height < 1:
+            raise ValueError("character_frame_height must be positive")
+        if self.character_bottom_margin is not None and self.character_bottom_margin < 0:
             raise ValueError("character_bottom_margin must be non-negative")
+        layout = self.character_layout
         outline_width = 1 if self.outline_color != "off" else 0
-        if self.character_frame_width + outline_width * 2 > self.width:
+        if layout.frame_width + outline_width * 2 > self.width:
             raise ValueError("character_frame_width does not fit the output canvas")
-        if self.character_frame_height + outline_width * 2 + self.character_bottom_margin > self.height:
+        if layout.frame_height + outline_width * 2 + layout.bottom_margin > self.height:
             raise ValueError("character frame and bottom margin do not fit the output canvas")
         if not 0.0 <= self.repeat_opt_strength <= 1.0:
             raise ValueError("repeat_opt_strength must be between 0 and 1")
@@ -102,7 +127,31 @@ class CompilerConfig:
         values = asdict(self)
         values.pop("semantic_callable", None)
         values["output_root"] = str(self.output_root)
+        values["width"] = self.width
+        values["height"] = self.height
+        values["character_frame_width"] = self.character_layout.frame_width
+        values["character_frame_height"] = self.character_layout.frame_height
+        values["character_bottom_margin"] = self.character_layout.bottom_margin
         return values
+
+    @property
+    def width(self) -> int:
+        return self.canvas.width
+
+    @property
+    def height(self) -> int:
+        return self.canvas.height
+
+    @property
+    def character_layout(self):
+        from pixel_tile_compiler.pixelizer.character import resolve_character_layout
+
+        return resolve_character_layout(
+            self.canvas,
+            frame_width=self.character_frame_width,
+            frame_height=self.character_frame_height,
+            bottom_margin=self.character_bottom_margin,
+        )
 
 
 @dataclass

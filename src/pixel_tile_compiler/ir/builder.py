@@ -35,6 +35,8 @@ def build_tile_ir(
             )
         )
     return TileIR(
+        width=config.width,
+        height=config.height,
         tile_type=semantic.tile_type,
         tile_mode=config.tile_mode,
         palette_budget=config.palette_budget,

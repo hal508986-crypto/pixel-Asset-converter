@@ -5,7 +5,7 @@ from typing import Optional
 
 import typer
 
-from pixel_tile_compiler.config import CompilerConfig, MapCompilerConfig, compiler_config_for_purpose
+from pixel_tile_compiler.config import CanvasSpec, CompilerConfig, MapCompilerConfig, compiler_config_for_purpose
 from pixel_tile_compiler.map.compiler import MapExperimentRunner
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 from pixel_tile_compiler.tileset.compiler import TilesetSourceCompiler
@@ -42,13 +42,19 @@ from pixel_tile_compiler.mixed_palette_study import (
     import_mixed_palette_review,
     load_mixed_palette_config,
 )
+from pixel_tile_compiler.character_study import (
+    CharacterPaletteDensityStudyRunner,
+    NativeResolutionStudyRunner,
+    load_character_study_config,
+    load_native_resolution_study_config,
+)
 from pixel_tile_compiler.asset.pipeline import process_generated_sheet, validate_asset_package
 from pixel_tile_compiler.generation.adapter import GenerationUnavailableError, UnconfiguredImageGenerationAdapter
 from pixel_tile_compiler.generation.pipeline import GenerationFirstPipeline
 from pixel_tile_compiler.generation.request_compiler import GenerationRequestCompiler
 from pixel_tile_compiler.generation.spec import TilesetSpec
 
-app = typer.Typer(help="SRPG用64x64ピクセルアートMAPタイルコンパイラ")
+app = typer.Typer(help="SRPG用ピクセルアートコンパイラ（単体Canvas可変、MAPセルは64x64）")
 
 
 @app.command()
@@ -56,7 +62,10 @@ def compile(
     source: Path = typer.Argument(..., exists=True, readable=True, help="入力画像PNG/JPEG/WebP"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="出力ディレクトリ"),
     purpose: str = typer.Option("terrain", "--purpose", help="用途: terrain/character"),
-    palette: int = typer.Option(16, "--palette", min=4, max=64, help="パレット上限"),
+    palette: Optional[int] = typer.Option(None, "--palette", min=4, max=64, help="パレット上限"),
+    preset: str = typer.Option("none", "--preset", help="none/b24"),
+    width: int = typer.Option(64, "--width", min=1, help="単体出力Canvasの幅"),
+    height: int = typer.Option(64, "--height", min=1, help="単体出力Canvasの高さ"),
     tile_mode: str = typer.Option("repeatable", "--tile-mode", help="repeatable/directional/object"),
     semantic: str = typer.Option("rule", "--semantic", help="rule/mcp"),
     seam: str = typer.Option("inspect", "--seam", help="off/inspect/correct"),
@@ -68,14 +77,20 @@ def compile(
     background_color: Optional[str] = typer.Option(None, "--background-color"),
     pixelization: str = typer.Option("region", "--pixelization", help="region/nearest"),
     outline: str = typer.Option("off", "--outline", help="off/black/white"),
+    character_detail: Optional[str] = typer.Option(None, "--character-detail", help="sparse/balanced/detailed"),
 ) -> None:
-    """入力画像を64x64のMAPタイルへ変換します。"""
+    """入力画像を指定した単体Output Canvasへ変換します。"""
     output_dir = output or (Path("output") / source.stem)
+    if preset not in {"none", "b24"}:
+        raise typer.BadParameter("presetはnoneまたはb24です", param_hint="--preset")
+    palette_budget = palette if palette is not None else (24 if preset == "b24" else 16)
+    detail_level = character_detail or ("balanced" if preset == "b24" else "detailed")
     try:
         config = compiler_config_for_purpose(
             purpose,  # type: ignore[arg-type]
             output_root=output_dir,
-            palette_budget=palette,
+            canvas=CanvasSpec(width, height),
+            palette_budget=palette_budget,
             tile_mode=tile_mode,  # type: ignore[arg-type]
             semantic_provider=semantic,  # type: ignore[arg-type]
             seam_mode=seam,  # type: ignore[arg-type]
@@ -87,6 +102,7 @@ def compile(
             background_color=background_color,
             pixelization_mode=pixelization,  # type: ignore[arg-type]
             outline_color=outline,  # type: ignore[arg-type]
+            character_detail_level=detail_level,  # type: ignore[arg-type]
         )
         result = PixelTileCompiler().compile(source, config)
     except (OSError, ValueError) as exc:
@@ -288,6 +304,43 @@ def study_pixel_hierarchy(
     typer.echo(f"完了: {result.output_root}")
     typer.echo(f"metrics: {result.metrics_path}")
     typer.echo(f"comparison: {result.comparison_board_path}")
+
+
+@app.command("study-character-palette-density")
+def study_character_palette_density(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Character Palette Density Study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """キャラクターのPalette BudgetとDetail Densityを3x3で比較します。"""
+    try:
+        study_config = load_character_study_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = CharacterPaletteDensityStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    for manifest in result.case_manifests:
+        typer.echo(f"manifest: {manifest}")
+
+
+@app.command("study-character-native-resolution")
+def study_character_native_resolution(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, readable=True, help="Character Native Resolution Study YAML/JSON設定"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="実験出力ディレクトリで設定を上書き"),
+) -> None:
+    """同一Source/B24でNative 64・64 nearest 2x・Native 128を比較します。"""
+    try:
+        study_config = load_native_resolution_study_config(config)
+        if output is not None:
+            study_config.output_root = output
+        result = NativeResolutionStudyRunner().run(study_config)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}")
+    typer.echo(f"manifest: {result.manifest_path}")
+    typer.echo(f"metrics: {result.metrics_path}")
+    typer.echo(f"比較: {result.comparison_path}")
 
 
 @app.command("build-material-library")

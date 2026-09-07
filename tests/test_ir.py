@@ -58,3 +58,27 @@ def test_tile_ir_rejects_palette_outside_spec_range():
     except ValueError:
         return
     raise AssertionError("palette_budget=3 must be rejected")
+
+
+def test_tile_ir_round_trips_rectangular_output_dimensions():
+    ir = TileIR(
+        width=128,
+        height=96,
+        tile_type="character",
+        tile_mode="object",
+        palette_budget=24,
+        global_style=GlobalStyle(
+            texture_density=0.4,
+            contrast_strength=0.5,
+            edge_strength=0.3,
+            dithering="off",
+            outline_mode="off",
+            seam_mode="off",
+        ),
+        regions=[make_region()],
+    )
+
+    restored = TileIR.model_validate_json(ir.model_dump_json())
+
+    assert restored.width == 128
+    assert restored.height == 96

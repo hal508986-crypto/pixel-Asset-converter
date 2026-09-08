@@ -591,7 +591,8 @@ def _code_inventory(root: Path, files: list[str], packages: list[dict[str, Any]]
                     imports.add(node.module.split(".", 1)[0])
         if re.search(r"subprocess|urllib|requests|https?://|socket|Popen|os\.system|ctypes|cffi", text):
             process_or_network.append(relative)
-    stdlib = set(getattr(sys, "stdlib_module_names", set()))
+    # Python 3.10ではtomllibが標準ライブラリ一覧にないため、互換importとして扱う。
+    stdlib = set(getattr(sys, "stdlib_module_names", set())) | {"tomllib"}
     project_roots = {"pixel_tile_compiler", "scripts"}
     package_names = {item["normalized_name"] for item in packages}
     import_distributions = metadata.packages_distributions()

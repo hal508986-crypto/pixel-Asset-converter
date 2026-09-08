@@ -34,7 +34,7 @@ Allowed SPDX identifiers:
 
 ```json
 {
-  "allowed": 30,
+  "allowed": 27,
   "asset_needs_review": 0,
   "blocked": 0,
   "conditional": 6,

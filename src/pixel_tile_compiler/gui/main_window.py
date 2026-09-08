@@ -49,7 +49,7 @@ from pixel_tile_compiler.pipeline.compiler import CompilationResult, PixelTileCo
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
     CharacterAnimationCompileResult,
-    animation_source_frame_boxes,
+    animation_source_frame_coordinates,
     compile_character_animation_sheet,
     map_source_point_to_frame,
 )
@@ -325,6 +325,8 @@ class MainWindow(QMainWindow):
         self._animation_frame_paths: tuple[Path, ...] = ()
         self._animation_frame_index = 0
         self._source_origin_frame_box: tuple[int, int, int, int] | None = None
+        self._source_origin_frame_index: int | None = None
+        self._source_origin_frame_logical_origin: tuple[int, int] | None = None
         self._source_origin_frame_signature: tuple[object, ...] | None = None
         self.default_output_root = Path.cwd() / "output"
         self.source_preview = SourceImagePreview("元絵を読み込んでください\nまたはここにドロップ")
@@ -806,7 +808,7 @@ class MainWindow(QMainWindow):
             self.canvas.set_canvas_size(profile.canvas_size)
             self.canvas.set_guide_point(None)
             split_mode = self.animation_split_mode.currentData()
-            if split_mode == "fixed_grid":
+            if split_mode in {"fixed_grid", "row_alpha_gap"}:
                 split_summary = f"{columns}列×{rows}行"
             elif split_mode == "hybrid":
                 split_summary = f"自動推定（失敗時{columns}列×{rows}行）"
@@ -827,7 +829,7 @@ class MainWindow(QMainWindow):
     def _update_animation_split_controls(self) -> None:
         is_animation = self.purpose.currentData() == "character_animation"
         split_mode = self.animation_split_mode.currentData()
-        show_grid = is_animation and split_mode in {"fixed_grid", "hybrid"}
+        show_grid = is_animation and split_mode in {"fixed_grid", "row_alpha_gap", "hybrid"}
         for widget in (self.animation_split_mode_label, self.animation_split_mode):
             widget.setVisible(is_animation)
         for widget in (
@@ -850,8 +852,10 @@ class MainWindow(QMainWindow):
             self.animation_rows.value(),
         )
 
-    def _source_frame_boxes(self) -> tuple[tuple[int, int, int, int], ...]:
-        """現在の分割設定で元絵上のフレーム矩形を取得する。"""
+    def _source_frame_coordinates(
+        self,
+    ) -> tuple[tuple[tuple[int, int, int, int], tuple[int, int]], ...]:
+        """現在の分割設定でsource矩形と論理原点を取得する。"""
         if self.source_path is None:
             return ()
         columns = self.animation_columns.value()
@@ -863,22 +867,31 @@ class MainWindow(QMainWindow):
             grid_rows=rows,
         )
         with Image.open(self.source_path) as opened:
-            return animation_source_frame_boxes(opened, config)
+            return animation_source_frame_coordinates(opened, config)
 
     def _source_origin_display_point(self) -> tuple[int, int] | None:
         """フレーム内原点を元絵プレビュー上の座標へ戻す。"""
         if not self.animation_source_origin_set.isChecked():
             return None
         box = self._source_origin_frame_box
-        if box is None or self._source_origin_frame_signature != self._animation_split_signature():
+        logical_origin = self._source_origin_frame_logical_origin
+        if (
+            box is None
+            or logical_origin is None
+            or self._source_origin_frame_signature != self._animation_split_signature()
+        ):
             try:
-                box = self._source_frame_boxes()[0]
+                coordinates = self._source_frame_coordinates()
+                frame_index = self._source_origin_frame_index or 0
+                box, logical_origin = coordinates[frame_index]
             except (OSError, ValueError, IndexError):
                 box = None
+                logical_origin = None
         local = (self.animation_source_origin_x.value(), self.animation_source_origin_y.value())
         if box is None:
             return local
-        return (box[0] + local[0], box[1] + local[1])
+        origin = logical_origin or (box[0], box[1])
+        return (origin[0] + local[0], origin[1] + local[1])
 
     def _update_animation_geometry_controls(self) -> None:
         is_animation = self.purpose.currentData() == "character_animation"
@@ -946,23 +959,28 @@ class MainWindow(QMainWindow):
             return
         x, y = point  # type: ignore[misc]
         try:
-            frame_boxes = self._source_frame_boxes()
-            frame_index, local_point = map_source_point_to_frame(
+            frame_coordinates = self._source_frame_coordinates()
+            frame_boxes = tuple(box for box, _origin in frame_coordinates)
+            logical_origins = tuple(origin for _box, origin in frame_coordinates)
+            frame_index, logical_point = map_source_point_to_frame(
                 (int(x), int(y)),
                 frame_boxes,
+                logical_origins=logical_origins,
             )
         except (OSError, ValueError) as exc:
             self.status.setText(f"ソース原点を指定できませんでした: {exc}")
             return
         self._source_origin_frame_box = frame_boxes[frame_index]
+        self._source_origin_frame_index = frame_index
+        self._source_origin_frame_logical_origin = logical_origins[frame_index]
         self._source_origin_frame_signature = self._animation_split_signature()
         self.animation_source_origin_set.setChecked(True)
-        self.animation_source_origin_x.setValue(local_point[0])
-        self.animation_source_origin_y.setValue(local_point[1])
+        self.animation_source_origin_x.setValue(logical_point[0])
+        self.animation_source_origin_y.setValue(logical_point[1])
         self._origin_pick_target = None
         self._update_animation_geometry_controls()
         self.status.setText(
-            f"F{frame_index + 1}のソース原点を指定しました: ({local_point[0]}, {local_point[1]})"
+            f"F{frame_index + 1}のソース原点を指定しました: ({logical_point[0]}, {logical_point[1]})"
         )
 
     def _on_output_origin_clicked(self, point: object) -> None:
@@ -1104,6 +1122,8 @@ class MainWindow(QMainWindow):
         self.source_path = source
         self.source_preview.set_image(source)
         self._source_origin_frame_box = None
+        self._source_origin_frame_index = None
+        self._source_origin_frame_logical_origin = None
         self._source_origin_frame_signature = None
         self._clear_stale_result()
         self.compile_button.setEnabled(True)
@@ -1181,9 +1201,13 @@ class MainWindow(QMainWindow):
                 )
             )
             if placement_mode == "preserve_motion":
-                self.status.setText("完了: 明示原点・共通倍率で移動を保持した戦闘アニメーションを出力しました")
+                completion_message = "完了: 明示原点・共通倍率で移動を保持した戦闘アニメーションを出力しました"
             else:
-                self.status.setText("完了: 分割・共通bbox・足元アンカーで待機アニメーションを出力しました")
+                completion_message = "完了: 分割・共通bbox・足元アンカーで待機アニメーションを出力しました"
+            if animation.warnings:
+                self.status.setText(f"警告付きで{completion_message}: {' / '.join(animation.warnings)}")
+            else:
+                self.status.setText(completion_message)
             return
 
         compilation = cast(CompilationResult, result)
@@ -1312,7 +1336,7 @@ class MainWindow(QMainWindow):
                     source_origin = None
                     output_origin = None
                     scale_override = None
-                    shared_palette_enabled = False
+                    shared_palette_enabled = bool(self.animation_shared_palette.currentData())
                 shared_palette = self._shared_palette_colors or None
                 shared_palette_enabled = shared_palette_enabled or shared_palette is not None
                 output = build_output_path(

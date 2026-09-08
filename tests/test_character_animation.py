@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ from pixel_tile_compiler.pixelizer.character_animation import (
     align_character_frames,
     analyze_frame_alpha,
     compile_character_animation_sheet,
+    map_source_point_to_frame,
     prepare_character_animation_sheet,
 )
 
@@ -39,6 +41,17 @@ def test_analyze_frame_alpha_thresholds_and_removes_tiny_islands() -> None:
     assert bbox == AlphaBoundingBox(3, 4, 8, 9)
     assert cleaned.getchannel("A").getbbox() == (3, 4, 8, 9)
     assert set(cleaned.getchannel("A").getdata()) <= {0, 255}
+
+
+def test_map_source_point_to_frame_adds_registration_to_logical_coordinates() -> None:
+    frame_index, logical_point = map_source_point_to_frame(
+        (30, 10),
+        ((0, 0, 16, 20), (16, 0, 40, 20)),
+        logical_origins=((0, 0), (20, 0)),
+    )
+
+    assert frame_index == 1
+    assert logical_point == (10, 10)
 
 
 def test_align_character_frames_uses_union_scale_and_fixed_foot_baseline() -> None:
@@ -104,7 +117,7 @@ def test_compiler_can_preserve_pre_aligned_character_frames(tmp_path: Path) -> N
     assert Image.open(result.final_path).getchannel("A").getbbox() == (8, 4, 16, 12)
 
 
-def test_compile_character_animation_collects_renamed_final_frames(tmp_path: Path) -> None:
+def test_compile_character_animation_collects_aseprite_final_frames(tmp_path: Path) -> None:
     source = tmp_path / "idle-sheet.png"
     sheet = Image.new("RGBA", (80, 20), (0, 0, 0, 0))
     for frame in range(4):
@@ -122,10 +135,10 @@ def test_compile_character_animation_collects_renamed_final_frames(tmp_path: Pat
     )
 
     assert [path.name for path in result.final_frame_paths] == [
-        "F1_final.png",
-        "F2_final.png",
-        "F3_final.png",
-        "F4_final.png",
+        "F1.png",
+        "F2.png",
+        "F3.png",
+        "F4.png",
     ]
     assert all(path.parent.name == "final_frames" for path in result.final_frame_paths)
     assert all(path.exists() for path in result.final_frame_paths)
@@ -133,7 +146,48 @@ def test_compile_character_animation_collects_renamed_final_frames(tmp_path: Pat
     assert result.detection_overlay_path.exists()
 
 
-def test_compile_character_animation_removes_stale_renamed_frames_on_rerun(tmp_path: Path) -> None:
+def test_compile_character_animation_row_split_keeps_registration_and_shared_palette(tmp_path: Path) -> None:
+    source = tmp_path / "row-sheet.png"
+    sheet = Image.new("RGBA", (100, 70), (0, 0, 0, 0))
+    boxes = (
+        (4, 5, 26, 18),
+        (36, 5, 48, 18),
+        (66, 5, 92, 18),
+        (2, 45, 16, 62),
+        (29, 45, 58, 62),
+        (72, 45, 96, 62),
+    )
+    for index, (left, top, right, bottom) in enumerate(boxes):
+        color = (40 + index * 20, 80 + index * 10, 180, 255)
+        for y in range(top, bottom):
+            for x in range(left, right):
+                sheet.putpixel((x, y), color)
+    sheet.save(source)
+
+    result = compile_character_animation_sheet(
+        source,
+        tmp_path / "row-output",
+        config=CharacterAnimationConfig(
+            frame_count=6,
+            split_mode="row_alpha_gap",
+            grid_columns=3,
+            grid_rows=2,
+            canvas_size=(64, 64),
+            fit_within=(54, 54),
+            remove_isolated_components=False,
+        ),
+        palette_budget=24,
+    )
+
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert report["sprite_sheet_split"]["detected_mode"] == "row_alpha_gap"
+    assert report["sprite_sheet_split"]["x_bands"] == []
+    assert report["shared_palette"]["enabled"] is True
+    assert [path.name for path in result.final_frame_paths] == [f"F{index}.png" for index in range(1, 7)]
+    assert all(path.exists() for path in result.final_frame_paths)
+
+
+def test_compile_character_animation_removes_stale_aseprite_frames_on_rerun(tmp_path: Path) -> None:
     source = tmp_path / "idle-sheet.png"
     sheet = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
     for frame in range(2):
@@ -167,7 +221,8 @@ def test_compile_character_animation_removes_stale_renamed_frames_on_rerun(tmp_p
 
     assert len(second.final_frame_paths) == 1
     assert second.final_frame_paths[0].exists()
-    assert not (output / "final_frames" / "F2_final.png").exists()
+    assert not (output / "final_frames" / "F2.png").exists()
+    assert not list((output / "final_frames").glob("*_final.png"))
     assert not (output / "compiled" / "F2" / "final.png").exists()
     assert user_notes.read_text(encoding="utf-8") == "keep this file"
 
@@ -186,7 +241,7 @@ def test_compile_character_animation_failure_preserves_previous_success_output(t
         output,
         config=CharacterAnimationConfig(frame_count=1),
     )
-    previous_final = output / "final_frames" / "F1_final.png"
+    previous_final = output / "final_frames" / "F1.png"
     previous_bytes = previous_final.read_bytes()
 
     with pytest.raises(ValueError, match="palette_budget"):

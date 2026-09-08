@@ -45,12 +45,15 @@ def test_cli_compile_character_animation_exports_aligned_sheet_and_report(tmp_pa
     assert result.exit_code == 0, result.stdout
     report = json.loads((output / "bbox_report.json").read_text(encoding="utf-8"))
     assert report["frame_count"] == 4
+    assert report["schema_version"] == 3
+    assert report["shared_palette"]["enabled"] is True
     assert len({frame["scale"] for frame in report["frames"]}) == 1
     assert Image.open(output / "aligned_sheet.png").size == (256, 64)
     assert Image.open(output / "compiled_sheet.png").size == (256, 64)
     assert Image.open(output / "compiled_sheet_8x.png").size == (2048, 512)
     assert all(Image.open(output / "compiled" / f"F{index}" / "final.png").size == (64, 64) for index in range(1, 5))
-    assert all((output / "final_frames" / f"F{index}_final.png").exists() for index in range(1, 5))
+    assert all((output / "final_frames" / f"F{index}.png").exists() for index in range(1, 5))
+    assert not list((output / "final_frames").glob("*_final.png"))
     assert {frame["placed_bbox"]["bottom"] for frame in report["frames"]} == {58}
     assert {frame["clipped"] for frame in report["frames"]} == {False}
 
@@ -88,6 +91,52 @@ def test_cli_compile_character_animation_supports_alpha_gap_auto_and_grid_fallba
     assert split_report["rows"] == 2
     assert split_report["frame_count"] == 4
     assert (output / "detection_overlay.png").exists()
+
+
+def test_cli_surfaces_split_warnings_without_failing_output(tmp_path: Path):
+    source = tmp_path / "thin-crossing.png"
+    image = Image.new("RGBA", (80, 70), (0, 0, 0, 0))
+    color = (80, 140, 220, 255)
+    for y in range(50, 60):
+        for x in range(5, 20):
+            image.putpixel((x, y), color)
+        for x in range(60, 75):
+            image.putpixel((x, y), color)
+    for step in range(42):
+        image.putpixel((19 + step, step), color)
+    image.save(source)
+    output = tmp_path / "thin-crossing-output"
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile-character-animation",
+            str(source),
+            "--output",
+            str(output),
+            "--split-mode",
+            "hybrid",
+            "--cols",
+            "2",
+            "--rows",
+            "1",
+            "--width",
+            "64",
+            "--height",
+            "64",
+            "--empty-row-threshold",
+            "2",
+            "--empty-column-threshold",
+            "0",
+            "--debug",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "警告:" in result.stdout
+    report = json.loads((output / "bbox_report.json").read_text(encoding="utf-8"))
+    assert report["warnings"]
+    assert report["sprite_sheet_split"]["quality_status"] == "warning"
 
 
 def test_cli_compile_accepts_character_profile_options(tmp_path: Path):

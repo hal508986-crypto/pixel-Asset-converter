@@ -51,6 +51,10 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".
 CODE_EXTENSIONS = {".py", ".js", ".ts", ".rs", ".c", ".cpp", ".h", ".hpp"}
 TEXT_SCAN_EXTENSIONS = TEXT_EXTENSIONS | {".json", ".toml", ".py", ".bat"}
 SPDX_TOKEN_RE = re.compile(r"\b(?:[A-Za-z][A-Za-z0-9.]+)(?:-[A-Za-z0-9.]+)+\b")
+SPDX_GCC_EXCEPTION_RE = re.compile(
+    r"\bGPL-3\.0(?:-(?:only|or-later))?\s+WITH\s+GCC-exception-3\.1\b",
+    re.IGNORECASE,
+)
 REQUIREMENT_NAME_RE = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9_.-]*)")
 IMPORT_RE = re.compile(r"^\s*(?:from|import)\s+([A-Za-z_][A-Za-z0-9_.]*)")
 KNOWN_SPDX = DEFAULT_ALLOWED_SPDX | CONDITIONAL_SPDX | {
@@ -240,7 +244,10 @@ def _license_documents(dist: metadata.Distribution) -> list[dict[str, str]]:
 
 
 def _spdx_ids(value: str) -> list[str]:
-    return sorted(set(SPDX_TOKEN_RE.findall(value)))
+    # NumPy/SciPyの配布物はGCC例外を、版によって異なる表記で記録する。
+    # 監査上同一のライセンスとして扱い、生成物の表記を固定する。
+    canonical = SPDX_GCC_EXCEPTION_RE.sub("GPL-3.0-with-GCC-exception", value)
+    return sorted(set(SPDX_TOKEN_RE.findall(canonical)))
 
 
 def _bundled_license_ids(metadata_license: str, documents: list[dict[str, str]], main_spdx: str) -> list[str]:

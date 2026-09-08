@@ -46,6 +46,7 @@ GUI_TERRAIN_PIXELIZATION_OPTIONS = (
 GUI_ANIMATION_SPLIT_OPTIONS = (
     ("固定グリッド（明示）", "fixed_grid"),
     ("アルファ自動分割", "alpha_gap_auto"),
+    ("行ごとの透明部分で分割", "row_alpha_gap"),
     ("ハイブリッド（推奨）", "hybrid"),
 )
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal
 
 import numpy as np
@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .normalizer import normalize_sheet
 
 
-SplitMode = Literal["fixed_grid", "alpha_gap_auto", "hybrid"]
+SplitMode = Literal["fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"]
 Band = tuple[int, int]
 SourceBox = tuple[int, int, int, int]
 
@@ -28,6 +28,8 @@ class SpriteSheetCell:
     visible_pixel_count: int
     occupied_ratio: float
     valid: bool
+    logical_origin: tuple[int, int] | None = None
+    registration_translation: tuple[int, int] | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -41,6 +43,10 @@ class SpriteSheetCell:
             "visible_pixel_count": self.visible_pixel_count,
             "occupied_ratio": self.occupied_ratio,
             "valid": self.valid,
+            "logical_origin": list(self.logical_origin) if self.logical_origin is not None else None,
+            "registration_translation": (
+                list(self.registration_translation) if self.registration_translation is not None else None
+            ),
         }
 
 
@@ -49,7 +55,7 @@ class SpriteSheetSplitResult:
     """Source cells plus explainable detection diagnostics."""
 
     requested_mode: SplitMode
-    detected_mode: Literal["fixed_grid", "alpha_projection"]
+    detected_mode: Literal["fixed_grid", "alpha_projection", "row_alpha_gap"]
     rows: int
     columns: int
     frames: tuple[Image.Image, ...]
@@ -68,6 +74,10 @@ class SpriteSheetSplitResult:
     empty_row_threshold: int
     min_gutter_width_px: int
     detection_overlay: Image.Image
+    row_bands: tuple[tuple[int, Band, tuple[Band, ...]], ...] = ()
+    boundary_crossings: tuple[dict[str, object], ...] = ()
+    attempted_modes: tuple[str, ...] = ()
+    failure_reasons: tuple[str, ...] = ()
 
     @property
     def frame_count(self) -> int:
@@ -75,6 +85,7 @@ class SpriteSheetSplitResult:
 
     def report_as_dict(self) -> dict[str, object]:
         return {
+            "schema_version": 3,
             "requested_mode": self.requested_mode,
             "detected_mode": self.detected_mode,
             "rows": self.rows,
@@ -94,6 +105,17 @@ class SpriteSheetSplitResult:
             "x_bands": [list(band) for band in self.x_bands],
             "y_bands": [list(band) for band in self.y_bands],
             "cells": [cell.as_dict() for cell in self.cells],
+            "row_bands": [
+                {"row": row, "y_range": list(y_range), "x_bands": [list(band) for band in x_bands]}
+                for row, y_range, x_bands in self.row_bands
+            ],
+            "boundary_crossings": [dict(crossing) for crossing in self.boundary_crossings],
+            "attempted_modes": list(self.attempted_modes),
+            "failure_reasons": list(self.failure_reasons),
+            "expected_frame_count": self.rows * self.columns,
+            "detected_frame_count": self.frame_count,
+            "quality_status": "warning" if self.fallback_used or self.boundary_crossings or self.issues else "passed",
+            "warnings": list(self.issues),
         }
 
 
@@ -251,6 +273,63 @@ def _mask_crosses_boundary(mask: np.ndarray, boundary: int, *, axis: int) -> boo
     )
 
 
+def _boundary_crossing_record(
+    mask: np.ndarray,
+    boundary: int,
+    *,
+    axis: int,
+    row: int | None = None,
+    frame: int | None = None,
+) -> dict[str, object] | None:
+    """Describe visible pixels touching an unsafe 8-neighbor boundary."""
+    if boundary <= 0 or (boundary >= mask.shape[1] if axis == 0 else boundary >= mask.shape[0]):
+        return None
+    if axis == 0:
+        before = mask[:, boundary - 1]
+        after = mask[:, boundary]
+        touching = int(np.count_nonzero(before | after))
+        direction = "vertical"
+    else:
+        before = mask[boundary - 1, :]
+        after = mask[boundary, :]
+        touching = int(np.count_nonzero(before | after))
+        direction = "horizontal"
+    if not _mask_crosses_boundary(mask, boundary, axis=axis):
+        return None
+    return {
+        "direction": direction,
+        "coordinate": boundary,
+        "row": row,
+        "frame": frame,
+        "visible_pixel_count": touching,
+    }
+
+
+def _choose_gap_boundary(
+    mask: np.ndarray,
+    left_end: int,
+    right_start: int,
+    *,
+    axis: int,
+    row: int | None = None,
+) -> int:
+    """Choose the closest safe integer boundary inside one transparent gap."""
+    if right_start <= left_end:
+        raise ValueError("可視帯の順序が不正です")
+    center = (left_end + right_start) // 2
+    extent = mask.shape[1] if axis == 0 else mask.shape[0]
+    candidates = sorted(
+        range(max(1, left_end), min(extent - 1, right_start) + 1),
+        key=lambda value: (abs(value - center), value),
+    )
+    for candidate in candidates:
+        if not _mask_crosses_boundary(mask, candidate, axis=axis):
+            return candidate
+    raise ValueError(
+        f"{('X' if axis == 0 else 'Y')}方向の透明ガター内に安全な境界がありません"
+    )
+
+
 def _grid_boundary_issues(
     mask: np.ndarray,
     grid_bands: tuple[Band, ...],
@@ -279,6 +358,8 @@ def _make_cells(
     min_component_area_px: int,
     require_nonempty_each_cell: bool,
     content_boxes: tuple[SourceBox, ...] | None = None,
+    logical_origins: tuple[tuple[int, int] | None, ...] | None = None,
+    registration_translations: tuple[tuple[int, int] | None, ...] | None = None,
 ) -> tuple[SpriteSheetCell, ...]:
     cells: list[SpriteSheetCell] = []
     for index, box in enumerate(boxes):
@@ -302,6 +383,10 @@ def _make_cells(
                 visible_pixel_count=visible_count,
                 occupied_ratio=visible_count / area,
                 valid=visible_count > 0 or not require_nonempty_each_cell,
+                logical_origin=(logical_origins[index] if logical_origins is not None else None),
+                registration_translation=(
+                    registration_translations[index] if registration_translations is not None else None
+                ),
             )
         )
     return tuple(cells)
@@ -367,11 +452,31 @@ def _fixed_grid(
         require_nonempty_each_cell=require_nonempty_each_cell,
         content_boxes=tuple(boxes),
     )
+    mask, _ = alpha_occupancy_mask(
+        source,
+        alpha_threshold=alpha_threshold,
+        remove_small_components=remove_small_components,
+        min_component_area_px=min_component_area_px,
+    )
+    boundary_crossings = tuple(
+        crossing
+        for axis, bands in ((0, x_bands), (1, y_bands))
+        for band in bands[1:]
+        for crossing in (_boundary_crossing_record(mask, band[0], axis=axis),)
+        if crossing is not None
+    )
     issues = tuple(
         f"セル{cell.index + 1}が空です"
         for cell in cells
         if not cell.valid
     )
+    crossing_issues = tuple(
+        f"{crossing['direction']}方向の境界{crossing['coordinate']}pxが可視maskを横切ります"
+        for crossing in boundary_crossings
+    )
+    issues = (*issues, *crossing_issues)
+    if fallback_used and fallback_reason:
+        issues = (fallback_reason, *issues)
     return SpriteSheetSplitResult(
         requested_mode=requested_mode,
         detected_mode="fixed_grid",
@@ -384,7 +489,7 @@ def _fixed_grid(
         source_size=source.size,
         normalized_size=normalized.image.size,
         crop_box=normalized.crop_box,
-        confidence=1.0,
+        confidence=0.0 if fallback_used or boundary_crossings else 1.0,
         fallback_used=fallback_used,
         fallback_reason=fallback_reason,
         issues=issues,
@@ -392,13 +497,198 @@ def _fixed_grid(
         empty_column_threshold=0,
         empty_row_threshold=0,
         min_gutter_width_px=0,
-        detection_overlay=_render_overlay(source, tuple(boxes), cells),
+        detection_overlay=_render_overlay(source, tuple(boxes), cells, boundary_crossings=boundary_crossings),
+        boundary_crossings=boundary_crossings,
+    )
+
+
+def _coalesce_bands_to_expected_count(
+    bands: tuple[Band, ...],
+    expected_count: int,
+    *,
+    min_gutter_width_px: int,
+    axis_name: str,
+) -> tuple[Band, ...]:
+    """Join only an unambiguous near-gap when projection sees one extra band."""
+    if len(bands) <= expected_count:
+        return bands
+    work = list(bands)
+    while len(work) > expected_count:
+        gaps = [work[index + 1][0] - work[index][1] for index in range(len(work) - 1)]
+        smallest = min(gaps)
+        if smallest > min_gutter_width_px + 1 or gaps.count(smallest) != 1:
+            raise ValueError(
+                f"{axis_name}方向の可視帯が期待数に一致しません"
+                f"（期待{expected_count}、検出{len(work)}。曖昧な隙間です）"
+            )
+        index = gaps.index(smallest)
+        work[index : index + 2] = [(work[index][0], work[index + 1][1])]
+    return tuple(work)
+
+
+def _row_grid(
+    source: Image.Image,
+    *,
+    columns: int,
+    rows: int,
+    alpha_threshold: int,
+    remove_small_components: bool,
+    min_component_area_px: int,
+    empty_column_threshold: int,
+    empty_row_threshold: int,
+    min_gutter_width_px: int,
+    require_nonempty_each_cell: bool,
+    requested_mode: SplitMode,
+) -> SpriteSheetSplitResult:
+    """Split each row from its own alpha bands while preserving source coverage."""
+    if columns < 1 or rows < 1:
+        raise ValueError("row split columns and rows must be positive")
+    mask, _ = alpha_occupancy_mask(
+        source,
+        alpha_threshold=alpha_threshold,
+        remove_small_components=remove_small_components,
+        min_component_area_px=min_component_area_px,
+    )
+    y_bands = _projection_bands(
+        mask,
+        empty_threshold=empty_row_threshold,
+        min_gutter_width_px=min_gutter_width_px,
+        axis=1,
+    )
+    y_bands = _coalesce_bands_to_expected_count(
+        y_bands,
+        rows,
+        min_gutter_width_px=min_gutter_width_px,
+        axis_name="Y",
+    )
+    if len(y_bands) != rows:
+        raise ValueError(f"Y方向の可視帯が期待数に一致しません（期待{rows}、検出{len(y_bands)}）")
+
+    row_x_bands: list[tuple[Band, ...]] = []
+    for row, (y_start, y_end) in enumerate(y_bands):
+        bands = _projection_bands(
+            mask[y_start:y_end, :],
+            empty_threshold=empty_column_threshold,
+            min_gutter_width_px=min_gutter_width_px,
+            axis=0,
+        )
+        bands = _coalesce_bands_to_expected_count(
+            bands,
+            columns,
+            min_gutter_width_px=min_gutter_width_px,
+            axis_name=f"行{row + 1}のX",
+        )
+        if len(bands) != columns:
+            raise ValueError(
+                f"行{row + 1}を{columns}コマに分割できませんでした"
+                f"（検出{len(bands)}コマ）"
+            )
+        row_x_bands.append(bands)
+
+    y_boundaries = [0]
+    for previous, current in zip(y_bands, y_bands[1:]):
+        y_boundaries.append(
+            _choose_gap_boundary(mask, previous[1], current[0], axis=1)
+        )
+    y_boundaries.append(source.height)
+
+    boxes: list[SourceBox] = []
+    content_boxes: list[SourceBox] = []
+    logical_origins: list[tuple[int, int]] = []
+    registration_translations: list[tuple[int, int]] = []
+    row_reports: list[tuple[int, Band, tuple[Band, ...]]] = []
+    boundary_crossings: list[dict[str, object]] = []
+    for row, (y_start, y_end) in enumerate(y_bands):
+        bands = row_x_bands[row]
+        x_boundaries = [0]
+        extraction_row_mask = mask[y_boundaries[row]:y_boundaries[row + 1], :]
+        for previous, current in zip(bands, bands[1:]):
+            x_boundaries.append(
+                _choose_gap_boundary(extraction_row_mask, previous[1], current[0], axis=0)
+            )
+        x_boundaries.append(source.width)
+        for boundary_index, boundary in enumerate(x_boundaries[1:-1], start=1):
+            crossing = _boundary_crossing_record(
+                extraction_row_mask,
+                boundary,
+                axis=0,
+                row=row,
+                frame=row * columns + boundary_index,
+            )
+            if crossing is not None:
+                boundary_crossings.append(crossing)
+        row_reports.append((row, (y_start, y_end), bands))
+        for column, (x_start, x_end) in enumerate(bands):
+            boxes.append((x_boundaries[column], y_boundaries[row], x_boundaries[column + 1], y_boundaries[row + 1]))
+            content_boxes.append((x_start, y_start, x_end, y_end))
+            logical_origin = (
+                round(column * source.width / columns),
+                round(row * source.height / rows),
+            )
+            logical_origins.append(logical_origin)
+            registration_translations.append(
+                (x_boundaries[column] - logical_origin[0], y_boundaries[row] - logical_origin[1])
+            )
+
+    box_tuple = tuple(boxes)
+    cells = _make_cells(
+        source,
+        box_tuple,
+        columns=columns,
+        alpha_threshold=alpha_threshold,
+        remove_small_components=remove_small_components,
+        min_component_area_px=min_component_area_px,
+        require_nonempty_each_cell=require_nonempty_each_cell,
+        content_boxes=tuple(content_boxes),
+        logical_origins=tuple(logical_origins),
+        registration_translations=tuple(registration_translations),
+    )
+    crossing_issues = tuple(
+        f"{crossing['direction']}方向の境界{crossing['coordinate']}pxが可視maskを横切ります"
+        for crossing in boundary_crossings
+    )
+    issues = (
+        *(f"セル{cell.index + 1}が空です" for cell in cells if not cell.valid),
+        *crossing_issues,
+    )
+    return SpriteSheetSplitResult(
+        requested_mode=requested_mode,
+        detected_mode="row_alpha_gap",
+        rows=rows,
+        columns=columns,
+        frames=tuple(source.crop(box) for box in box_tuple),
+        cells=cells,
+        x_bands=(),
+        y_bands=y_bands,
+        source_size=source.size,
+        normalized_size=source.size,
+        crop_box=(0, 0, source.width, source.height),
+        confidence=0.0 if issues else 1.0,
+        fallback_used=False,
+        fallback_reason=None,
+        issues=issues,
+        alpha_threshold=alpha_threshold,
+        empty_column_threshold=empty_column_threshold,
+        empty_row_threshold=empty_row_threshold,
+        min_gutter_width_px=min_gutter_width_px,
+        detection_overlay=_render_overlay(
+            source,
+            box_tuple,
+            cells,
+            boundary_crossings=tuple(boundary_crossings),
+        ),
+        row_bands=tuple(row_reports),
+        boundary_crossings=tuple(boundary_crossings),
+        attempted_modes=("row_alpha_gap",),
     )
 
 
 def _auto_grid(
     source: Image.Image,
     *,
+    columns: int,
+    rows: int,
+    enforce_expected_count: bool,
     alpha_threshold: int,
     remove_small_components: bool,
     min_component_area_px: int,
@@ -432,6 +722,10 @@ def _auto_grid(
         issues.append("可視領域を検出できませんでした")
     if len(x_bands) == 1 and len(y_bands) == 1:
         issues.append("透明ガターからグリッド境界を検出できませんでした")
+    if enforce_expected_count and len(x_bands) != columns:
+        issues.append(f"列数が期待値と異なります（期待{columns}、検出{len(x_bands)}）")
+    if enforce_expected_count and len(y_bands) != rows:
+        issues.append(f"行数が期待値と異なります（期待{rows}、検出{len(y_bands)}）")
     if _ratio([end - start for start, end in x_bands]) > max_cell_size_variance_ratio:
         issues.append("列方向のセル幅のばらつきが大きすぎます")
     if _ratio([end - start for start, end in y_bands]) > max_cell_size_variance_ratio:
@@ -516,8 +810,8 @@ def split_sprite_sheet(
     remainder_policy: Literal["center_crop", "error"] = "center_crop",
 ) -> SpriteSheetSplitResult:
     """Split a regular sprite sheet with fixed, alpha, or hybrid detection."""
-    if mode not in {"fixed_grid", "alpha_gap_auto", "hybrid"}:
-        raise ValueError("split mode must be fixed_grid, alpha_gap_auto, or hybrid")
+    if mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"}:
+        raise ValueError("split mode must be fixed_grid, alpha_gap_auto, row_alpha_gap, or hybrid")
     if empty_column_threshold < 0 or empty_row_threshold < 0:
         raise ValueError("empty band thresholds must be non-negative")
     if min_gutter_width_px < 1:
@@ -526,7 +820,7 @@ def split_sprite_sheet(
         raise ValueError("max_cell_size_variance_ratio must be at least 1")
     source = image.convert("RGBA")
     if mode == "fixed_grid":
-        return _fixed_grid(
+        return replace(_fixed_grid(
             source,
             columns=columns,
             rows=rows,
@@ -538,10 +832,47 @@ def split_sprite_sheet(
             requested_mode=mode,
             fallback_used=False,
             fallback_reason=None,
-        )
-    try:
-        return _auto_grid(
+        ), attempted_modes=("fixed_grid",))
+    if mode == "row_alpha_gap":
+        return _row_grid(
             source,
+            columns=columns,
+            rows=rows,
+            alpha_threshold=alpha_threshold,
+            remove_small_components=remove_small_components,
+            min_component_area_px=min_component_area_px,
+            empty_column_threshold=empty_column_threshold,
+            empty_row_threshold=empty_row_threshold,
+            min_gutter_width_px=min_gutter_width_px,
+            require_nonempty_each_cell=require_nonempty_each_cell,
+            requested_mode=mode,
+        )
+
+    if mode == "alpha_gap_auto":
+        return replace(_auto_grid(
+            source,
+            columns=columns,
+            rows=rows,
+            enforce_expected_count=False,
+            alpha_threshold=alpha_threshold,
+            remove_small_components=remove_small_components,
+            min_component_area_px=min_component_area_px,
+            empty_column_threshold=empty_column_threshold,
+            empty_row_threshold=empty_row_threshold,
+            min_gutter_width_px=min_gutter_width_px,
+            max_cell_size_variance_ratio=max_cell_size_variance_ratio,
+            require_nonempty_each_cell=require_nonempty_each_cell,
+            requested_mode=mode,
+        ), attempted_modes=("alpha_gap_auto",))
+
+    attempts = ["alpha_gap_auto"]
+    failures: list[str] = []
+    try:
+        result = _auto_grid(
+            source,
+            columns=columns,
+            rows=rows,
+            enforce_expected_count=True,
             alpha_threshold=alpha_threshold,
             remove_small_components=remove_small_components,
             min_component_area_px=min_component_area_px,
@@ -552,10 +883,31 @@ def split_sprite_sheet(
             require_nonempty_each_cell=require_nonempty_each_cell,
             requested_mode=mode,
         )
+        return replace(result, attempted_modes=tuple(attempts))
     except ValueError as exc:
-        if mode != "hybrid":
-            raise
-        return _fixed_grid(
+        failures.append(str(exc))
+
+    attempts.append("row_alpha_gap")
+    try:
+        result = _row_grid(
+            source,
+            columns=columns,
+            rows=rows,
+            alpha_threshold=alpha_threshold,
+            remove_small_components=remove_small_components,
+            min_component_area_px=min_component_area_px,
+            empty_column_threshold=empty_column_threshold,
+            empty_row_threshold=empty_row_threshold,
+            min_gutter_width_px=min_gutter_width_px,
+            require_nonempty_each_cell=require_nonempty_each_cell,
+            requested_mode=mode,
+        )
+        return replace(result, attempted_modes=tuple(attempts), failure_reasons=tuple(failures))
+    except ValueError as exc:
+        failures.append(str(exc))
+
+    attempts.append("fixed_grid")
+    return replace(_fixed_grid(
             source,
             columns=columns,
             rows=rows,
@@ -566,14 +918,16 @@ def split_sprite_sheet(
             remainder_policy=remainder_policy,
             requested_mode=mode,
             fallback_used=True,
-            fallback_reason=str(exc),
-        )
+            fallback_reason=" / ".join(failures),
+        ), attempted_modes=tuple(attempts), failure_reasons=tuple(failures))
 
 
 def _render_overlay(
     source: Image.Image,
     boxes: tuple[SourceBox, ...],
     cells: tuple[SpriteSheetCell, ...],
+    *,
+    boundary_crossings: tuple[dict[str, object], ...] = (),
 ) -> Image.Image:
     overlay = source.convert("RGBA").copy()
     draw = ImageDraw.Draw(overlay, "RGBA")
@@ -586,6 +940,12 @@ def _render_overlay(
         text_y = min(max(0, box[1] + 2), max(0, overlay.height - 12))
         draw.rectangle((text_x, text_y, text_x + 20, text_y + 10), fill=(0, 0, 0, 160))
         draw.text((text_x + 2, text_y), label, fill=(255, 255, 255, 255), font=font)
+    for crossing in boundary_crossings:
+        coordinate = int(crossing["coordinate"])
+        if crossing["direction"] == "vertical":
+            draw.line((coordinate, 0, coordinate, overlay.height - 1), fill=(255, 70, 70, 255), width=2)
+        else:
+            draw.line((0, coordinate, overlay.width - 1, coordinate), fill=(255, 70, 70, 255), width=2)
     return overlay
 
 

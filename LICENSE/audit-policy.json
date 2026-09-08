@@ -14,7 +14,12 @@
     "Unicode-3.0",
     "Zlib"
   ],
-  "package_spdx_overrides": {},
+  "package_spdx_overrides": {
+    "numpy": "BSD-3-Clause",
+    "opencv-python": "Apache-2.0",
+    "scikit-image": "BSD-3-Clause",
+    "scipy": "BSD-3-Clause"
+  },
   "import_distribution_overrides": {
     "numpy": "numpy",
     "pydantic": "pydantic",

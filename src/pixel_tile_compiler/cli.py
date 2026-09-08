@@ -123,7 +123,7 @@ def compile(
 def compile_character_animation_command(
     source: Path = typer.Argument(..., exists=True, readable=True, help="キャラクターアニメーションSheet PNG"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="アニメーション出力ディレクトリ"),
-    split_mode: str = typer.Option("fixed_grid", "--split-mode", help="fixed_grid/alpha_gap_auto/hybrid"),
+    split_mode: str = typer.Option("fixed_grid", "--split-mode", help="fixed_grid/alpha_gap_auto/row_alpha_gap/hybrid"),
     columns: int = typer.Option(4, "--cols", min=1, help="fixed_gridまたはhybridフォールバック時の列数"),
     rows: int = typer.Option(1, "--rows", min=1, help="fixed_gridまたはhybridフォールバック時の行数"),
     frames: Optional[int] = typer.Option(None, "--frames", min=1, help="後方互換: --cols N --rows 1 と同じ"),
@@ -156,8 +156,8 @@ def compile_character_animation_command(
 ) -> None:
     """キャラクターアニメーションSheetを分割し、共通配置で64x64化します。"""
     output_dir = output or (Path("output") / f"{source.stem}_animation")
-    if split_mode not in {"fixed_grid", "alpha_gap_auto", "hybrid"}:
-        raise typer.BadParameter("split_modeはfixed_grid、alpha_gap_auto、hybridのいずれかです", param_hint="--split-mode")
+    if split_mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"}:
+        raise typer.BadParameter("split_modeはfixed_grid、alpha_gap_auto、row_alpha_gap、hybridのいずれかです", param_hint="--split-mode")
     if frames is not None:
         if columns != 4 or rows != 1:
             raise typer.BadParameter("--framesは--cols/--rowsと併用できません", param_hint="--frames")
@@ -184,9 +184,7 @@ def compile_character_animation_command(
 
     parsed_source_origin = parse_point(source_origin, "--source-origin")
     parsed_output_origin = parse_point(output_origin, "--output-origin")
-    shared_palette_enabled = (
-        placement_mode == "preserve_motion" if shared_palette is None else shared_palette
-    )
+    shared_palette_enabled = True if shared_palette is None else shared_palette
     loaded_transform = None
     if transform_file is not None:
         try:
@@ -199,9 +197,7 @@ def compile_character_animation_command(
     ):
         raise typer.BadParameter("--transformは原点・--scaleと併用できません", param_hint="--transform")
     effective_placement_mode = "preserve_motion" if loaded_transform is not None else placement_mode
-    shared_palette_enabled = (
-        effective_placement_mode == "preserve_motion" if shared_palette is None else shared_palette
-    )
+    shared_palette_enabled = True if shared_palette is None else shared_palette
     try:
         result = compile_character_animation_sheet(
             source,
@@ -246,6 +242,8 @@ def compile_character_animation_command(
     typer.echo(f"{result.preview_scale}倍プレビュー（上限8倍）: {result.preview_8x_path}")
     typer.echo(f"bboxレポート: {result.report_path}")
     typer.echo(f"final集約: {result.final_frame_paths[0].parent}")
+    for warning in result.warnings:
+        typer.echo(f"警告: {warning}")
     if result.detection_overlay_path is not None:
         typer.echo(f"分割確認画像: {result.detection_overlay_path}")
     for frame_path in result.frame_paths:

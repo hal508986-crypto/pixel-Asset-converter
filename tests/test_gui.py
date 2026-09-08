@@ -229,6 +229,7 @@ def test_main_window_exposes_animation_split_modes_and_fixed_grid_controls(monke
         assert [window.animation_split_mode.itemData(index) for index in range(window.animation_split_mode.count())] == [
             "fixed_grid",
             "alpha_gap_auto",
+            "row_alpha_gap",
             "hybrid",
         ]
         assert window.animation_columns.isVisible()
@@ -238,6 +239,11 @@ def test_main_window_exposes_animation_split_modes_and_fixed_grid_controls(monke
         app.processEvents()
         assert window.animation_columns.isHidden()
         assert window.animation_rows.isHidden()
+
+        window.animation_split_mode.setCurrentIndex(window.animation_split_mode.findData("row_alpha_gap"))
+        app.processEvents()
+        assert window.animation_columns.isVisible()
+        assert window.animation_rows.isVisible()
 
         window.animation_split_mode.setCurrentIndex(window.animation_split_mode.findData("hybrid"))
         app.processEvents()
@@ -401,6 +407,92 @@ def test_main_window_origin_guides_select_points_and_expose_scale_modes(monkeypa
         window.animation_scale_mode.setCurrentIndex(window.animation_scale_mode.findData("fixed"))
         app.processEvents()
         assert window.animation_scale.isEnabled()
+    finally:
+        window.close()
+
+
+def test_main_window_row_split_origin_click_uses_logical_coordinates(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from PIL import Image
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = tmp_path / "row-origin.png"
+    image = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    for y in range(5, 15):
+        for x in range(2, 8):
+            image.putpixel((x, y), (80, 140, 220, 255))
+        for x in range(24, 32):
+            image.putpixel((x, y), (120, 180, 220, 255))
+    image.save(source)
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_split_mode.setCurrentIndex(window.animation_split_mode.findData("row_alpha_gap"))
+        window.animation_placement_mode.setCurrentIndex(
+            window.animation_placement_mode.findData("preserve_motion")
+        )
+        window.animation_columns.setValue(2)
+        window.animation_rows.setValue(1)
+        app.processEvents()
+
+        window.start_source_origin_pick()
+        _image, (left, top, width, height) = window.source_preview._display_geometry()
+        QTest.mouseClick(
+            window.source_preview,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(left + (width * 3) // 4, top + height // 2),
+        )
+        app.processEvents()
+
+        # クリックした元絵座標は(30,10)。2コマ目の論理原点(20,0)からの座標は(10,10)。
+        assert (window.animation_source_origin_x.value(), window.animation_source_origin_y.value()) == (10, 10)
+        assert window._source_origin_display_point() == (30, 10)
+    finally:
+        window.close()
+
+
+def test_main_window_surfaces_animation_warnings(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from types import SimpleNamespace
+    from PySide6.QtWidgets import QApplication
+    from PIL import Image
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    frame = tmp_path / "F1.png"
+    preview = tmp_path / "preview.png"
+    Image.new("RGBA", (64, 64), (80, 140, 220, 255)).save(frame)
+    Image.new("RGBA", (64, 64), (80, 140, 220, 255)).save(preview)
+    window._compile_context = {
+        "kind": "animation",
+        "configuration_revision": window._configuration_revision,
+        "canvas_size": (64, 64),
+        "output": tmp_path,
+        "placement_mode": "preserve_motion",
+    }
+    try:
+        window._on_compile_succeeded(
+            SimpleNamespace(
+                final_frame_paths=(frame,),
+                preview_8x_path=preview,
+                preview_scale=1,
+                warnings=("等分割へfallbackしました", "X境界が可視maskを横切ります"),
+            )
+        )
+        assert "警告" in window.status.text()
+        assert "等分割へfallbackしました" in window.status.text()
     finally:
         window.close()
 

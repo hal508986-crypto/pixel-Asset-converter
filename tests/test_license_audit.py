@@ -36,6 +36,27 @@ def test_main_license_expression_wins_over_bundled_component_text() -> None:
     assert license_audit._infer_spdx("opencv-python", "Apache 2.0", documents, {}) == "Apache-2.0"
 
 
+def test_license_audit_normalizes_new_gcc_exception_spdx_wording() -> None:
+    assert license_audit._spdx_ids("GPL-3.0-or-later WITH GCC-exception-3.1") == [
+        "GPL-3.0-with-GCC-exception"
+    ]
+
+
+def test_package_license_overrides_win_over_version_specific_metadata() -> None:
+    policy = {"package_spdx_overrides": {"numpy": "BSD-3-Clause"}}
+
+    assert (
+        license_audit._infer_spdx(
+            "numpy",
+            "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+            [],
+            policy,
+            metadata_expression="BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0",
+        )
+        == "BSD-3-Clause"
+    )
+
+
 def test_audit_keeps_bundled_component_licenses_visible() -> None:
     audit = license_audit.build_audit(Path(__file__).resolve().parents[1])
     numpy = next(item for item in audit["packages"] if item["normalized_name"] == "numpy")

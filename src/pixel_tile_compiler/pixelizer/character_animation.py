@@ -250,14 +250,14 @@ class CharacterAnimationConfig:
     output_origin: tuple[float, float] | None = None
     scale_override: float | None = None
     frame_offsets: tuple[tuple[int, int], ...] | None = None
-    shared_palette_enabled: bool = False
+    shared_palette_enabled: bool = True
     allow_empty_frames: bool = False
 
     def __post_init__(self) -> None:
         if self.frame_count < 1:
             raise ValueError("frame_count must be positive")
-        if self.split_mode not in {"fixed_grid", "alpha_gap_auto", "hybrid"}:
-            raise ValueError("split_mode must be fixed_grid, alpha_gap_auto, or hybrid")
+        if self.split_mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"}:
+            raise ValueError("split_mode must be fixed_grid, alpha_gap_auto, row_alpha_gap, or hybrid")
         if self.grid_columns is not None and self.grid_columns < 1:
             raise ValueError("grid_columns must be positive")
         if self.grid_rows is not None and self.grid_rows < 1:
@@ -424,7 +424,7 @@ class CharacterAnimationResult:
                 "mode": "preserve_motion",
             }
         return {
-            "schema_version": 2,
+            "schema_version": 3,
             "frame_count": len(self.aligned_frames),
             "common_scale": self.scale,
             "common_anchor": common_anchor,
@@ -445,7 +445,7 @@ class CharacterAnimationResult:
                 "colors": [list(color) for color in self.shared_palette] if self.shared_palette is not None else None,
                 "color_count": len(self.shared_palette) if self.shared_palette is not None else None,
             },
-            "warnings": list(self.warnings),
+            "warnings": list(dict.fromkeys((*self.warnings, *self.split_report.get("warnings", [])))),
             "config": self.config.as_dict(),
         }
 
@@ -497,20 +497,43 @@ def animation_source_frame_boxes(
     config: CharacterAnimationConfig | None = None,
 ) -> tuple[tuple[int, int, int, int], ...]:
     """元絵上の各フレームのsource座標を返す。"""
+    return tuple(box for box, _origin in animation_source_frame_coordinates(image, config))
+
+
+def animation_source_frame_coordinates(
+    image: Image.Image,
+    config: CharacterAnimationConfig | None = None,
+) -> tuple[tuple[tuple[int, int, int, int], tuple[int, int]], ...]:
+    """元絵上のsource矩形と、その矩形に対応する論理原点を返す。"""
     resolved_config = config or CharacterAnimationConfig()
     split = _split_character_animation_source(image, resolved_config)
-    return tuple(cell.source_box for cell in split.cells)
+    return tuple(
+        (
+            cell.source_box,
+            cell.logical_origin or (cell.source_box[0], cell.source_box[1]),
+        )
+        for cell in split.cells
+    )
 
 
 def map_source_point_to_frame(
     point: tuple[int, int],
     frame_boxes: tuple[tuple[int, int, int, int], ...],
+    *,
+    logical_origins: tuple[tuple[int, int], ...] | list[tuple[int, int]] | None = None,
 ) -> tuple[int, tuple[int, int]]:
-    """シート上のクリック座標を、含まれるフレームのローカル座標へ変換する。"""
+    """シート上のクリック座標を、フレームの論理座標へ変換する。"""
+    if logical_origins is not None and len(logical_origins) != len(frame_boxes):
+        raise ValueError("logical_origins must contain one pair per frame")
     x, y = int(point[0]), int(point[1])
     for index, (left, top, right, bottom) in enumerate(frame_boxes):
         if left <= x < right and top <= y < bottom:
-            return index, (x - left, y - top)
+            origin = (
+                logical_origins[index]
+                if logical_origins is not None
+                else (left, top)
+            )
+            return index, (x - int(origin[0]), y - int(origin[1]))
     raise ValueError("フレームのセル内をクリックしてください")
 
 
@@ -836,12 +859,38 @@ def _resolve_animation_preview_scale(
     return scale
 
 
+def _translate_bbox(bbox: AlphaBoundingBox | None, offset: tuple[int, int]) -> AlphaBoundingBox | None:
+    if bbox is None:
+        return None
+    offset_x, offset_y = offset
+    return AlphaBoundingBox(
+        bbox.left + offset_x,
+        bbox.top + offset_y,
+        bbox.right + offset_x,
+        bbox.bottom + offset_y,
+    )
+
+
+def _transform_for_frame_coordinates(
+    transform: CharacterAnimationTransform,
+    frame_coordinate_offset: tuple[int, int],
+) -> CharacterAnimationTransform:
+    """Use a logical-frame transform on a crop-local raster."""
+    offset_x, offset_y = frame_coordinate_offset
+    source_x, source_y = transform.source_origin
+    return replace(
+        transform,
+        source_origin=(source_x - offset_x, source_y - offset_y),
+    )
+
+
 def align_character_frames(
     frames: tuple[Image.Image, ...] | list[Image.Image],
     config: CharacterAnimationConfig | None = None,
     *,
     protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
     transform: CharacterAnimationTransform | None = None,
+    frame_coordinate_offsets: tuple[tuple[int, int], ...] | list[tuple[int, int]] | None = None,
 ) -> CharacterAnimationResult:
     """Align frames through the legacy foot mode or an explicit motion transform."""
     config = config or CharacterAnimationConfig(frame_count=len(frames))
@@ -851,7 +900,15 @@ def align_character_frames(
         raise ValueError("at least one frame is required")
     source_frames = tuple(frame.convert("RGBA") for frame in frames)
     source_size = source_frames[0].size
-    if any(frame.size != source_size for frame in source_frames):
+    if frame_coordinate_offsets is None:
+        coordinate_offsets = tuple((0, 0) for _ in source_frames)
+    else:
+        if len(frame_coordinate_offsets) != len(source_frames):
+            raise ValueError("frame_coordinate_offsets must contain one pair per animation frame")
+        coordinate_offsets = tuple(
+            (int(offset[0]), int(offset[1])) for offset in frame_coordinate_offsets
+        )
+    if frame_coordinate_offsets is None and any(frame.size != source_size for frame in source_frames):
         raise ValueError("all animation frames must have the same size")
     if protected_masks is None:
         source_protected_masks: tuple[Image.Image | None, ...] = tuple(None for _ in source_frames)
@@ -862,7 +919,10 @@ def align_character_frames(
             None if mask is None else _protected_mask_to_luminance(mask)
             for mask in protected_masks
         )
-        if any(mask is not None and mask.size != source_size for mask in source_protected_masks):
+        if any(
+            mask is not None and mask.size != frame.size
+            for mask, frame in zip(source_protected_masks, source_frames)
+        ):
             raise ValueError("protected masks must have the same size as the source frames")
 
     cleaned_frames: list[Image.Image] = []
@@ -877,12 +937,13 @@ def align_character_frames(
             protected_mask=protected_mask,
         )
         cleaned_frames.append(cleaned)
-        if bbox is not None:
-            union_bbox = bbox if union_bbox is None else union_bbox.union(bbox)
+        logical_bbox = _translate_bbox(bbox, coordinate_offsets[index])
+        if logical_bbox is not None:
+            union_bbox = logical_bbox if union_bbox is None else union_bbox.union(logical_bbox)
         frame_reports.append(
             CharacterAnimationFrameReport(
                 frame_id=f"F{index + 1}",
-                source_size=source_size,
+                source_size=frame.size,
                 bbox=bbox,
                 visible_pixel_count=_visible_pixel_count(cleaned),
                 removed_isolated_pixel_count=(
@@ -924,27 +985,32 @@ def align_character_frames(
             protected_masks=tuple(None for _ in source_frames),
         )
 
+    layout_reports = tuple(
+        replace(report, bbox=_translate_bbox(report.bbox, coordinate_offsets[index]))
+        for index, report in enumerate(frame_reports)
+    )
+
     if config.placement_mode == "preserve_motion":
-        reports = tuple(frame_reports)
         resolved_transform = _resolve_preserve_transform(
-            tuple(cleaned_frames), reports, config, transform
+            tuple(cleaned_frames), layout_reports, config, transform
         )
         aligned_frames: list[Image.Image] = []
         aligned_protected_masks: list[Image.Image | None] = []
         updated_reports: list[CharacterAnimationFrameReport] = []
         warnings: list[str] = []
-        for index, (cleaned, report, source_mask) in enumerate(
-            zip(cleaned_frames, frame_reports, source_protected_masks)
+        for index, (cleaned, report, source_mask, coordinate_offset) in enumerate(
+            zip(cleaned_frames, frame_reports, source_protected_masks, coordinate_offsets)
         ):
+            frame_transform = _transform_for_frame_coordinates(resolved_transform, coordinate_offset)
             aligned = _sample_nearest(
                 cleaned,
-                transform=resolved_transform,
+                transform=frame_transform,
                 frame_index=index,
                 canvas_size=config.canvas_size,
             )
             aligned_mask = _render_protected_mask(
                 source_mask,
-                transform=resolved_transform,
+                transform=frame_transform,
                 frame_index=index,
                 canvas_size=config.canvas_size,
             )
@@ -984,7 +1050,15 @@ def align_character_frames(
             protected_masks=tuple(aligned_protected_masks),
         )
 
-    union_bbox = union_bbox.expand(config.padding_px, source_size)
+    if any(coordinate_offsets):
+        union_bbox = AlphaBoundingBox(
+            union_bbox.left - config.padding_px,
+            union_bbox.top - config.padding_px,
+            union_bbox.right + config.padding_px,
+            union_bbox.bottom + config.padding_px,
+        )
+    else:
+        union_bbox = union_bbox.expand(config.padding_px, source_size)
     scale = min(config.fit_within[0] / union_bbox.width, config.fit_within[1] / union_bbox.height)
     resized_size = (
         max(1, round(union_bbox.width * scale)),
@@ -992,8 +1066,16 @@ def align_character_frames(
     )
     aligned_frames: list[Image.Image] = []
     updated_reports: list[CharacterAnimationFrameReport] = []
-    for cleaned, report in zip(cleaned_frames, frame_reports):
-        cropped = cleaned.crop((union_bbox.left, union_bbox.top, union_bbox.right, union_bbox.bottom))
+    for index, (cleaned, report) in enumerate(zip(cleaned_frames, frame_reports)):
+        coordinate_offset = coordinate_offsets[index]
+        cropped = cleaned.crop(
+            (
+                union_bbox.left - coordinate_offset[0],
+                union_bbox.top - coordinate_offset[1],
+                union_bbox.right - coordinate_offset[0],
+                union_bbox.bottom - coordinate_offset[1],
+            )
+        )
         resized = cropped.resize(resized_size, Image.Resampling.NEAREST)
         aligned, placed_bbox, clipped = _place_frame(
             resized,
@@ -1041,11 +1123,15 @@ def prepare_character_animation_sheet(
     config = config or CharacterAnimationConfig()
     split = split_result or _split_character_animation_source(image, config)
     alignment_config = replace(config, frame_count=split.frame_count)
+    frame_coordinate_offsets = tuple(
+        cell.registration_translation or (0, 0) for cell in split.cells
+    )
     result = align_character_frames(
         split.frames,
         alignment_config,
         protected_masks=protected_masks,
         transform=transform,
+        frame_coordinate_offsets=frame_coordinate_offsets,
     )
     return replace(
         result,
@@ -1053,6 +1139,7 @@ def prepare_character_animation_sheet(
         normalized_sheet_size=split.normalized_size,
         split_report=split.report_as_dict(),
         detection_overlay=split.detection_overlay,
+        warnings=result.warnings,
     )
 
 
@@ -1067,6 +1154,7 @@ class CharacterAnimationCompileResult:
     preview_8x_path: Path
     detection_overlay_path: Path | None
     preview_scale: int = MAX_ANIMATION_PREVIEW_SCALE
+    warnings: tuple[str, ...] = ()
 
 
 _MANAGED_ANIMATION_OUTPUTS = (
@@ -1221,7 +1309,7 @@ def _compile_character_animation_to_root(
     final_frames_root = output_root / "final_frames"
     final_frames_root.mkdir(parents=True, exist_ok=True)
     final_frame_paths = tuple(
-        final_frames_root / f"F{index + 1}_final.png"
+        final_frames_root / f"F{index + 1}.png"
         for index in range(len(frame_paths))
     )
     for frame_path, final_frame_path in zip(frame_paths, final_frame_paths):
@@ -1269,6 +1357,7 @@ def _compile_character_animation_to_root(
         "within_budget": within_palette_budget,
         "alpha_policy": "binary",
     }
+    warnings = tuple(str(item) for item in report_payload.get("warnings", ()))
     compiled_sheet = Image.new(
         "RGBA",
         compiled_sheet_size,
@@ -1302,6 +1391,7 @@ def _compile_character_animation_to_root(
         preview_8x_path,
         detection_overlay_path,
         preview_scale,
+        warnings,
     )
 
 
@@ -1411,6 +1501,7 @@ __all__ = [
     "CharacterAnimationTransform",
     "align_character_frames",
     "animation_source_frame_boxes",
+    "animation_source_frame_coordinates",
     "analyze_frame_alpha",
     "compile_character_animation_sheet",
     "load_character_animation_transform",

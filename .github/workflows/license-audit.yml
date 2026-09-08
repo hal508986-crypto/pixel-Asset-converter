@@ -23,3 +23,5 @@ jobs:
         run: python -m pip install --disable-pip-version-check -c requirements-license-audit.txt -e ".[gui,dev]"
       - name: Verify generated license inventory and policy gate
         run: python scripts/generate_licenses.py --check
+      - name: Run LICENSE reproducibility gate tests
+        run: python -m pytest tests/test_license_audit.py -m license_gate

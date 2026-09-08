@@ -31,4 +31,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-q"
+addopts = "-q -m 'not license_gate'"
+markers = [
+  "license_gate: 固定依存環境とコミット済みLICENSE生成物の再現性を検査するゲート",
+]

@@ -87,9 +87,12 @@ MAP・Tileset・アニメーションの各コマンドは、これに加えて�
 ```powershell
 py -3.10 -m pytest
 py -3.10 scripts/generate_licenses.py --check
+py -3.10 -m pytest tests/test_license_audit.py -m license_gate
 ```
 
-主要コードは `src/`、テストは `tests/`、仕様・設計記録は `specs/` と `docs/` にあります。
+通常のpytestでは環境依存のLICENSE再現性テストを除外し、`requirements-license-audit.txt`で
+固定した環境で上記の `license_gate` と生成物チェックを実行します。主要コードは `src/`、
+テストは `tests/`、仕様・設計記録は `specs/` と `docs/` にあります。
 旧READMEに残る実験別の詳細手順は [docs/README-legacy.md](docs/README-legacy.md) に退避しています。
 
 ## ライセンス
@@ -169,9 +172,12 @@ remain available for users who prefer a command-driven workflow.
 ```powershell
 py -3.10 -m pytest
 py -3.10 scripts/generate_licenses.py --check
+py -3.10 -m pytest tests/test_license_audit.py -m license_gate
 ```
 
-The source code is released under the [MIT License](LICENSE.txt). Third-party license texts and
+The regular pytest run excludes the environment-dependent LICENSE reproducibility test. Run the
+`license_gate` test and generated-output check in an environment pinned by
+`requirements-license-audit.txt`. The source code is released under the [MIT License](LICENSE.txt). Third-party license texts and
 the audit records are available in [NOTICE.txt](NOTICE.txt) and [LICENSE/](LICENSE/).
 
 ## アセットについて

@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "generate_licenses.py"
 SPEC = importlib.util.spec_from_file_location("generate_licenses", MODULE_PATH)
@@ -76,7 +78,8 @@ def test_rendered_outputs_include_a_generated_root_notice() -> None:
     assert "LICENSE/third-party-licenses.txt" in outputs[notice_path]
 
 
-def test_committed_license_outputs_are_reproducible_in_the_current_environment() -> None:
+@pytest.mark.license_gate
+def test_committed_license_outputs_are_reproducible_in_the_pinned_environment() -> None:
     root = Path(__file__).resolve().parents[1]
     audit = license_audit.build_audit(root)
 

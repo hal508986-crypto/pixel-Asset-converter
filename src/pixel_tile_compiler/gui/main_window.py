@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable, cast
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QThread, QTimer, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QFileDialog,
+    QCheckBox,
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
@@ -20,7 +22,9 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QProgressBar,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -37,13 +41,12 @@ from pixel_tile_compiler.gui.policy import (
     resolve_character_gui_profile,
     resolve_terrain_gui_profile,
 )
-from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+from pixel_tile_compiler.pipeline.compiler import CompilationResult, PixelTileCompiler
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
+    CharacterAnimationCompileResult,
     compile_character_animation_sheet,
 )
-
-
 CHECKER_LIGHT = QColor("#d6d9dd")
 CHECKER_DARK = QColor("#b9bec5")
 
@@ -73,35 +76,58 @@ class ImagePreview(QLabel):
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setFrameShadow(QFrame.Shadow.Plain)
         self.setToolTip("透明部分は市松模様で表示します")
+        self._guide_point: tuple[float, float] | None = None
 
     def set_image(self, path: Path | None) -> None:
         self._path = Path(path) if path is not None else None
         self.update()
 
+    def set_guide_point(self, point: tuple[float, float] | None) -> None:
+        self._guide_point = point
+        self.update()
+
+    def _display_geometry(self) -> tuple[QImage, tuple[int, int, int, int]] | None:
+        if self._path is None or not self._path.exists():
+            return None
+        image = QImage(str(self._path)).convertToFormat(QImage.Format.Format_RGBA8888)
+        if image.isNull():
+            return None
+        available = QSize(max(1, self.width() - 20), max(1, self.height() - 20))
+        scaled_size = image.size().scaled(available, Qt.AspectRatioMode.KeepAspectRatio)
+        left = (self.width() - scaled_size.width()) // 2
+        top = (self.height() - scaled_size.height()) // 2
+        return image, (left, top, scaled_size.width(), scaled_size.height())
+
     def paintEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         del event
         painter = QPainter(self)
         _draw_checkerboard(painter, self.rect())
-        if self._path is None or not self._path.exists():
+        geometry = self._display_geometry()
+        if geometry is None:
             painter.setPen(QColor("#434a54"))
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self._empty_text)
             return
-        image = QImage(str(self._path)).convertToFormat(QImage.Format.Format_RGBA8888)
-        available = QSize(max(1, self.width() - 20), max(1, self.height() - 20))
+        image, (left, top, width, height) = geometry
         scaled = image.scaled(
-            available,
-            Qt.AspectRatioMode.KeepAspectRatio,
+            QSize(width, height),
+            Qt.AspectRatioMode.IgnoreAspectRatio,
             Qt.TransformationMode.FastTransformation,
         )
-        left = (self.width() - scaled.width()) // 2
-        top = (self.height() - scaled.height()) // 2
         painter.drawImage(left, top, scaled)
+        if self._guide_point is not None:
+            guide_x, guide_y = self._guide_point
+            x = left + int((guide_x + 0.5) * width / max(1, image.width()))
+            y = top + int((guide_y + 0.5) * height / max(1, image.height()))
+            painter.setPen(QColor("#ffcc66"))
+            painter.drawLine(x - 8, y, x + 8, y)
+            painter.drawLine(x, y - 8, x, y + 8)
 
 
 class SourceImagePreview(ImagePreview):
     """Image preview that accepts one supported local image by drag-and-drop."""
 
     image_dropped = Signal(object)
+    image_point_clicked = Signal(object)
 
     def __init__(self, empty_text: str) -> None:
         super().__init__(empty_text)
@@ -129,9 +155,25 @@ class SourceImagePreview(ImagePreview):
         self.image_dropped.emit(path)
         event.acceptProposedAction()
 
+    def mousePressEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        if event.button() == Qt.MouseButton.LeftButton:
+            geometry = self._display_geometry()
+            if geometry is not None:
+                image, (left, top, width, height) = geometry
+                position = event.position()
+                if left <= position.x() < left + width and top <= position.y() < top + height:
+                    x = min(image.width() - 1, max(0, int((position.x() - left) * image.width() / width)))
+                    y = min(image.height() - 1, max(0, int((position.y() - top) * image.height() / height)))
+                    self.image_point_clicked.emit((x, y))
+                    event.accept()
+                    return
+        super().mousePressEvent(event)
+
 
 class PixelCanvas(QGraphicsView):
     """Nearest-neighbor canvas with a dynamic grid and alpha checkerboard."""
+
+    point_clicked = Signal(object)
 
     def __init__(self) -> None:
         super().__init__()
@@ -143,6 +185,7 @@ class PixelCanvas(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self._item: QGraphicsPixmapItem | None = None
         self._source_image: QImage | None = None
+        self._guide_point: tuple[float, float] | None = None
         self._refresh_scene()
 
     def set_canvas_size(self, canvas_size: tuple[int, int]) -> None:
@@ -175,6 +218,22 @@ class PixelCanvas(QGraphicsView):
         self._source_image = None
         self._refresh_scene()
 
+    def set_guide_point(self, point: tuple[float, float] | None) -> None:
+        self._guide_point = point
+        self.viewport().update()
+
+    def mousePressEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        if event.button() == Qt.MouseButton.LeftButton:
+            scene_point = self.mapToScene(event.position().toPoint())
+            width, height = self.state.canvas_size
+            zoom = self.state.zoom
+            x = min(width, max(0, int(scene_point.x() / zoom + 0.5)))
+            y = min(height, max(0, int(scene_point.y() / zoom + 0.5)))
+            self.point_clicked.emit((x, y))
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
     def wheelEvent(self, event) -> None:  # type: ignore[no-untyped-def]
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
             if event.angleDelta().y() > 0:
@@ -190,17 +249,23 @@ class PixelCanvas(QGraphicsView):
 
     def drawForeground(self, painter: QPainter, rect) -> None:  # type: ignore[no-untyped-def]
         del rect
-        if self.state.zoom < 4:
-            return
         width, height = self.state.canvas_size
         pixel_size = self.state.zoom
-        painter.setPen(QColor(35, 40, 48, 80))
-        for column in range(width + 1):
-            x = column * pixel_size
-            painter.drawLine(x, 0, x, height * pixel_size)
-        for row in range(height + 1):
-            y = row * pixel_size
-            painter.drawLine(0, y, width * pixel_size, y)
+        if self.state.zoom >= 4:
+            painter.setPen(QColor(35, 40, 48, 80))
+            for column in range(width + 1):
+                x = column * pixel_size
+                painter.drawLine(x, 0, x, height * pixel_size)
+            for row in range(height + 1):
+                y = row * pixel_size
+                painter.drawLine(0, y, width * pixel_size, y)
+        if self._guide_point is not None:
+            guide_x, guide_y = self._guide_point
+            x = int(guide_x * pixel_size)
+            y = int(guide_y * pixel_size)
+            painter.setPen(QColor("#ffcc66"))
+            painter.drawLine(x - pixel_size * 2, y, x + pixel_size * 2, y)
+            painter.drawLine(x, y - pixel_size * 2, x, y + pixel_size * 2)
 
     def _refresh_scene(self) -> None:
         self.scene().clear()
@@ -219,6 +284,23 @@ class PixelCanvas(QGraphicsView):
         self.viewport().update()
 
 
+class _CompileWorker(QThread):
+    """Run one compiler operation away from the Qt GUI thread."""
+
+    succeeded = Signal(object)
+    failed = Signal(str)
+
+    def __init__(self, operation: Callable[[], object]) -> None:
+        super().__init__()
+        self._operation = operation
+
+    def run(self) -> None:
+        try:
+            self.succeeded.emit(self._operation())
+        except Exception as exc:  # pragma: no cover - asserted through Qt signal tests
+            self.failed.emit(str(exc))
+
+
 class MainWindow(QMainWindow):
     """Character-first GUI; compiler behavior remains in the core pipeline."""
 
@@ -229,12 +311,19 @@ class MainWindow(QMainWindow):
         self.source_path: Path | None = None
         self._compiled_canvas_size: tuple[int, int] | None = None
         self._terrain_batch_window = None
+        self._origin_pick_target: str | None = None
+        self._compile_thread: _CompileWorker | None = None
+        self._compile_context: dict[str, object] | None = None
+        self._animation_frame_paths: tuple[Path, ...] = ()
+        self._animation_frame_index = 0
         self.default_output_root = Path.cwd() / "output"
         self.source_preview = SourceImagePreview("元絵を読み込んでください\nまたはここにドロップ")
         self.source_preview.image_dropped.connect(self.set_source_path)
+        self.source_preview.image_point_clicked.connect(self._on_source_origin_clicked)
         self.result_preview = ImagePreview("コンパイル結果")
         self.tile_preview = ImagePreview("タイルプレビュー")
         self.canvas = PixelCanvas()
+        self.canvas.point_clicked.connect(self._on_output_origin_clicked)
         self.status = QLabel("元絵を読み込むと始められます")
         self.metrics = QLabel("出力情報はここに表示されます")
         self.output_root_field = QLineEdit(str(self.default_output_root))
@@ -284,6 +373,9 @@ class MainWindow(QMainWindow):
         self.animation_source_origin_y.setValue(0)
         self.animation_source_origin_y_label = QLabel("ソース原点Y")
         self.animation_source_origin_label = QLabel("ソース原点（x,y）")
+        self.animation_source_origin_set = QCheckBox("指定")
+        self.animation_source_origin_pick_button = QPushButton("画像から指定")
+        self.animation_source_origin_pick_button.clicked.connect(self.start_source_origin_pick)
         self.animation_output_origin_x = QSpinBox()
         self.animation_output_origin_x.setRange(-4096, 4096)
         self.animation_output_origin_x.setValue(0)
@@ -292,6 +384,13 @@ class MainWindow(QMainWindow):
         self.animation_output_origin_y.setValue(0)
         self.animation_output_origin_y_label = QLabel("出力原点Y")
         self.animation_output_origin_label = QLabel("出力原点（x,y）")
+        self.animation_output_origin_set = QCheckBox("指定")
+        self.animation_output_origin_pick_button = QPushButton("Canvasから指定")
+        self.animation_output_origin_pick_button.clicked.connect(self.start_output_origin_pick)
+        self.animation_scale_mode = QComboBox()
+        self.animation_scale_mode.addItem("自動fit", userData="auto")
+        self.animation_scale_mode.addItem("固定倍率", userData="fixed")
+        self.animation_scale_mode_label = QLabel("倍率調整")
         self.animation_scale = QDoubleSpinBox()
         self.animation_scale.setRange(0.01, 100.0)
         self.animation_scale.setSingleStep(0.05)
@@ -306,6 +405,8 @@ class MainWindow(QMainWindow):
         self.animation_palette.setRange(4, 64)
         self.animation_palette.setValue(24)
         self.animation_palette_label = QLabel("アニメーションpalette上限")
+        self.animation_source_origin_set.toggled.connect(self._update_purpose_controls)
+        self.animation_output_origin_set.toggled.connect(self._update_purpose_controls)
         self.animation_split_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_columns.valueChanged.connect(self._update_purpose_controls)
         self.animation_rows.valueChanged.connect(self._update_purpose_controls)
@@ -320,6 +421,7 @@ class MainWindow(QMainWindow):
             self.animation_scale,
         ):
             widget.valueChanged.connect(self._update_purpose_controls)
+        self.animation_scale_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_shared_palette.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_palette.valueChanged.connect(self._update_purpose_controls)
         self.auto_profile = QLabel()
@@ -337,6 +439,18 @@ class MainWindow(QMainWindow):
         self.repeat_opt.setCurrentIndex(1)
         self.repeat_opt_label = QLabel("繰り返し最適化")
         self.secondary_preview_label = QLabel("繰り返し確認")
+        self.animation_play_button = QPushButton("▶ 再生")
+        self.animation_play_button.setEnabled(False)
+        self.animation_play_button.clicked.connect(self._toggle_animation_playback)
+        self.animation_playback_label = QLabel("未再生")
+        self.animation_play_timer = QTimer(self)
+        self.animation_play_timer.setInterval(160)
+        self.animation_play_timer.timeout.connect(self._advance_animation_frame)
+        self.compile_progress = QProgressBar()
+        self.compile_progress.setRange(0, 1)
+        self.compile_progress.setValue(0)
+        self.compile_progress.setFormat("待機中")
+        self.compile_progress.setTextVisible(True)
         self.pixelization_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.palette.valueChanged.connect(self._on_terrain_setting_changed)
         self.repeat_opt.currentIndexChanged.connect(self._on_terrain_setting_changed)
@@ -385,10 +499,25 @@ class MainWindow(QMainWindow):
         settings_form.addRow(self.animation_placement_mode_label, self.animation_placement_mode)
         settings_form.addRow(self.animation_width_label, self.animation_width)
         settings_form.addRow(self.animation_height_label, self.animation_height)
-        settings_form.addRow(self.animation_source_origin_label, self.animation_source_origin_x)
-        settings_form.addRow(self.animation_source_origin_y_label, self.animation_source_origin_y)
-        settings_form.addRow(self.animation_output_origin_label, self.animation_output_origin_x)
-        settings_form.addRow(self.animation_output_origin_y_label, self.animation_output_origin_y)
+        self.animation_source_origin_row = QWidget()
+        source_origin_layout = QHBoxLayout(self.animation_source_origin_row)
+        source_origin_layout.setContentsMargins(0, 0, 0, 0)
+        source_origin_layout.addWidget(self.animation_source_origin_set)
+        source_origin_layout.addWidget(self.animation_source_origin_x)
+        source_origin_layout.addWidget(QLabel(","))
+        source_origin_layout.addWidget(self.animation_source_origin_y)
+        source_origin_layout.addWidget(self.animation_source_origin_pick_button)
+        settings_form.addRow(self.animation_source_origin_label, self.animation_source_origin_row)
+        self.animation_output_origin_row = QWidget()
+        output_origin_layout = QHBoxLayout(self.animation_output_origin_row)
+        output_origin_layout.setContentsMargins(0, 0, 0, 0)
+        output_origin_layout.addWidget(self.animation_output_origin_set)
+        output_origin_layout.addWidget(self.animation_output_origin_x)
+        output_origin_layout.addWidget(QLabel(","))
+        output_origin_layout.addWidget(self.animation_output_origin_y)
+        output_origin_layout.addWidget(self.animation_output_origin_pick_button)
+        settings_form.addRow(self.animation_output_origin_label, self.animation_output_origin_row)
+        settings_form.addRow(self.animation_scale_mode_label, self.animation_scale_mode)
         settings_form.addRow(self.animation_scale_label, self.animation_scale)
         settings_form.addRow(self.animation_palette_label, self.animation_palette)
         settings_form.addRow(self.animation_shared_palette_label, self.animation_shared_palette)
@@ -403,18 +532,25 @@ class MainWindow(QMainWindow):
         output_row_layout.addWidget(self.output_root_field, 1)
         output_row_layout.addWidget(self.output_browse_button)
         settings_form.addRow("保存先", output_row)
-        settings_form.addRow(self.compile_button)
-        settings_form.addRow(self.terrain_batch_button)
 
-        controls = QVBoxLayout()
+        controls_content = QWidget()
+        controls = QVBoxLayout(controls_content)
         controls.addWidget(source_group)
         controls.addWidget(settings_group)
         controls.addStretch(1)
+        controls_scroll = QScrollArea()
+        controls_scroll.setObjectName("animationControlsScroll")
+        controls_scroll.setWidgetResizable(True)
+        controls_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        controls_scroll.setWidget(controls_content)
         controls_panel = QFrame()
         controls_panel.setObjectName("controlsPanel")
-        controls_panel.setLayout(controls)
-        controls_panel.setMinimumWidth(280)
-        controls_panel.setMaximumWidth(340)
+        controls_panel_layout = QVBoxLayout(controls_panel)
+        controls_panel_layout.setContentsMargins(0, 0, 0, 0)
+        controls_panel_layout.addWidget(controls_scroll)
+        self.animation_controls_scroll = controls_scroll
+        controls_panel.setMinimumWidth(320)
+        controls_panel.setMaximumWidth(390)
 
         canvas_title = QLabel("ドットプレビュー")
         canvas_title.setObjectName("sectionTitle")
@@ -452,6 +588,16 @@ class MainWindow(QMainWindow):
         body.addWidget(canvas_widget, 1)
         body.addWidget(output_panel)
 
+        action_panel = QFrame()
+        action_panel.setObjectName("actionPanel")
+        action_layout = QHBoxLayout(action_panel)
+        action_layout.setContentsMargins(0, 0, 0, 0)
+        action_layout.addWidget(self.compile_button)
+        action_layout.addWidget(self.compile_progress, 1)
+        action_layout.addWidget(self.animation_play_button)
+        action_layout.addWidget(self.animation_playback_label)
+        action_layout.addWidget(self.terrain_batch_button)
+
         footer = QVBoxLayout()
         footer.addWidget(self.metrics)
         footer.addWidget(self.status)
@@ -459,6 +605,7 @@ class MainWindow(QMainWindow):
         root = QVBoxLayout()
         root.setContentsMargins(18, 16, 18, 14)
         root.addLayout(body, 1)
+        root.addWidget(action_panel)
         root.addLayout(footer)
         container = QWidget()
         container.setLayout(root)
@@ -521,7 +668,11 @@ class MainWindow(QMainWindow):
         self.repeat_opt_label.setVisible(not is_character)
         self.repeat_opt.setVisible(not is_character)
         self.terrain_batch_button.setVisible(not is_character)
-        self.secondary_preview_label.setText("アニメーションシート（8倍）" if is_animation else "繰り返し確認")
+        self.animation_play_button.setVisible(is_animation)
+        self.animation_playback_label.setVisible(is_animation)
+        self.secondary_preview_label.setText("アニメーションシート" if is_animation else "繰り返し確認")
+        if not is_animation:
+            self._stop_animation_playback()
         self._update_animation_split_controls()
         self._update_animation_geometry_controls()
         if is_character:
@@ -547,10 +698,16 @@ class MainWindow(QMainWindow):
             if self.animation_placement_mode.currentData() == "preserve_motion":
                 canvas_size = (self.animation_width.value(), self.animation_height.value())
                 self.canvas.set_canvas_size(canvas_size)
+                self.canvas.set_guide_point(
+                    (self.animation_output_origin_x.value(), self.animation_output_origin_y.value())
+                    if self.animation_output_origin_set.isChecked()
+                    else None
+                )
                 columns = self.animation_columns.value()
                 rows = self.animation_rows.value()
+                scale_label = "自動fit" if self.animation_scale_mode.currentData() == "auto" else f"固定{self.animation_scale.value():g}倍"
                 self.auto_profile.setText(
-                    f"戦闘 / {canvas_size[0]}×{canvas_size[1]} / {columns}列×{rows}行 / {self.animation_palette.value()}色 / 明示原点・移動保持"
+                    f"戦闘 / {canvas_size[0]}×{canvas_size[1]} / {columns}列×{rows}行 / {self.animation_palette.value()}色 / {scale_label}"
                 )
                 self._clear_stale_result(canvas_size)
                 return
@@ -558,6 +715,7 @@ class MainWindow(QMainWindow):
             rows = self.animation_rows.value()
             profile = resolve_character_animation_gui_profile(canvas_size, frame_count=columns * rows)
             self.canvas.set_canvas_size(profile.canvas_size)
+            self.canvas.set_guide_point(None)
             split_mode = self.animation_split_mode.currentData()
             if split_mode == "fixed_grid":
                 split_summary = f"{columns}列×{rows}行"
@@ -608,13 +766,11 @@ class MainWindow(QMainWindow):
             self.animation_height_label,
             self.animation_height,
             self.animation_source_origin_label,
-            self.animation_source_origin_x,
-            self.animation_source_origin_y_label,
-            self.animation_source_origin_y,
+            self.animation_source_origin_row,
             self.animation_output_origin_label,
-            self.animation_output_origin_x,
-            self.animation_output_origin_y_label,
-            self.animation_output_origin_y,
+            self.animation_output_origin_row,
+            self.animation_scale_mode_label,
+            self.animation_scale_mode,
             self.animation_scale_label,
             self.animation_scale,
             self.animation_palette_label,
@@ -623,7 +779,95 @@ class MainWindow(QMainWindow):
             self.animation_shared_palette,
         ):
             widget.setVisible(is_motion)
+        for widget in (
+            self.animation_source_origin_set,
+            self.animation_source_origin_pick_button,
+            self.animation_output_origin_set,
+            self.animation_output_origin_pick_button,
+        ):
             widget.setEnabled(is_motion)
+        for widget in (
+            self.animation_source_origin_x,
+            self.animation_source_origin_y,
+        ):
+            widget.setEnabled(is_motion and self.animation_source_origin_set.isChecked())
+        for widget in (
+            self.animation_output_origin_x,
+            self.animation_output_origin_y,
+        ):
+            widget.setEnabled(is_motion and self.animation_output_origin_set.isChecked())
+        self.animation_scale.setEnabled(is_motion and self.animation_scale_mode.currentData() == "fixed")
+        self.animation_scale_mode.setEnabled(is_motion)
+        self.source_preview.set_guide_point(
+            (self.animation_source_origin_x.value(), self.animation_source_origin_y.value())
+            if is_motion and self.animation_source_origin_set.isChecked()
+            else None
+        )
+        self.canvas.set_guide_point(
+            (self.animation_output_origin_x.value(), self.animation_output_origin_y.value())
+            if is_motion and self.animation_output_origin_set.isChecked()
+            else None
+        )
+
+    def start_source_origin_pick(self) -> None:
+        self._origin_pick_target = "source"
+        self.status.setText("元絵プレビュー上でソース原点をクリックしてください")
+
+    def start_output_origin_pick(self) -> None:
+        self._origin_pick_target = "output"
+        self.status.setText("ドットプレビュー上で出力原点をクリックしてください")
+
+    def _on_source_origin_clicked(self, point: object) -> None:
+        if self._origin_pick_target != "source":
+            return
+        x, y = point  # type: ignore[misc]
+        self.animation_source_origin_set.setChecked(True)
+        self.animation_source_origin_x.setValue(int(x))
+        self.animation_source_origin_y.setValue(int(y))
+        self._origin_pick_target = None
+        self.status.setText(f"ソース原点を指定しました: ({int(x)}, {int(y)})")
+
+    def _on_output_origin_clicked(self, point: object) -> None:
+        if self._origin_pick_target != "output":
+            return
+        x, y = point  # type: ignore[misc]
+        self.animation_output_origin_set.setChecked(True)
+        self.animation_output_origin_x.setValue(int(x))
+        self.animation_output_origin_y.setValue(int(y))
+        self._origin_pick_target = None
+        self.status.setText(f"出力原点を指定しました: ({int(x)}, {int(y)})")
+
+    def _show_animation_frame(self) -> None:
+        if not self._animation_frame_paths:
+            return
+        path = self._animation_frame_paths[self._animation_frame_index]
+        canvas_size = self._compiled_canvas_size
+        self.result_preview.set_image(path)
+        if canvas_size is not None:
+            self.canvas.set_image(path, canvas_size)
+        self.animation_playback_label.setText(
+            f"F{self._animation_frame_index + 1}/{len(self._animation_frame_paths)}"
+        )
+
+    def _toggle_animation_playback(self) -> None:
+        if not self._animation_frame_paths:
+            return
+        if self.animation_play_timer.isActive():
+            self._stop_animation_playback()
+            return
+        self.animation_play_timer.start()
+        self.animation_play_button.setText("■ 停止")
+
+    def _stop_animation_playback(self) -> None:
+        self.animation_play_timer.stop()
+        self.animation_play_button.setText("▶ 再生")
+
+    def _advance_animation_frame(self) -> None:
+        if not self._animation_frame_paths:
+            self._stop_animation_playback()
+            return
+        self._animation_frame_index = (self._animation_frame_index + 1) % len(self._animation_frame_paths)
+        self._show_animation_frame()
 
     def _clear_stale_result(self, selected_size: tuple[int, int] | None = None) -> None:
         if self._compiled_canvas_size is None:
@@ -631,6 +875,11 @@ class MainWindow(QMainWindow):
         if selected_size is not None and self._compiled_canvas_size == selected_size:
             return
         self._compiled_canvas_size = None
+        self._stop_animation_playback()
+        self._animation_frame_paths = ()
+        self._animation_frame_index = 0
+        self.animation_play_button.setEnabled(False)
+        self.animation_playback_label.setText("未再生")
         self.canvas.clear_image()
         self.result_preview.set_image(None)
         self.tile_preview.set_image(None)
@@ -685,11 +934,103 @@ class MainWindow(QMainWindow):
             return
         self.set_source_path(path)
 
+    def _start_compile(self, operation: Callable[[], object], context: dict[str, object]) -> None:
+        if self._compile_thread is not None:
+            return
+        self._compile_context = context
+        self.compile_button.setEnabled(False)
+        self.compile_progress.setRange(0, 0)
+        self.compile_progress.setFormat("変換中...")
+        self.status.setText("変換中...")
+        worker = _CompileWorker(operation)
+        worker.succeeded.connect(self._on_compile_succeeded)
+        worker.failed.connect(self._on_compile_failed)
+        worker.finished.connect(self._on_compile_finished)
+        self._compile_thread = worker
+        worker.start()
+
+    def _on_compile_succeeded(self, result: object) -> None:
+        context = self._compile_context
+        if context is None:
+            return
+        self.compile_progress.setRange(0, 1)
+        self.compile_progress.setValue(1)
+        self.compile_progress.setFormat("完了")
+        if context["kind"] == "animation":
+            animation = cast(CharacterAnimationCompileResult, result)
+            width, height = cast(tuple[int, int], context["canvas_size"])
+            output = cast(Path, context["output"])
+            placement_mode = cast(str, context["placement_mode"])
+            self._compiled_canvas_size = (width, height)
+            self._animation_frame_paths = tuple(animation.final_frame_paths)
+            self._animation_frame_index = 0
+            self._show_animation_frame()
+            self.animation_play_button.setEnabled(bool(self._animation_frame_paths))
+            self.tile_preview.set_image(animation.preview_8x_path)
+            self.secondary_preview_label.setText(f"アニメーションシート（{animation.preview_scale}倍）")
+            self.metrics.setText(
+                " / ".join(
+                    [
+                        f"出力 {width}×{height}",
+                        f"{len(animation.final_frame_paths)}フレーム（{width * len(animation.final_frame_paths)}×{height} Sheet）",
+                        f"フレーム集約 {animation.final_frame_paths[0].parent}",
+                        f"保存先 {output}",
+                    ]
+                )
+            )
+            if placement_mode == "preserve_motion":
+                self.status.setText("完了: 明示原点・共通倍率で移動を保持した戦闘アニメーションを出力しました")
+            else:
+                self.status.setText("完了: 分割・共通bbox・足元アンカーで待機アニメーションを出力しました")
+            return
+
+        compilation = cast(CompilationResult, result)
+        width, height = cast(tuple[int, int], context["canvas_size"])
+        output = cast(Path, context["output"])
+        purpose = cast(str, context["purpose"])
+        self.canvas.set_image(compilation.final_path, (width, height))
+        self._compiled_canvas_size = (width, height)
+        self.result_preview.set_image(compilation.final_path)
+        tile = output / "debug" / "09_tile_preview.png"
+        if not tile.exists():
+            tile = output / "debug" / "08_tile_preview.png"
+        self.tile_preview.set_image(tile if tile.exists() else None)
+        self.metrics.setText(
+            " / ".join(
+                [
+                    f"出力 {width}×{height}",
+                    f"可視RGB {compilation.metrics.actual_palette_count}色",
+                    f"保存先 {output}",
+                ]
+            )
+        )
+        if purpose == "character":
+            self.status.setText("完了: B24をCanvasに合わせて自動適用しました")
+        else:
+            self.status.setText("完了: 64×64地形タイルを出力しました")
+
+    def _on_compile_failed(self, message: str) -> None:
+        self.compile_progress.setRange(0, 1)
+        self.compile_progress.setValue(1)
+        self.compile_progress.setFormat("失敗")
+        self.status.setText(f"コンパイルできませんでした: {message}")
+
+    def _on_compile_finished(self) -> None:
+        worker = self._compile_thread
+        self._compile_thread = None
+        self._compile_context = None
+        if worker is not None:
+            worker.deleteLater()
+        self.compile_button.setEnabled(self.source_path is not None)
+
     def compile_image(self) -> None:
         if self.source_path is None:
             self.status.setText("先に元絵を読み込んでください")
             return
+        if self._compile_thread is not None:
+            return
         try:
+            source = self.source_path
             output_root = self._selected_output_root()
             purpose = self.purpose.currentData()
             if purpose == "character_animation":
@@ -697,6 +1038,11 @@ class MainWindow(QMainWindow):
                 rows = self.animation_rows.value()
                 placement_mode = self.animation_placement_mode.currentData()
                 if placement_mode == "preserve_motion":
+                    if (
+                        not self.animation_source_origin_set.isChecked()
+                        or not self.animation_output_origin_set.isChecked()
+                    ):
+                        raise ValueError("戦闘モードでは画像／Canvas上で両方の原点を指定してください")
                     width, height = self.animation_width.value(), self.animation_height.value()
                     fit_within = (width, height)
                     bottom_margin = 0
@@ -708,7 +1054,11 @@ class MainWindow(QMainWindow):
                         float(self.animation_output_origin_x.value()),
                         float(self.animation_output_origin_y.value()),
                     )
-                    scale_override = float(self.animation_scale.value())
+                    scale_override = (
+                        None
+                        if self.animation_scale_mode.currentData() == "auto"
+                        else float(self.animation_scale.value())
+                    )
                     shared_palette_enabled = bool(self.animation_shared_palette.currentData())
                 else:
                     profile = resolve_character_animation_gui_profile(
@@ -724,57 +1074,49 @@ class MainWindow(QMainWindow):
                     shared_palette_enabled = False
                 output = build_output_path(
                     output_root,
-                    self.source_path,
+                    source,
                     purpose="character_animation",
                     canvas_size=(width, height),
                 )
-                animation = compile_character_animation_sheet(
-                    self.source_path,
+                config = CharacterAnimationConfig(
+                    frame_count=columns * rows,
+                    split_mode=self.animation_split_mode.currentData(),  # type: ignore[arg-type]
+                    grid_columns=columns,
+                    grid_rows=rows,
+                    canvas_size=(width, height),
+                    fit_within=fit_within,
+                    bottom_margin=bottom_margin,
+                    placement_mode=placement_mode,  # type: ignore[arg-type]
+                    source_origin=source_origin,
+                    output_origin=output_origin,
+                    scale_override=scale_override,
+                    shared_palette_enabled=shared_palette_enabled,
+                )
+                palette_budget = self.animation_palette.value()
+                operation = lambda: compile_character_animation_sheet(
+                    source,
                     output,
-                    config=CharacterAnimationConfig(
-                        frame_count=profile.frame_count,
-                        split_mode=self.animation_split_mode.currentData(),  # type: ignore[arg-type]
-                        grid_columns=columns,
-                        grid_rows=rows,
-                        canvas_size=(width, height),
-                        fit_within=fit_within,
-                        bottom_margin=bottom_margin,
-                        placement_mode=placement_mode,  # type: ignore[arg-type]
-                        source_origin=source_origin,
-                        output_origin=output_origin,
-                        scale_override=scale_override,
-                        shared_palette_enabled=shared_palette_enabled,
-                    ),
-                    palette_budget=self.animation_palette.value(),
+                    config=config,
+                    palette_budget=palette_budget,
                     character_detail_level="balanced",
                     debug_enabled=True,
                 )
-                first_frame = animation.frame_paths[0]
-                self.canvas.set_image(first_frame, (width, height))
-                self._compiled_canvas_size = (width, height)
-                self.result_preview.set_image(first_frame)
-                self.tile_preview.set_image(animation.preview_8x_path)
-                self.metrics.setText(
-                    " / ".join(
-                        [
-                            f"出力 {width}×{height}",
-                            f"{len(animation.frame_paths)}フレーム（{width * len(animation.frame_paths)}×{height} Sheet）",
-                            f"フレーム集約 {animation.final_frame_paths[0].parent}",
-                            f"保存先 {output}",
-                        ]
-                    )
+                self._start_compile(
+                    operation,
+                    {
+                        "kind": "animation",
+                        "canvas_size": (width, height),
+                        "output": output,
+                        "placement_mode": placement_mode,
+                    },
                 )
-                if placement_mode == "preserve_motion":
-                    self.status.setText("完了: 明示原点・共通倍率で移動を保持した戦闘アニメーションを出力しました")
-                else:
-                    self.status.setText("完了: 分割・共通bbox・足元アンカーで待機アニメーションを出力しました")
                 return
             if purpose == "character":
                 profile = resolve_character_gui_profile(self.canvas_size.currentData())
                 width, height = profile.canvas_size
                 output = build_output_path(
                     output_root,
-                    self.source_path,
+                    source,
                     purpose="character",
                     canvas_size=(width, height),
                 )
@@ -793,7 +1135,7 @@ class MainWindow(QMainWindow):
                 repeat_opt_enabled = bool(self.repeat_opt.currentData())
                 output = build_output_path(
                     output_root,
-                    self.source_path,
+                    source,
                     purpose="terrain",
                     canvas_size=(width, height),
                     pixelization_mode=terrain_profile.pixelization_mode,
@@ -809,31 +1151,23 @@ class MainWindow(QMainWindow):
                     repeat_opt_enabled=repeat_opt_enabled,
                     debug_enabled=True,
                 )
-            result = PixelTileCompiler().compile(self.source_path, config)
-        except (OSError, RuntimeError, ValueError) as exc:
-            self.status.setText(f"コンパイルできませんでした: {exc}")
-            return
-
-        self.canvas.set_image(result.final_path, (width, height))
-        self._compiled_canvas_size = (width, height)
-        self.result_preview.set_image(result.final_path)
-        tile = output / "debug" / "09_tile_preview.png"
-        if not tile.exists():
-            tile = output / "debug" / "08_tile_preview.png"
-        self.tile_preview.set_image(tile if tile.exists() else None)
-        self.metrics.setText(
-            " / ".join(
-                [
-                    f"出力 {width}×{height}",
-                    f"可視RGB {result.metrics.actual_palette_count}色",
-                    f"保存先 {output}",
-                ]
+            operation = lambda: PixelTileCompiler().compile(source, config)
+            self._start_compile(
+                operation,
+                {
+                    "kind": "single",
+                    "purpose": purpose,
+                    "canvas_size": (width, height),
+                    "output": output,
+                },
             )
-        )
-        if purpose == "character":
-            self.status.setText("完了: B24をCanvasに合わせて自動適用しました")
-        else:
-            self.status.setText("完了: 64×64地形タイルを出力しました")
+        except (OSError, RuntimeError, ValueError) as exc:
+            self._on_compile_failed(str(exc))
+
+    def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        if self._compile_thread is not None and self._compile_thread.isRunning():
+            self._compile_thread.wait()
+        event.accept()
 
     def open_terrain_batch(self) -> None:
         """Open the terrain-only batch window without changing single-image behavior."""

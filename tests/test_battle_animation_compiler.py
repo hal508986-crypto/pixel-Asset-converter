@@ -10,6 +10,7 @@ from typer.testing import CliRunner
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
     CharacterAnimationTransform,
+    _resolve_animation_preview_scale,
     align_character_frames,
     analyze_frame_alpha,
     compile_character_animation_sheet,
@@ -341,6 +342,36 @@ def test_protected_pixel_survives_alpha_preprocess_and_detail_cleanup() -> None:
     assert simplified.getpixel((5, 5)) == cleaned.getpixel((5, 5))
 
 
+def test_rgba_protected_mask_keeps_alpha_scope_through_motion_alignment() -> None:
+    frame = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
+    for y in range(4, 9):
+        for x in range(4, 9):
+            frame.putpixel((x, y), (100, 100, 100, 255))
+    protected = Image.new("RGBA", frame.size, (255, 255, 255, 0))
+    protected_alpha = Image.new("L", frame.size, 0)
+    protected_alpha.putpixel((5, 5), 255)
+    protected.putalpha(protected_alpha)
+
+    result = align_character_frames(
+        (frame,),
+        CharacterAnimationConfig(
+            frame_count=1,
+            canvas_size=(64, 64),
+            placement_mode="preserve_motion",
+            source_origin=(10, 10),
+            output_origin=(32, 32),
+            scale_override=1.0,
+            remove_isolated_components=False,
+        ),
+        protected_masks=(protected,),
+    )
+
+    aligned_mask = result.protected_masks[0]
+    assert aligned_mask is not None
+    assert aligned_mask.getpixel((27, 27))[3] > 0
+    assert aligned_mask.getpixel((28, 27))[3] == 0
+
+
 def test_detail_bridge_protection_and_padding_independence() -> None:
     source = Image.new("RGBA", (9, 9), (0, 0, 0, 0))
     for x in (2, 3, 4, 5, 6):
@@ -359,12 +390,118 @@ def test_detail_bridge_protection_and_padding_independence() -> None:
     assert result_64.getpixel((4, 4)) == (108, 108, 108, 255)
 
 
-@pytest.mark.skipif(
-    not Path("assets/test/battle_animation_generated_fixture.png").exists(),
-    reason="local imagegen fixture is intentionally Git-ignored",
+def test_legacy_animation_palette_budget_is_checked_per_frame_when_not_shared(tmp_path: Path) -> None:
+    palettes = (
+        ((220, 40, 40), (180, 30, 30), (140, 20, 20), (100, 10, 10)),
+        ((40, 220, 80), (30, 180, 70), (20, 140, 60), (10, 100, 50)),
+    )
+    sheet = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    for frame_index, palette in enumerate(palettes):
+        for index, color in enumerate(palette):
+            left = frame_index * 20 + (index % 2) * 10
+            top = (index // 2) * 10
+            for y in range(top, top + 10):
+                for x in range(left, left + 10):
+                    sheet.putpixel((x, y), (*color, 255))
+    source = tmp_path / "legacy-palette.png"
+    sheet.save(source)
+
+    result = compile_character_animation_sheet(
+        source,
+        tmp_path / "legacy-palette-output",
+        config=CharacterAnimationConfig(
+            frame_count=2,
+            grid_columns=2,
+            grid_rows=1,
+            canvas_size=(32, 32),
+            fit_within=(28, 28),
+            bottom_margin=2,
+            remove_isolated_components=False,
+            shared_palette_enabled=False,
+        ),
+        palette_budget=4,
+        character_detail_level="detailed",
+    )
+
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert report["final_palette"]["scope"] == "frame"
+    assert report["final_palette"]["within_budget"] is True
+    assert report["final_palette"]["frame_color_counts"] == [4, 4]
+
+
+def test_auto_fit_adds_negative_offset_to_left_constraint() -> None:
+    frame = Image.new("RGBA", (20, 20), (80, 140, 220, 255))
+
+    result = align_character_frames(
+        (frame,),
+        CharacterAnimationConfig(
+            frame_count=1,
+            canvas_size=(64, 64),
+            placement_mode="preserve_motion",
+            source_origin=(10, 10),
+            output_origin=(32, 32),
+            scale_override=None,
+            frame_offsets=((-10, 0),),
+            remove_isolated_components=False,
+        ),
+    )
+
+    assert result.scale == pytest.approx(2.2)
+
+
+def test_saved_report_relocates_final_frame_paths_out_of_staging(tmp_path: Path) -> None:
+    source = tmp_path / "report-paths.png"
+    frame = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
+    for y in range(3, 15):
+        for x in range(5, 13):
+            frame.putpixel((x, y), (80, 140, 220, 255))
+    frame.save(source)
+    output = tmp_path / "report-paths-output"
+
+    result = compile_character_animation_sheet(
+        source,
+        output,
+        config=CharacterAnimationConfig(frame_count=1),
+    )
+
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    saved_path = Path(report["final_frames"][0]["path"])
+    assert saved_path == result.final_frame_paths[0]
+    assert saved_path.exists()
+    assert ".staging-" not in str(saved_path)
+
+
+def test_preview_scale_is_capped_for_large_animation_sheets() -> None:
+    assert _resolve_animation_preview_scale((256, 192), max_preview_pixels=8_000_000) == 8
+    assert _resolve_animation_preview_scale((512 * 16, 320), max_preview_pixels=8_000_000) == 1
+
+
+def test_animation_sheet_pixel_cap_fails_before_frame_compilation(tmp_path: Path) -> None:
+    source = tmp_path / "oversized-sheet.png"
+    frame = Image.new("RGBA", (20, 20), (80, 140, 220, 255))
+    frame.save(source)
+
+    with pytest.raises(ValueError, match="総画素数が上限"):
+        compile_character_animation_sheet(
+            source,
+            tmp_path / "oversized-output",
+            config=CharacterAnimationConfig(
+                frame_count=1,
+                canvas_size=(4097, 4096),
+                fit_within=(54, 54),
+                bottom_margin=6,
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    "fixture_name",
+    ("battle_animation_generated_fixture.png", "battle_animation_review_fixture.png"),
 )
-def test_imagegen_fixture_runs_through_battle_animation_smoke(tmp_path: Path) -> None:
-    source = Path("assets/test/battle_animation_generated_fixture.png")
+def test_imagegen_fixture_runs_through_battle_animation_smoke(tmp_path: Path, fixture_name: str) -> None:
+    source = Path("assets/test") / fixture_name
+    if not source.exists():
+        pytest.skip("local imagegen fixture is intentionally Git-ignored")
     result = compile_character_animation_sheet(
         source,
         tmp_path / "imagegen-output",

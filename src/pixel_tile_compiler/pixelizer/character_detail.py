@@ -78,7 +78,9 @@ def simplify_character_detail(
     if protected_mask is not None and protected_mask.size != source.size:
         raise ValueError("protected mask must have the same size as the source image")
     explicit_protection = (
-        protected_mask.convert("L") if protected_mask is not None else Image.new("L", source.size, 0)
+        _protected_mask_to_luminance(protected_mask)
+        if protected_mask is not None
+        else Image.new("L", source.size, 0)
     )
     pixels = source.load()
     visited: set[tuple[int, int]] = set()
@@ -126,6 +128,11 @@ def simplify_character_detail(
             alpha = pixels[x, y][3]
             result.putpixel((x, y), (*replacement, alpha))
     return result
+
+
+def _protected_mask_to_luminance(mask: Image.Image) -> Image.Image:
+    """Read RGBA protection from alpha instead of its white RGB carrier."""
+    return mask.getchannel("A") if "A" in mask.getbands() else mask.convert("L")
 
 
 def _component_is_bridge(

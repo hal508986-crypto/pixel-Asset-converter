@@ -71,3 +71,21 @@ def test_detail_thresholds_scale_with_native_canvas_short_side() -> None:
     assert character_detail_profile("balanced", canvas_size=(128, 128)).max_low_contrast_component_area == 8
     assert character_detail_profile("balanced", canvas_size=(128, 96)).max_low_contrast_component_area == 5
     assert character_detail_profile("sparse", canvas_size=(128, 128)).max_low_contrast_component_area == 16
+
+
+def test_rgba_protected_mask_uses_alpha_only_for_detail_cleanup() -> None:
+    source = Image.new("RGBA", (9, 9), (0, 0, 0, 0))
+    for y in range(2, 7):
+        for x in range(2, 7):
+            source.putpixel((x, y), (100, 100, 100, 255))
+    source.putpixel((3, 3), (108, 108, 108, 255))
+    source.putpixel((5, 5), (108, 108, 108, 255))
+    protected = Image.new("RGBA", source.size, (255, 255, 255, 0))
+    protected_alpha = Image.new("L", source.size, 0)
+    protected_alpha.putpixel((3, 3), 255)
+    protected.putalpha(protected_alpha)
+
+    result = simplify_character_detail(source, "sparse", protected_mask=protected)
+
+    assert result.getpixel((3, 3)) == (108, 108, 108, 255)
+    assert result.getpixel((5, 5)) == (100, 100, 100, 255)

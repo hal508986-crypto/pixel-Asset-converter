@@ -83,7 +83,7 @@ pixel-tile compile-character-animation character_idle_sheet.png `
   --min-gutter-width 2 --debug --character-detail balanced
 ```
 
-`--frames 4` は従来互換で、`--cols 4 --rows 1` と同じです。出力には、共通配置前の `aligned_sheet.png`、減色後の `compiled_sheet.png`、最近傍8倍の `compiled_sheet_8x.png`、分割確認用の `detection_overlay.png`（`--debug` 時）、各フレームの `compiled/F1/final.png` を保存します。さらに `final_frames/F1_final.png` のように、分割後の `final.png` を1フォルダへリネーム集約します。`bbox_report.json` には各フレームの可視bbox、union bbox、共通倍率、配置bbox、足元アンカー、クリップ有無に加えて、検出モード、行列数、各セル、信頼度、fallback有無を記録します。
+`--frames 4` は従来互換で、`--cols 4 --rows 1` と同じです。出力には、共通配置前の `aligned_sheet.png`、減色後の `compiled_sheet.png`、最近傍の拡大プレビュー（最大8倍、資源上限に応じて倍率を下げる）である `compiled_sheet_8x.png`、分割確認用の `detection_overlay.png`（`--debug` 時）、各フレームの `compiled/F1/final.png` を保存します。さらに `final_frames/F1_final.png` のように、分割後の `final.png` を1フォルダへリネーム集約します。`bbox_report.json` には各フレームの可視bbox、union bbox、共通倍率、配置bbox、足元アンカー、クリップ有無に加えて、検出モード、行列数、各セル、信頼度、fallback有無を記録します。
 
 ### Repeatability optimization
 

@@ -239,6 +239,7 @@ def test_main_window_exposes_animation_split_modes_and_fixed_grid_controls(monke
 def test_main_window_shows_animation_restore_backup_error(monkeypatch, tmp_path):
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QThread
     from PySide6.QtWidgets import QApplication
 
     import pixel_tile_compiler.gui.main_window as main_window_module
@@ -265,10 +266,163 @@ def test_main_window_shows_animation_restore_backup_error(monkeypatch, tmp_path)
         app.processEvents()
 
         window.compile_image()
+        deadline = 5000
+        elapsed = 0
+        while window._compile_thread is not None and elapsed < deadline:
+            app.processEvents()
+            QThread.msleep(10)
+            elapsed += 10
 
         assert "コンパイルできませんでした" in window.status.text()
         assert "復元できませんでした" in window.status.text()
         assert "復旧用バックアップ" in window.status.text()
         assert str(backup_root) in window.status.text()
+    finally:
+        window.close()
+
+
+def test_main_window_keeps_animation_actions_visible_with_scrollable_settings(monkeypatch):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.resize(1440, 860)
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_placement_mode.setCurrentIndex(
+            window.animation_placement_mode.findData("preserve_motion")
+        )
+        app.processEvents()
+        assert window.animation_controls_scroll.widgetResizable()
+        assert window.animation_controls_scroll.verticalScrollBar().maximum() > 0
+        assert window.minimumSizeHint().height() <= 860
+        assert window.compile_button.geometry().bottom() < window.height()
+        assert window.compile_progress.isVisible()
+        assert window.compile_button.parentWidget() is not window.animation_controls_scroll.widget()
+    finally:
+        window.close()
+
+
+def test_main_window_origin_guides_select_points_and_expose_scale_modes(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from PIL import Image
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = tmp_path / "origin.png"
+    Image.new("RGBA", (40, 20), (80, 140, 220, 255)).save(source)
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_placement_mode.setCurrentIndex(
+            window.animation_placement_mode.findData("preserve_motion")
+        )
+        app.processEvents()
+        assert window.animation_scale_mode.currentData() == "auto"
+        assert not window.animation_scale.isEnabled()
+        assert not window.animation_source_origin_set.isChecked()
+        assert not window.animation_output_origin_set.isChecked()
+
+        window.start_source_origin_pick()
+        image, (left, top, width, height) = window.source_preview._display_geometry()
+        del image
+        QTest.mouseClick(
+            window.source_preview,
+            Qt.MouseButton.LeftButton,
+            pos=QPoint(left + width // 2, top + height // 2),
+        )
+        window.start_output_origin_pick()
+        window.canvas.set_zoom(1)
+        app.processEvents()
+        QTest.mouseClick(
+            window.canvas.viewport(),
+            Qt.MouseButton.LeftButton,
+            pos=window.canvas.mapFromScene(QPointF(128, 180)),
+        )
+        app.processEvents()
+
+        assert window.animation_source_origin_set.isChecked()
+        assert (window.animation_source_origin_x.value(), window.animation_source_origin_y.value()) == (20, 10)
+        assert window.animation_output_origin_set.isChecked()
+        assert (window.animation_output_origin_x.value(), window.animation_output_origin_y.value()) == (128, 180)
+        window.animation_scale_mode.setCurrentIndex(window.animation_scale_mode.findData("fixed"))
+        app.processEvents()
+        assert window.animation_scale.isEnabled()
+    finally:
+        window.close()
+
+
+def test_main_window_compiles_animation_asynchronously_and_can_play_frames(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QThread
+    from PySide6.QtWidgets import QApplication
+    from PIL import Image
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    source = tmp_path / "animation.png"
+    sheet = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    for frame in range(2):
+        for y in range(3, 15):
+            for x in range(frame * 20 + 5, frame * 20 + 13):
+                sheet.putpixel((x, y), (80 + frame * 40, 140, 220, 255))
+    sheet.save(source)
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "outputs"))
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_columns.setValue(2)
+        window.animation_rows.setValue(1)
+        window.animation_placement_mode.setCurrentIndex(
+            window.animation_placement_mode.findData("preserve_motion")
+        )
+        window.animation_source_origin_set.setChecked(True)
+        window.animation_source_origin_x.setValue(10)
+        window.animation_source_origin_y.setValue(10)
+        window.animation_output_origin_set.setChecked(True)
+        window.animation_output_origin_x.setValue(32)
+        window.animation_output_origin_y.setValue(56)
+        window.animation_scale_mode.setCurrentIndex(window.animation_scale_mode.findData("fixed"))
+        window.animation_scale.setValue(1.0)
+        app.processEvents()
+
+        window.compile_image()
+        deadline = 5000
+        elapsed = 0
+        while window._compile_thread is not None and elapsed < deadline:
+            app.processEvents()
+            QThread.msleep(10)
+            elapsed += 10
+
+        assert window._compile_thread is None
+        assert "完了" in window.status.text()
+        assert window.animation_play_button.isEnabled()
+        initial_index = window._animation_frame_index
+        window.animation_play_timer.setInterval(1)
+        window.animation_play_button.click()
+        QThread.msleep(20)
+        app.processEvents()
+        assert window._animation_frame_index != initial_index
+        window.animation_play_button.click()
     finally:
         window.close()

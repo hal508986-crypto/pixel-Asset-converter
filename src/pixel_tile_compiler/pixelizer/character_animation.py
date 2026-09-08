@@ -24,6 +24,11 @@ from pixel_tile_compiler.sheet.alpha_projection import (
 )
 
 
+MAX_ANIMATION_OUTPUT_SHEET_PIXELS = 16_777_216
+MAX_ANIMATION_PREVIEW_PIXELS = 8_000_000
+MAX_ANIMATION_PREVIEW_SCALE = 8
+
+
 @dataclass(frozen=True)
 class AlphaBoundingBox:
     """An image bounding box using Pillow's right/bottom-exclusive convention."""
@@ -597,7 +602,7 @@ def _fit_preserve_scale(
         )
         for low, high, before, after, shift in extents:
             if low < 0:
-                candidates.append((before - shift) / -low)
+                candidates.append((before + shift) / -low)
             if high > 0:
                 candidates.append((after - shift) / high)
     positive = [candidate for candidate in candidates if candidate > 0 and math.isfinite(candidate)]
@@ -681,13 +686,18 @@ def _render_protected_mask(
     if mask is None:
         return None
     source = Image.new("RGBA", mask.size, (255, 255, 255, 0))
-    source.putalpha(mask.convert("L"))
+    source.putalpha(_protected_mask_to_luminance(mask))
     return _sample_nearest(
         source,
         transform=transform,
         frame_index=frame_index,
         canvas_size=canvas_size,
     )
+
+
+def _protected_mask_to_luminance(mask: Image.Image) -> Image.Image:
+    """Use alpha as the protection channel when a mask carries white RGB."""
+    return mask.getchannel("A") if "A" in mask.getbands() else mask.convert("L")
 
 
 def _outline_rgb(color: str) -> tuple[int, int, int] | None:
@@ -759,6 +769,27 @@ def _image_bbox(path: Path) -> list[int] | None:
     return list(bbox) if bbox is not None else None
 
 
+def _resolve_animation_preview_scale(
+    sheet_size: tuple[int, int],
+    *,
+    max_preview_pixels: int = MAX_ANIMATION_PREVIEW_PIXELS,
+) -> int:
+    """Keep the nearest-neighbor preview within a bounded pixel budget."""
+    width, height = sheet_size
+    if width < 1 or height < 1:
+        raise ValueError("animation sheet dimensions must be positive")
+    if max_preview_pixels < 1:
+        raise ValueError("max_preview_pixels must be positive")
+    base_pixels = width * height
+    scale = min(
+        MAX_ANIMATION_PREVIEW_SCALE,
+        max(1, int(math.sqrt(max_preview_pixels / base_pixels))),
+    )
+    while scale > 1 and base_pixels * scale * scale > max_preview_pixels:
+        scale -= 1
+    return scale
+
+
 def align_character_frames(
     frames: tuple[Image.Image, ...] | list[Image.Image],
     config: CharacterAnimationConfig | None = None,
@@ -782,7 +813,8 @@ def align_character_frames(
         if len(protected_masks) != len(source_frames):
             raise ValueError("protected_masks must contain one mask per animation frame")
         source_protected_masks = tuple(
-            None if mask is None else mask.convert("L") for mask in protected_masks
+            None if mask is None else _protected_mask_to_luminance(mask)
+            for mask in protected_masks
         )
         if any(mask is not None and mask.size != source_size for mask in source_protected_masks):
             raise ValueError("protected masks must have the same size as the source frames")
@@ -1002,6 +1034,7 @@ class CharacterAnimationCompileResult:
     compiled_sheet_path: Path
     preview_8x_path: Path
     detection_overlay_path: Path | None
+    preview_scale: int = MAX_ANIMATION_PREVIEW_SCALE
 
 
 _MANAGED_ANIMATION_OUTPUTS = (
@@ -1107,6 +1140,14 @@ def _compile_character_animation_to_root(
     if debug_enabled and prepared.detection_overlay is not None:
         detection_overlay_path = save_png(prepared.detection_overlay, output_root / "detection_overlay.png")
 
+    compiled_sheet_size = (config.canvas_size[0] * len(prepared.aligned_frames), config.canvas_size[1])
+    compiled_sheet_pixels = compiled_sheet_size[0] * compiled_sheet_size[1]
+    if compiled_sheet_pixels > MAX_ANIMATION_OUTPUT_SHEET_PIXELS:
+        raise ValueError(
+            "アニメーションSheetの総画素数が上限を超えています: "
+            f"{compiled_sheet_pixels} > {MAX_ANIMATION_OUTPUT_SHEET_PIXELS}"
+        )
+
     frame_paths: list[Path] = []
     compiler = PixelTileCompiler()
     for index, frame in enumerate(prepared.aligned_frames):
@@ -1143,15 +1184,21 @@ def _compile_character_animation_to_root(
     )
     for frame_path, final_frame_path in zip(frame_paths, final_frame_paths):
         copyfile(frame_path, final_frame_path)
+    frame_palettes = [_image_palette_colors(path) for path in final_frame_paths]
     final_palette = sorted(
-        {
-            tuple(color)
-            for final_frame_path in final_frame_paths
-            for color in _image_palette_colors(final_frame_path)
-        }
+        {tuple(color) for frame_palette in frame_palettes for color in frame_palette}
     )
-    if len(final_palette) > palette_budget:
-        raise RuntimeError("最終frame群の実paletteが上限を超えました")
+    frame_color_counts = [len(colors) for colors in frame_palettes]
+    palette_scope = "shared" if resolved_shared_palette is not None else "frame"
+    within_palette_budget = (
+        len(final_palette) <= palette_budget
+        if resolved_shared_palette is not None
+        else all(count <= palette_budget for count in frame_color_counts)
+    )
+    if not within_palette_budget:
+        if resolved_shared_palette is not None:
+            raise RuntimeError("最終frame群の共有paletteが上限を超えました")
+        raise RuntimeError("最終frameの実paletteが上限を超えました")
     if resolved_shared_palette is not None and not set(final_palette).issubset(set(resolved_shared_palette)):
         raise RuntimeError("最終frame群の色が共有paletteの外へ出ました")
     report_payload = prepared.report_as_dict()
@@ -1175,23 +1222,34 @@ def _compile_character_animation_to_root(
     report_payload["final_palette"] = {
         "colors": [list(color) for color in final_palette],
         "color_count": len(final_palette),
-        "within_budget": len(final_palette) <= palette_budget,
+        "scope": palette_scope,
+        "frame_color_counts": frame_color_counts,
+        "within_budget": within_palette_budget,
         "alpha_policy": "binary",
     }
-    save_json(report_payload, report_path)
     compiled_sheet = Image.new(
         "RGBA",
-        (config.canvas_size[0] * len(frame_paths), config.canvas_size[1]),
+        compiled_sheet_size,
         (0, 0, 0, 0),
     )
     for index, frame_path in enumerate(frame_paths):
         with Image.open(frame_path) as opened:
             compiled_sheet.alpha_composite(opened.convert("RGBA"), (index * config.canvas_size[0], 0))
     compiled_sheet_path = save_png(compiled_sheet, output_root / "compiled_sheet.png")
+    preview_scale = _resolve_animation_preview_scale(compiled_sheet.size)
     preview_8x_path = save_png(
-        compiled_sheet.resize((compiled_sheet.width * 8, compiled_sheet.height * 8), Image.Resampling.NEAREST),
+        compiled_sheet.resize(
+            (compiled_sheet.width * preview_scale, compiled_sheet.height * preview_scale),
+            Image.Resampling.NEAREST,
+        ),
         output_root / "compiled_sheet_8x.png",
     )
+    report_payload["preview"] = {
+        "scale": preview_scale,
+        "size": [compiled_sheet.width * preview_scale, compiled_sheet.height * preview_scale],
+        "max_pixels": MAX_ANIMATION_PREVIEW_PIXELS,
+    }
+    save_json(report_payload, report_path)
     return CharacterAnimationCompileResult(
         output_root,
         aligned_sheet_path,
@@ -1201,6 +1259,7 @@ def _compile_character_animation_to_root(
         compiled_sheet_path,
         preview_8x_path,
         detection_overlay_path,
+        preview_scale,
     )
 
 
@@ -1221,7 +1280,7 @@ def _rewrite_staged_metadata_paths(staging_root: Path, output_root: Path) -> Non
     """Keep compiler metadata pointing at the committed output location."""
     old_prefix = str(staging_root)
     new_prefix = str(output_root)
-    for metadata_path in staging_root.glob("compiled/F*/metadata.json"):
+    for metadata_path in staging_root.rglob("*.json"):
         payload = json.loads(metadata_path.read_text(encoding="utf-8"))
         save_json(_replace_staged_value(payload, old_prefix, new_prefix), metadata_path)
 

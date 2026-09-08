@@ -243,7 +243,7 @@ def compile_character_animation_command(
     typer.echo(f"完了: {result.output_root}")
     typer.echo(f"整列Sheet: {result.aligned_sheet_path}")
     typer.echo(f"出力Sheet: {result.compiled_sheet_path}")
-    typer.echo(f"8倍プレビュー: {result.preview_8x_path}")
+    typer.echo(f"{result.preview_scale}倍プレビュー（上限8倍）: {result.preview_8x_path}")
     typer.echo(f"bboxレポート: {result.report_path}")
     typer.echo(f"final集約: {result.final_frame_paths[0].parent}")
     if result.detection_overlay_path is not None:

@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "pixel-tile-compiler"
 version = "0.1.0"
 description = "Deterministic SRPG map tile pixel-art compiler"
+license = {file = "LICENSE.txt"}
 requires-python = ">=3.10"
 dependencies = [
   "Pillow>=10",
@@ -14,6 +15,7 @@ dependencies = [
   "scikit-image>=0.21",
   "pydantic>=2",
   "typer>=0.9",
+  "PyYAML>=6.0",
 ]
 
 [project.optional-dependencies]

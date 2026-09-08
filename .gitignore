@@ -5,13 +5,15 @@ __pycache__/
 *.egg-info/
 build/
 dist/
+# Generated images, experiment fixtures, and compiled asset packages are local-only.
+# This does not remove files that are already tracked; prune those from Git
+# separately when the repository history is intentionally cleaned up.
+/assets/
+/e2e/
+/experiment/
+/experiments/e2e/
+/experiments/material_library/
+/material_library/
+/Output/
 /output/
-# Compiler-generated output is local-only. Existing tracked fixtures remain tracked.
-/Output/*
-
-# E2E experiments are reproducible local outputs; keep existing tracked fixtures,
-# but do not add new generated E2E directories and assets by default.
-/e2e/*
-
-# Local experiment workspace; source and reproducible fixtures stay tracked separately.
 /unused/

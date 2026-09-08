@@ -1,0 +1,83 @@
+{
+  "allowed_spdx": [
+    "0BSD",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "CC0-1.0",
+    "HPND",
+    "ISC",
+    "MIT",
+    "MIT-CMU",
+    "MPL-2.0",
+    "PSF-2.0",
+    "Unicode-3.0",
+    "Zlib"
+  ],
+  "package_spdx_overrides": {},
+  "import_distribution_overrides": {
+    "numpy": "numpy",
+    "pydantic": "pydantic",
+    "skimage": "scikit-image",
+    "typer": "typer",
+    "yaml": "PyYAML"
+  },
+  "asset_policy": [
+    {
+      "pattern": "assets/**",
+      "status": "needs_review",
+      "license": "provenance not yet confirmed",
+      "surface": "bundled source assets and prompts",
+      "evidence": "README.md and asset metadata identify generated/existing source images, but no per-asset redistribution record is present.",
+      "notes": "Confirm the source, applicable service/material terms, and redistribution permission before public release; update this entry to approved only after that review."
+    },
+    {
+      "pattern": "experiment/**",
+      "status": "derived",
+      "license": "inherits source asset status",
+      "surface": "derived experiment fixtures",
+      "evidence": "Compiler outputs derived from source images.",
+      "notes": "Do not treat derived output as independently cleared when its source is unresolved."
+    },
+    {
+      "pattern": "e2e/**",
+      "status": "derived",
+      "license": "inherits source asset status",
+      "surface": "derived E2E fixtures",
+      "evidence": "E2E outputs and manifests reference repository source images.",
+      "notes": "Recheck source provenance before distributing these fixtures outside the repository."
+    },
+    {
+      "pattern": "experiments/**",
+      "status": "derived",
+      "license": "inherits source asset status",
+      "surface": "accepted/derived material study fixtures",
+      "evidence": "Study records reference experiment and material-library source paths.",
+      "notes": "Keep source and derived asset permissions linked."
+    },
+    {
+      "pattern": "material_library/**",
+      "status": "derived",
+      "license": "inherits source asset status",
+      "surface": "promoted material fixtures",
+      "evidence": "Material library records point to generated or existing source images.",
+      "notes": "Promotion is a compiler decision, not a license grant."
+    },
+    {
+      "pattern": "Output/**",
+      "status": "derived",
+      "license": "inherits source asset status",
+      "surface": "derived output fixtures",
+      "evidence": "Tracked output images are generated artifacts.",
+      "notes": "Recheck source provenance before redistribution."
+    },
+    {
+      "pattern": "unused/**",
+      "status": "derived",
+      "license": "inherits source asset status",
+      "surface": "local experiment fixtures",
+      "evidence": "Tracked local experiment artifacts.",
+      "notes": "Keep this path out of release artifacts when possible."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+License review queue
+
+The release/publication gate fails when a blocked or needs_review entry exists.
+Conditional entries are listed for human review but do not fail the default source audit.
+Resolve an item in LICENSE/audit-policy.json, then regenerate and inspect the diff.
+
+Conditional dependencies:
+
+[conditional] numpy 2.2.6: BSD-3-Clause
+Condition: LGPL/GPL or dual-license terms require the applicable license text and notice. If distributed as a bundled application, verify the chosen Qt/PySide6 build and preserve the required relink/source obligations. Bundled component identifiers observed: GPL-3.0-with-GCC-exception.
+
+[conditional] PySide6 6.11.1: LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+Condition: LGPL/GPL or dual-license terms require the applicable license text and notice. If distributed as a bundled application, verify the chosen Qt/PySide6 build and preserve the required relink/source obligations.
+
+[conditional] PySide6_Addons 6.11.1: LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+Condition: LGPL/GPL or dual-license terms require the applicable license text and notice. If distributed as a bundled application, verify the chosen Qt/PySide6 build and preserve the required relink/source obligations.
+
+[conditional] PySide6_Essentials 6.11.1: LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+Condition: LGPL/GPL or dual-license terms require the applicable license text and notice. If distributed as a bundled application, verify the chosen Qt/PySide6 build and preserve the required relink/source obligations.
+
+[conditional] scipy 1.15.3: BSD-3-Clause
+Condition: LGPL/GPL or dual-license terms require the applicable license text and notice. If distributed as a bundled application, verify the chosen Qt/PySide6 build and preserve the required relink/source obligations. Bundled component identifiers observed: GPL-3.0-with-GCC-exception.
+
+[conditional] shiboken6 6.11.1: LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
+Condition: LGPL/GPL or dual-license terms require the applicable license text and notice. If distributed as a bundled application, verify the chosen Qt/PySide6 build and preserve the required relink/source obligations.
+
+No blocked or needs_review entries.

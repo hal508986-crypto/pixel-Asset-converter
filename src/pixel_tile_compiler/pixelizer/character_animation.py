@@ -3,17 +3,20 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import math
 import shutil
 import tempfile
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from shutil import copyfile
-from typing import Literal
+from typing import Literal, Mapping
 
 import numpy as np
 from PIL import Image
 
 from pixel_tile_compiler.io.exporter import save_json, save_png
+from pixel_tile_compiler.pixelizer.palette import extract_palette
 from pixel_tile_compiler.sheet.alpha_projection import (
     SplitMode,
     alpha_occupancy_mask,
@@ -73,6 +76,146 @@ class AlphaBoundingBox:
 
 
 @dataclass(frozen=True)
+class CharacterAnimationTransform:
+    """One affine nearest-neighbor transform shared by every animation frame."""
+
+    source_origin: tuple[float, float]
+    output_origin: tuple[float, float]
+    scale: float
+    frame_offsets: tuple[tuple[int, int], ...] = ()
+    sampling_rounding: str = "floor(v + 0.5)"
+
+    def __post_init__(self) -> None:
+        if self.sampling_rounding != "floor(v + 0.5)":
+            raise ValueError("sampling_rounding must be floor(v + 0.5)")
+        if not math.isfinite(float(self.scale)) or self.scale <= 0:
+            raise ValueError("animation scale must be greater than 0")
+        for name, point in (("source_origin", self.source_origin), ("output_origin", self.output_origin)):
+            if not _valid_finite_point(point):
+                raise ValueError(f"{name} must contain two finite coordinates")
+        for offset in self.frame_offsets:
+            if not _valid_integer_pair(offset):
+                raise ValueError("frame_offsets must contain integer pairs")
+
+    def offset_for(self, frame_index: int) -> tuple[int, int]:
+        if frame_index < 0:
+            raise ValueError("frame_index must be non-negative")
+        if not self.frame_offsets or frame_index >= len(self.frame_offsets):
+            return (0, 0)
+        return self.frame_offsets[frame_index]
+
+    def map_source_point(
+        self,
+        x: float | tuple[float, float],
+        y: float | None = None,
+        *,
+        frame_index: int = 0,
+    ) -> tuple[int, int]:
+        if y is None:
+            if not isinstance(x, tuple) or len(x) != 2:
+                raise ValueError("source point must contain x and y")
+            x, y = x
+        offset_x, offset_y = self.offset_for(frame_index)
+        source_x, source_y = self.source_origin
+        output_x, output_y = self.output_origin
+        return (
+            _round_half_up(output_x + self.scale * (float(x) - source_x) + offset_x),
+            _round_half_up(output_y + self.scale * (float(y) - source_y) + offset_y),
+        )
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "source_origin": [self.source_origin[0], self.source_origin[1]],
+            "output_origin": [self.output_origin[0], self.output_origin[1]],
+            "scale": self.scale,
+            "frame_offsets": [list(offset) for offset in self.frame_offsets],
+            "sampling_rounding": self.sampling_rounding,
+        }
+
+    @classmethod
+    def from_dict(cls, value: Mapping[str, object]) -> "CharacterAnimationTransform":
+        try:
+            source_origin = tuple(float(item) for item in value["source_origin"])  # type: ignore[index]
+            output_origin = tuple(float(item) for item in value["output_origin"])  # type: ignore[index]
+            scale = float(value["scale"])  # type: ignore[arg-type]
+            raw_offsets = value.get("frame_offsets", [])
+            frame_offsets = tuple(tuple(int(item) for item in offset) for offset in raw_offsets)  # type: ignore[union-attr]
+            sampling_rounding = str(value.get("sampling_rounding", "floor(v + 0.5)"))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("invalid animation transform") from exc
+        return cls(source_origin, output_origin, scale, frame_offsets, sampling_rounding)
+
+
+def _round_half_up(value: float) -> int:
+    return math.floor(value + 0.5)
+
+
+def _valid_positive_size(size: object) -> bool:
+    return (
+        isinstance(size, tuple)
+        and len(size) == 2
+        and all(
+            isinstance(value, int) and not isinstance(value, bool) and value >= 1
+            for value in size
+        )
+    )
+
+
+def _valid_finite_point(point: object) -> bool:
+    return (
+        isinstance(point, (tuple, list))
+        and len(point) == 2
+        and all(math.isfinite(float(value)) for value in point)
+    )
+
+
+def _valid_integer_pair(pair: object) -> bool:
+    return (
+        isinstance(pair, (tuple, list))
+        and len(pair) == 2
+        and all(isinstance(value, int) and not isinstance(value, bool) for value in pair)
+    )
+
+
+def resolve_action_scale(
+    *,
+    target_reference_length: float | None,
+    source_reference_length: float | None,
+) -> float:
+    """Calibrate an action from explicit reference lengths; never infer a body size."""
+    if target_reference_length is None or source_reference_length is None:
+        raise ValueError("動作間の縮尺には基準長を明示してください")
+    if (
+        not math.isfinite(float(target_reference_length))
+        or not math.isfinite(float(source_reference_length))
+        or target_reference_length <= 0
+        or source_reference_length <= 0
+    ):
+        raise ValueError("基準長は正の有限値で指定してください")
+    return float(target_reference_length) / float(source_reference_length)
+
+
+def save_character_animation_transform(
+    transform: CharacterAnimationTransform,
+    path: Path,
+) -> Path:
+    """Persist a resolved transform for reuse by another action."""
+    return save_json({"transform": transform.as_dict()}, Path(path))
+
+
+def load_character_animation_transform(path: Path) -> CharacterAnimationTransform:
+    """Load only the explicit transform contract from a report or transform file."""
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        value = payload.get("transform", payload)
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(f"transformを読み込めません: {exc}") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("transform must be a JSON object")
+    return CharacterAnimationTransform.from_dict(value)
+
+
+@dataclass(frozen=True)
 class CharacterAnimationConfig:
     """Deterministic preparation settings for a horizontal character sheet."""
 
@@ -96,6 +239,13 @@ class CharacterAnimationConfig:
     min_gutter_width_px: int = 2
     max_cell_size_variance_ratio: float = 1.25
     require_nonempty_each_cell: bool = True
+    placement_mode: Literal["legacy_foot", "preserve_motion"] = "legacy_foot"
+    source_origin: tuple[float, float] | None = None
+    output_origin: tuple[float, float] | None = None
+    scale_override: float | None = None
+    frame_offsets: tuple[tuple[int, int], ...] | None = None
+    shared_palette_enabled: bool = False
+    allow_empty_frames: bool = False
 
     def __post_init__(self) -> None:
         if self.frame_count < 1:
@@ -106,7 +256,7 @@ class CharacterAnimationConfig:
             raise ValueError("grid_columns must be positive")
         if self.grid_rows is not None and self.grid_rows < 1:
             raise ValueError("grid_rows must be positive")
-        if min(self.canvas_size) < 1 or min(self.fit_within) < 1:
+        if not _valid_positive_size(self.canvas_size) or not _valid_positive_size(self.fit_within):
             raise ValueError("canvas_size and fit_within must be positive")
         if self.bottom_margin < 0:
             raise ValueError("bottom_margin must be non-negative")
@@ -126,6 +276,19 @@ class CharacterAnimationConfig:
             raise ValueError("max_cell_size_variance_ratio must be at least 1")
         if self.remainder_policy not in {"center_crop", "error"}:
             raise ValueError("remainder_policy must be center_crop or error")
+        if self.placement_mode not in {"legacy_foot", "preserve_motion"}:
+            raise ValueError("placement_mode must be legacy_foot or preserve_motion")
+        for name, point in (("source_origin", self.source_origin), ("output_origin", self.output_origin)):
+            if point is not None and not _valid_finite_point(point):
+                raise ValueError(f"{name} must contain two finite coordinates")
+        if self.scale_override is not None and (
+            not math.isfinite(float(self.scale_override)) or self.scale_override <= 0
+        ):
+            raise ValueError("scale_override must be a positive finite number")
+        if self.frame_offsets is not None:
+            for offset in self.frame_offsets:
+                if not _valid_integer_pair(offset):
+                    raise ValueError("frame_offsets must contain integer pairs")
         if self.fit_within[0] + self.outline_width * 2 > self.canvas_size[0]:
             raise ValueError("fit width does not fit canvas with outline")
         if self.fit_within[1] + self.outline_width * 2 + self.bottom_margin > self.canvas_size[1]:
@@ -139,6 +302,38 @@ class CharacterAnimationConfig:
             self.grid_rows if self.grid_rows is not None else 1,
         )
 
+    def as_dict(self) -> dict[str, object]:
+        """Return the serializable animation settings used for a report."""
+        return {
+            "frame_count": self.frame_count,
+            "split_mode": self.split_mode,
+            "grid_columns": self.grid_columns,
+            "grid_rows": self.grid_rows,
+            "canvas_size": list(self.canvas_size),
+            "fit_within": list(self.fit_within),
+            "bottom_margin": self.bottom_margin,
+            "alpha_threshold": self.alpha_threshold,
+            "remove_isolated_components": self.remove_isolated_components,
+            "min_component_area_px": self.min_component_area_px,
+            "padding_px": self.padding_px,
+            "remainder_policy": self.remainder_policy,
+            "anchor_x": self.anchor_x,
+            "anchor_y": self.anchor_y,
+            "outline_width": self.outline_width,
+            "empty_column_threshold": self.empty_column_threshold,
+            "empty_row_threshold": self.empty_row_threshold,
+            "min_gutter_width_px": self.min_gutter_width_px,
+            "max_cell_size_variance_ratio": self.max_cell_size_variance_ratio,
+            "require_nonempty_each_cell": self.require_nonempty_each_cell,
+            "placement_mode": self.placement_mode,
+            "source_origin": list(self.source_origin) if self.source_origin is not None else None,
+            "output_origin": list(self.output_origin) if self.output_origin is not None else None,
+            "scale_override": self.scale_override,
+            "frame_offsets": [list(offset) for offset in self.frame_offsets] if self.frame_offsets is not None else None,
+            "shared_palette_enabled": self.shared_palette_enabled,
+            "allow_empty_frames": self.allow_empty_frames,
+        }
+
 
 @dataclass(frozen=True)
 class CharacterAnimationFrameReport:
@@ -150,9 +345,17 @@ class CharacterAnimationFrameReport:
     status: Literal["ready", "empty"]
     placed_bbox: AlphaBoundingBox | None = None
     clipped: bool = False
+    offset: tuple[int, int] = (0, 0)
+    protected_pixel_count: int | None = None
+    protected_pixel_lost: bool | None = None
 
     def as_dict(self, *, union_bbox: AlphaBoundingBox | None, scale: float, config: CharacterAnimationConfig) -> dict[str, object]:
         alpha_values = [0, 255]
+        anchor_x: object = config.anchor_x
+        anchor_y: object = config.anchor_y
+        if config.placement_mode == "preserve_motion":
+            anchor_x = "explicit"
+            anchor_y = "explicit"
         return {
             "frame_id": self.frame_id,
             "source_size": list(self.source_size),
@@ -162,11 +365,14 @@ class CharacterAnimationFrameReport:
             "removed_isolated_pixel_count": self.removed_isolated_pixel_count,
             "scale": scale,
             "placed_bbox": self.placed_bbox.as_dict() if self.placed_bbox else None,
-            "anchor_x": config.anchor_x,
-            "anchor_y": config.anchor_y,
+            "anchor_x": anchor_x,
+            "anchor_y": anchor_y,
             "clipped": self.clipped,
             "alpha_values": alpha_values,
             "status": self.status,
+            "offset": list(self.offset),
+            "protected_pixel_count": self.protected_pixel_count,
+            "protected_pixel_lost": self.protected_pixel_lost,
         }
 
 
@@ -181,6 +387,10 @@ class CharacterAnimationResult:
     config: CharacterAnimationConfig
     split_report: dict[str, object] = field(default_factory=dict)
     detection_overlay: Image.Image | None = None
+    transform: CharacterAnimationTransform | None = None
+    shared_palette: tuple[tuple[int, int, int], ...] | None = None
+    warnings: tuple[str, ...] = ()
+    protected_masks: tuple[Image.Image | None, ...] = ()
 
     @property
     def output_sheet(self) -> Image.Image:
@@ -194,14 +404,24 @@ class CharacterAnimationResult:
         return output
 
     def report_as_dict(self) -> dict[str, object]:
-        return {
-            "frame_count": len(self.aligned_frames),
-            "common_scale": self.scale,
-            "common_anchor": {
+        if self.transform is None:
+            common_anchor: dict[str, object] = {
                 "x": self.config.anchor_x,
                 "y": self.config.anchor_y,
                 "bottom_margin_px": self.config.bottom_margin,
-            },
+            }
+        else:
+            common_anchor = {
+                "x": self.transform.output_origin[0],
+                "y": self.transform.output_origin[1],
+                "source_origin": list(self.transform.source_origin),
+                "mode": "preserve_motion",
+            }
+        return {
+            "schema_version": 2,
+            "frame_count": len(self.aligned_frames),
+            "common_scale": self.scale,
+            "common_anchor": common_anchor,
             "output_frame_size": list(self.config.canvas_size),
             "output_sheet_size": [self.output_sheet.width, self.output_sheet.height],
             "normalized_sheet_size": list(self.normalized_sheet_size),
@@ -212,6 +432,15 @@ class CharacterAnimationResult:
                 for report in self.frame_reports
             ],
             "sprite_sheet_split": self.split_report,
+            "placement_mode": self.config.placement_mode,
+            "transform": self.transform.as_dict() if self.transform is not None else None,
+            "shared_palette": {
+                "enabled": self.config.shared_palette_enabled,
+                "colors": [list(color) for color in self.shared_palette] if self.shared_palette is not None else None,
+                "color_count": len(self.shared_palette) if self.shared_palette is not None else None,
+            },
+            "warnings": list(self.warnings),
+            "config": self.config.as_dict(),
         }
 
 
@@ -240,6 +469,7 @@ def analyze_frame_alpha(
     alpha_threshold: int = 16,
     remove_isolated_components: bool = True,
     min_component_area_px: int = 3,
+    protected_mask: Image.Image | None = None,
 ) -> tuple[Image.Image, AlphaBoundingBox | None]:
     """Return a binary-alpha frame and its stable visible bounding box."""
     if not 0 <= alpha_threshold <= 255:
@@ -252,6 +482,7 @@ def analyze_frame_alpha(
         alpha_threshold=alpha_threshold,
         remove_small_components=remove_isolated_components,
         min_component_area_px=min_component_area_px,
+        protected_mask=protected_mask,
     )
     bbox = None
     if mask.any():
@@ -298,11 +529,244 @@ def _place_frame(
     return output, placed, False
 
 
+def _resolve_frame_offsets(
+    frame_count: int,
+    offsets: tuple[tuple[int, int], ...] | None,
+) -> tuple[tuple[int, int], ...]:
+    if offsets is None:
+        return tuple((0, 0) for _ in range(frame_count))
+    if len(offsets) not in {0, frame_count}:
+        raise ValueError("frame_offsets must contain one pair per animation frame")
+    return tuple(offsets) if offsets else tuple((0, 0) for _ in range(frame_count))
+
+
+def _resolve_preserve_transform(
+    frames: tuple[Image.Image, ...],
+    reports: tuple[CharacterAnimationFrameReport, ...],
+    config: CharacterAnimationConfig,
+    transform: CharacterAnimationTransform | None,
+) -> CharacterAnimationTransform:
+    if transform is not None:
+        if transform.frame_offsets and len(transform.frame_offsets) not in {len(frames)}:
+            raise ValueError("animation transform frame count does not match frames")
+        resolved = transform
+    else:
+        if config.source_origin is None or config.output_origin is None:
+            raise ValueError("移動保存モードではソース原点と出力原点を明示してください")
+        offsets = _resolve_frame_offsets(len(frames), config.frame_offsets)
+        scale = config.scale_override
+        if scale is None:
+            scale = _fit_preserve_scale(
+                reports,
+                source_origin=config.source_origin,
+                output_origin=config.output_origin,
+                offsets=offsets,
+                canvas_size=config.canvas_size,
+            )
+        resolved = CharacterAnimationTransform(
+            tuple(float(value) for value in config.source_origin),
+            tuple(float(value) for value in config.output_origin),
+            float(scale),
+            offsets,
+        )
+    _validate_transform_fits(reports, resolved, config.canvas_size)
+    return resolved
+
+
+def _fit_preserve_scale(
+    reports: tuple[CharacterAnimationFrameReport, ...],
+    *,
+    source_origin: tuple[float, float],
+    output_origin: tuple[float, float],
+    offsets: tuple[tuple[int, int], ...],
+    canvas_size: tuple[int, int],
+) -> float:
+    output_width, output_height = canvas_size
+    origin_x, origin_y = output_origin
+    if not (0 <= origin_x <= output_width and 0 <= origin_y <= output_height):
+        raise ValueError("出力原点はCanvas内の境界座標で指定してください")
+    candidates: list[float] = []
+    source_x, source_y = source_origin
+    for report, offset in zip(reports, offsets):
+        if report.bbox is None:
+            continue
+        left, top, right, bottom = report.bbox.left, report.bbox.top, report.bbox.right, report.bbox.bottom
+        extents = (
+            (left - source_x, right - source_x, origin_x, output_width - origin_x, offset[0]),
+            (top - source_y, bottom - source_y, origin_y, output_height - origin_y, offset[1]),
+        )
+        for low, high, before, after, shift in extents:
+            if low < 0:
+                candidates.append((before - shift) / -low)
+            if high > 0:
+                candidates.append((after - shift) / high)
+    positive = [candidate for candidate in candidates if candidate > 0 and math.isfinite(candidate)]
+    return min(positive) if positive else 1.0
+
+
+def _transformed_bbox(
+    bbox: AlphaBoundingBox,
+    transform: CharacterAnimationTransform,
+    frame_index: int,
+) -> tuple[float, float, float, float]:
+    offset_x, offset_y = transform.offset_for(frame_index)
+    source_x, source_y = transform.source_origin
+    output_x, output_y = transform.output_origin
+    return (
+        output_x + transform.scale * (bbox.left - source_x) + offset_x,
+        output_y + transform.scale * (bbox.top - source_y) + offset_y,
+        output_x + transform.scale * (bbox.right - source_x) + offset_x,
+        output_y + transform.scale * (bbox.bottom - source_y) + offset_y,
+    )
+
+
+def _validate_transform_fits(
+    reports: tuple[CharacterAnimationFrameReport, ...],
+    transform: CharacterAnimationTransform,
+    canvas_size: tuple[int, int],
+) -> None:
+    width, height = canvas_size
+    issues: list[str] = []
+    for index, report in enumerate(reports):
+        if report.bbox is None:
+            continue
+        left, top, right, bottom = _transformed_bbox(report.bbox, transform, index)
+        if left < 0:
+            issues.append(f"F{index + 1}: left {math.floor(left)}px")
+        if top < 0:
+            issues.append(f"F{index + 1}: top {math.floor(top)}px")
+        if right > width:
+            issues.append(f"F{index + 1}: right needs {math.ceil(right - width)}px")
+        if bottom > height:
+            issues.append(f"F{index + 1}: bottom needs {math.ceil(bottom - height)}px")
+    if issues:
+        raise ValueError("指定した戦闘アニメーション変換では見切れます: " + "; ".join(issues))
+
+
+def _sample_nearest(
+    image: Image.Image,
+    *,
+    transform: CharacterAnimationTransform,
+    frame_index: int,
+    canvas_size: tuple[int, int],
+) -> Image.Image:
+    """Sample directly from the source using one affine phase for every frame."""
+    source = np.asarray(image.convert("RGBA"), dtype=np.uint8)
+    output_width, output_height = canvas_size
+    output_x, output_y = transform.output_origin
+    source_x, source_y = transform.source_origin
+    offset_x, offset_y = transform.offset_for(frame_index)
+    x_centers = np.arange(output_width, dtype=np.float64) + 0.5
+    y_centers = np.arange(output_height, dtype=np.float64) + 0.5
+    source_x_indices = np.floor((x_centers - output_x - offset_x) / transform.scale + source_x).astype(int)
+    source_y_indices = np.floor((y_centers - output_y - offset_y) / transform.scale + source_y).astype(int)
+    valid_x = (source_x_indices >= 0) & (source_x_indices < source.shape[1])
+    valid_y = (source_y_indices >= 0) & (source_y_indices < source.shape[0])
+    output = np.zeros((output_height, output_width, 4), dtype=np.uint8)
+    if valid_x.any() and valid_y.any():
+        output[np.ix_(valid_y, valid_x)] = source[
+            source_y_indices[valid_y][:, None],
+            source_x_indices[valid_x][None, :],
+        ]
+    return Image.fromarray(output, mode="RGBA")
+
+
+def _render_protected_mask(
+    mask: Image.Image | None,
+    *,
+    transform: CharacterAnimationTransform,
+    frame_index: int,
+    canvas_size: tuple[int, int],
+) -> Image.Image | None:
+    if mask is None:
+        return None
+    source = Image.new("RGBA", mask.size, (255, 255, 255, 0))
+    source.putalpha(mask.convert("L"))
+    return _sample_nearest(
+        source,
+        transform=transform,
+        frame_index=frame_index,
+        canvas_size=canvas_size,
+    )
+
+
+def _outline_rgb(color: str) -> tuple[int, int, int] | None:
+    if color == "off":
+        return None
+    if color == "black":
+        return (0, 0, 0)
+    if color == "white":
+        return (255, 255, 255)
+    raise ValueError("outline_color must be off, black, or white")
+
+
+def _resolve_shared_palette(
+    frames: tuple[Image.Image, ...],
+    *,
+    budget: int,
+    outline_color: str,
+    palette_colors: tuple[tuple[int, int, int], ...] | None,
+) -> tuple[tuple[int, int, int], ...]:
+    """Resolve one visible-RGB palette for the complete action."""
+    if palette_colors is not None:
+        if not palette_colors:
+            raise ValueError("palette_colors must not be empty")
+        if len(palette_colors) > budget:
+            raise ValueError("palette_colors cannot exceed palette_budget")
+        resolved = tuple(tuple(int(channel) for channel in color) for color in palette_colors)
+    else:
+        combined = Image.new(
+            "RGBA",
+            (max(frame.width for frame in frames), sum(frame.height for frame in frames)),
+            (0, 0, 0, 0),
+        )
+        top = 0
+        for frame in frames:
+            combined.alpha_composite(frame.convert("RGBA"), (0, top))
+            top += frame.height
+        outline_rgb = _outline_rgb(outline_color)
+        resolved = extract_palette(
+            combined,
+            budget=max(1, budget - (1 if outline_rgb is not None else 0)),
+        )
+    outline_rgb = _outline_rgb(outline_color)
+    if outline_rgb is not None and outline_rgb not in resolved:
+        if len(resolved) < budget:
+            resolved = (*resolved, outline_rgb)
+        else:
+            resolved = (*resolved[:-1], outline_rgb)
+    return tuple(resolved)
+
+
+def _image_palette_colors(path: Path) -> list[list[int]]:
+    with Image.open(path) as opened:
+        return [
+            list(color)
+            for color in sorted(
+                {pixel[:3] for pixel in opened.convert("RGBA").getdata() if pixel[3] != 0}
+            )
+        ]
+
+
+def _image_alpha_values(path: Path) -> list[int]:
+    with Image.open(path) as opened:
+        return sorted(set(opened.convert("RGBA").getchannel("A").getdata()))
+
+
+def _image_bbox(path: Path) -> list[int] | None:
+    with Image.open(path) as opened:
+        bbox = opened.convert("RGBA").getchannel("A").getbbox()
+    return list(bbox) if bbox is not None else None
+
+
 def align_character_frames(
     frames: tuple[Image.Image, ...] | list[Image.Image],
     config: CharacterAnimationConfig | None = None,
+    *,
+    protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
+    transform: CharacterAnimationTransform | None = None,
 ) -> CharacterAnimationResult:
-    """Measure, union-trim, uniformly scale, and anchor animation frames."""
+    """Align frames through the legacy foot mode or an explicit motion transform."""
     config = config or CharacterAnimationConfig(frame_count=len(frames))
     if len(frames) != config.frame_count:
         raise ValueError("frame count does not match CharacterAnimationConfig")
@@ -312,16 +776,27 @@ def align_character_frames(
     source_size = source_frames[0].size
     if any(frame.size != source_size for frame in source_frames):
         raise ValueError("all animation frames must have the same size")
+    if protected_masks is None:
+        source_protected_masks: tuple[Image.Image | None, ...] = tuple(None for _ in source_frames)
+    else:
+        if len(protected_masks) != len(source_frames):
+            raise ValueError("protected_masks must contain one mask per animation frame")
+        source_protected_masks = tuple(
+            None if mask is None else mask.convert("L") for mask in protected_masks
+        )
+        if any(mask is not None and mask.size != source_size for mask in source_protected_masks):
+            raise ValueError("protected masks must have the same size as the source frames")
 
     cleaned_frames: list[Image.Image] = []
     frame_reports: list[CharacterAnimationFrameReport] = []
     union_bbox: AlphaBoundingBox | None = None
-    for index, frame in enumerate(source_frames):
+    for index, (frame, protected_mask) in enumerate(zip(source_frames, source_protected_masks)):
         cleaned, bbox = analyze_frame_alpha(
             frame,
             alpha_threshold=config.alpha_threshold,
             remove_isolated_components=config.remove_isolated_components,
             min_component_area_px=config.min_component_area_px,
+            protected_mask=protected_mask,
         )
         cleaned_frames.append(cleaned)
         if bbox is not None:
@@ -336,19 +811,29 @@ def align_character_frames(
                     int(
                         np.count_nonzero(
                             alpha_occupancy_mask(
-                                frame,
-                                alpha_threshold=config.alpha_threshold,
-                                remove_small_components=False,
-                                min_component_area_px=config.min_component_area_px,
-                            )[0]
+                            frame,
+                            alpha_threshold=config.alpha_threshold,
+                            remove_small_components=False,
+                            min_component_area_px=config.min_component_area_px,
+                            protected_mask=protected_mask,
+                        )[0]
                         )
                     )
                     - _visible_pixel_count(cleaned)
                 ),
                 status="ready" if bbox is not None else "empty",
+                offset=(0, 0),
+                protected_pixel_count=(
+                    int(np.count_nonzero(np.asarray(protected_mask, dtype=np.uint8)))
+                    if protected_mask is not None
+                    else None
+                ),
+                protected_pixel_lost=False if protected_mask is not None and bbox is not None else None,
             )
         )
     if union_bbox is None:
+        if config.placement_mode == "preserve_motion" and not config.allow_empty_frames:
+            raise ValueError("移動保存モードでは空のframeを既定で許可しません")
         return CharacterAnimationResult(
             tuple(Image.new("RGBA", config.canvas_size, (0, 0, 0, 0)) for _ in source_frames),
             tuple(frame_reports),
@@ -357,6 +842,68 @@ def align_character_frames(
             (0, 0, source_size[0], source_size[1]),
             source_size,
             config,
+            transform=transform,
+            protected_masks=tuple(None for _ in source_frames),
+        )
+
+    if config.placement_mode == "preserve_motion":
+        reports = tuple(frame_reports)
+        resolved_transform = _resolve_preserve_transform(
+            tuple(cleaned_frames), reports, config, transform
+        )
+        aligned_frames: list[Image.Image] = []
+        aligned_protected_masks: list[Image.Image | None] = []
+        updated_reports: list[CharacterAnimationFrameReport] = []
+        warnings: list[str] = []
+        for index, (cleaned, report, source_mask) in enumerate(
+            zip(cleaned_frames, frame_reports, source_protected_masks)
+        ):
+            aligned = _sample_nearest(
+                cleaned,
+                transform=resolved_transform,
+                frame_index=index,
+                canvas_size=config.canvas_size,
+            )
+            aligned_mask = _render_protected_mask(
+                source_mask,
+                transform=resolved_transform,
+                frame_index=index,
+                canvas_size=config.canvas_size,
+            )
+            protected_count = report.protected_pixel_count
+            protected_lost = (
+                protected_count is not None
+                and protected_count > 0
+                and (aligned_mask is None or aligned_mask.getchannel("A").getbbox() is None)
+            )
+            if protected_lost:
+                warnings.append(f"F{index + 1}: 保護領域が縮小で消失しました")
+            aligned_frames.append(aligned)
+            aligned_protected_masks.append(aligned_mask)
+            updated_reports.append(
+                replace(
+                    report,
+                    placed_bbox=(
+                        AlphaBoundingBox(*aligned.getchannel("A").getbbox())
+                        if aligned.getchannel("A").getbbox() is not None
+                        else None
+                    ),
+                    clipped=False,
+                    offset=resolved_transform.offset_for(index),
+                    protected_pixel_lost=protected_lost if protected_count is not None else None,
+                )
+            )
+        return CharacterAnimationResult(
+            tuple(aligned_frames),
+            tuple(updated_reports),
+            union_bbox,
+            resolved_transform.scale,
+            (0, 0, source_size[0], source_size[1]),
+            source_size,
+            config,
+            transform=resolved_transform,
+            warnings=tuple(warnings),
+            protected_masks=tuple(aligned_protected_masks),
         )
 
     union_bbox = union_bbox.expand(config.padding_px, source_size)
@@ -387,6 +934,9 @@ def align_character_frames(
                 status=report.status,
                 placed_bbox=placed_bbox,
                 clipped=clipped,
+                offset=(0, 0),
+                protected_pixel_count=report.protected_pixel_count,
+                protected_pixel_lost=report.protected_pixel_lost,
             )
         )
     return CharacterAnimationResult(
@@ -397,12 +947,16 @@ def align_character_frames(
         (0, 0, source_size[0], source_size[1]),
         source_size,
         config,
+        protected_masks=tuple(None for _ in source_frames),
     )
 
 
 def prepare_character_animation_sheet(
     image: Image.Image,
     config: CharacterAnimationConfig | None = None,
+    *,
+    protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
+    transform: CharacterAnimationTransform | None = None,
 ) -> CharacterAnimationResult:
     """Split a regular sheet and align all frames against one layout."""
     config = config or CharacterAnimationConfig()
@@ -423,7 +977,12 @@ def prepare_character_animation_sheet(
         remainder_policy=config.remainder_policy,
     )
     alignment_config = replace(config, frame_count=split.frame_count)
-    result = align_character_frames(split.frames, alignment_config)
+    result = align_character_frames(
+        split.frames,
+        alignment_config,
+        protected_masks=protected_masks,
+        transform=transform,
+    )
     return replace(
         result,
         crop_box=split.crop_box,
@@ -465,6 +1024,10 @@ def compile_character_animation_sheet(
     character_detail_level: str = "balanced",
     outline_color: str = "off",
     debug_enabled: bool = False,
+    palette_colors: tuple[tuple[int, int, int], ...] | None = None,
+    shared_palette: tuple[tuple[int, int, int], ...] | None = None,
+    protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
+    transform: CharacterAnimationTransform | None = None,
 ) -> CharacterAnimationCompileResult:
     """Prepare and compile every animation frame with transactional output replacement."""
     source = Path(source)
@@ -486,6 +1049,10 @@ def compile_character_animation_sheet(
             character_detail_level=character_detail_level,
             outline_color=outline_color,
             debug_enabled=debug_enabled,
+            palette_colors=palette_colors,
+            shared_palette=shared_palette,
+            protected_masks=protected_masks,
+            transform=transform,
         )
         final_result = _relocate_compile_result(staged_result, staging_root, output_root)
         _rewrite_staged_metadata_paths(staging_root, output_root)
@@ -505,13 +1072,34 @@ def _compile_character_animation_to_root(
     character_detail_level: str,
     outline_color: str,
     debug_enabled: bool,
+    palette_colors: tuple[tuple[int, int, int], ...] | None,
+    shared_palette: tuple[tuple[int, int, int], ...] | None,
+    protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None,
+    transform: CharacterAnimationTransform | None,
 ) -> CharacterAnimationCompileResult:
     """Write one complete animation artifact set into an empty staging root."""
     from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
     from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 
     with Image.open(source) as opened:
-        prepared = prepare_character_animation_sheet(opened, config)
+        prepared = prepare_character_animation_sheet(
+            opened,
+            config,
+            protected_masks=protected_masks,
+            transform=transform,
+        )
+    if not 4 <= palette_budget <= 64:
+        raise ValueError("palette_budget must be between 4 and 64")
+    if palette_colors is not None and shared_palette is not None:
+        raise ValueError("palette_colors and shared_palette cannot both be provided")
+    requested_shared_palette = palette_colors if palette_colors is not None else shared_palette
+    resolved_shared_palette = _resolve_shared_palette(
+        prepared.aligned_frames,
+        budget=palette_budget,
+        outline_color=outline_color,
+        palette_colors=requested_shared_palette,
+    ) if config.shared_palette_enabled or requested_shared_palette is not None else None
+    prepared = replace(prepared, shared_palette=resolved_shared_palette)
     output_root.mkdir(parents=True, exist_ok=True)
     aligned_sheet_path = save_png(prepared.output_sheet, output_root / "aligned_sheet.png")
     report_path = save_json(prepared.report_as_dict(), output_root / "bbox_report.json")
@@ -535,6 +1123,13 @@ def _compile_character_animation_to_root(
             outline_color=outline_color,  # type: ignore[arg-type]
             character_detail_level=character_detail_level,  # type: ignore[arg-type]
             character_input_mode="pre_aligned",
+            character_detail_scale_with_canvas=config.placement_mode == "legacy_foot",
+            character_protected_mask=(
+                prepared.protected_masks[index]
+                if index < len(prepared.protected_masks)
+                else None
+            ),
+            palette_colors=resolved_shared_palette,
             smoothing_enabled=False,
             debug_enabled=debug_enabled,
         )
@@ -548,6 +1143,42 @@ def _compile_character_animation_to_root(
     )
     for frame_path, final_frame_path in zip(frame_paths, final_frame_paths):
         copyfile(frame_path, final_frame_path)
+    final_palette = sorted(
+        {
+            tuple(color)
+            for final_frame_path in final_frame_paths
+            for color in _image_palette_colors(final_frame_path)
+        }
+    )
+    if len(final_palette) > palette_budget:
+        raise RuntimeError("最終frame群の実paletteが上限を超えました")
+    if resolved_shared_palette is not None and not set(final_palette).issubset(set(resolved_shared_palette)):
+        raise RuntimeError("最終frame群の色が共有paletteの外へ出ました")
+    report_payload = prepared.report_as_dict()
+    report_payload["source_image"] = {
+        "path": str(source),
+        "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "dimensions": list(Image.open(source).size),
+    }
+    report_payload["final_frames"] = [
+        {
+            "frame_id": f"F{index + 1}",
+            "path": str(final_frame_path),
+            "sha256": hashlib.sha256(final_frame_path.read_bytes()).hexdigest(),
+            "size": list(Image.open(final_frame_path).size),
+            "placed_bbox": _image_bbox(final_frame_path),
+            "palette_colors": _image_palette_colors(final_frame_path),
+            "alpha_values": _image_alpha_values(final_frame_path),
+        }
+        for index, final_frame_path in enumerate(final_frame_paths)
+    ]
+    report_payload["final_palette"] = {
+        "colors": [list(color) for color in final_palette],
+        "color_count": len(final_palette),
+        "within_budget": len(final_palette) <= palette_budget,
+        "alpha_policy": "binary",
+    }
+    save_json(report_payload, report_path)
     compiled_sheet = Image.new(
         "RGBA",
         (config.canvas_size[0] * len(frame_paths), config.canvas_size[1]),
@@ -676,9 +1307,13 @@ __all__ = [
     "CharacterAnimationConfig",
     "CharacterAnimationFrameReport",
     "CharacterAnimationResult",
+    "CharacterAnimationTransform",
     "align_character_frames",
     "analyze_frame_alpha",
     "compile_character_animation_sheet",
+    "load_character_animation_transform",
     "prepare_character_animation_sheet",
+    "resolve_action_scale",
+    "save_character_animation_transform",
     "split_horizontal_sheet",
 ]

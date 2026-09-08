@@ -234,7 +234,13 @@ class PixelTileCompiler:
             quantized = raw_pixelized.convert("RGBA")
         character_detail_applied = config.tile_mode == "object"
         character_detail = (
-            simplify_character_detail(quantized, config.character_detail_level, canvas_size=config.canvas.size)
+            simplify_character_detail(
+                quantized,
+                config.character_detail_level,
+                canvas_size=config.canvas.size,
+                protected_mask=config.character_protected_mask,
+                scale_with_canvas=config.character_detail_scale_with_canvas,
+            )
             if character_detail_applied
             else quantized
         )

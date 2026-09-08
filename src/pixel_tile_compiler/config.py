@@ -24,7 +24,14 @@ class CanvasSpec:
     height: int = 64
 
     def __post_init__(self) -> None:
-        if self.width < 1 or self.height < 1:
+        if (
+            isinstance(self.width, bool)
+            or isinstance(self.height, bool)
+            or not isinstance(self.width, int)
+            or not isinstance(self.height, int)
+            or self.width < 1
+            or self.height < 1
+        ):
             raise ValueError("canvas dimensions must be positive")
 
     @property
@@ -74,6 +81,8 @@ class CompilerConfig:
     character_bottom_margin: int | None = None
     character_input_mode: CharacterInputMode = "single_frame"
     character_detail_level: CharacterDetailLevel = "detailed"
+    character_detail_scale_with_canvas: bool = True
+    character_protected_mask: Any = None
     work_size: int = 256
     smoothing_enabled: bool = True
     seed: int = 42
@@ -130,6 +139,7 @@ class CompilerConfig:
         """Return a JSON-safe representation, excluding runtime callbacks."""
         values = asdict(self)
         values.pop("semantic_callable", None)
+        values.pop("character_protected_mask", None)
         values["output_root"] = str(self.output_root)
         values["width"] = self.width
         values["height"] = self.height

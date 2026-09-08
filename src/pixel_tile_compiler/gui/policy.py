@@ -62,10 +62,12 @@ def resolve_character_animation_gui_profile(
     canvas_size: tuple[int, int] = (128, 128),
     frame_count: int = 4,
 ) -> CharacterAnimationGuiProfile:
-    """Resolve animation layout values proportionally to the selected square canvas."""
+    """Resolve animation layout values proportionally to any positive Canvas."""
     if frame_count < 1:
         raise ValueError("animation frame_count must be positive")
-    normalized = resolve_character_gui_profile(canvas_size).canvas_size
+    normalized = (int(canvas_size[0]), int(canvas_size[1]))
+    if min(normalized) < 1:
+        raise ValueError("animation Canvas dimensions must be positive")
     width, height = normalized
     return CharacterAnimationGuiProfile(
         canvas_size=normalized,

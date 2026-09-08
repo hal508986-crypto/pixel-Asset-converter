@@ -1,5 +1,6 @@
 """Typer command-line interface."""
 
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -50,6 +51,7 @@ from pixel_tile_compiler.character_study import (
 )
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
+    CharacterAnimationTransform,
     compile_character_animation_sheet,
 )
 from pixel_tile_compiler.asset.pipeline import compile_generated_sheet, process_generated_sheet, validate_asset_package
@@ -142,6 +144,15 @@ def compile_character_animation_command(
     character_detail: str = typer.Option("balanced", "--character-detail", help="sparse/balanced/detailed"),
     outline: str = typer.Option("off", "--outline", help="off/black/white"),
     debug: bool = typer.Option(False, "--debug/--no-debug", help="各フレームのデバッグ画像を保存"),
+    width: int = typer.Option(64, "--width", min=1, help="1frameの出力Canvas幅"),
+    height: int = typer.Option(64, "--height", min=1, help="1frameの出力Canvas高さ"),
+    placement_mode: str = typer.Option("legacy_foot", "--placement-mode", help="legacy_foot/preserve_motion"),
+    source_origin: Optional[str] = typer.Option(None, "--source-origin", help="移動保存のソース原点 x,y"),
+    output_origin: Optional[str] = typer.Option(None, "--output-origin", help="移動保存の出力原点 x,y"),
+    scale: Optional[float] = typer.Option(None, "--scale", min=0.000001, help="移動保存の固定倍率"),
+    transform_file: Optional[Path] = typer.Option(None, "--transform", exists=True, readable=True, help="保存済みtransform JSON"),
+    shared_palette: Optional[bool] = typer.Option(None, "--shared-palette/--no-shared-palette", help="動作全体でpaletteを共有"),
+    allow_empty: bool = typer.Option(False, "--allow-empty/--reject-empty", help="移動保存で透明frameを許可"),
 ) -> None:
     """キャラクターアニメーションSheetを分割し、共通配置で64x64化します。"""
     output_dir = output or (Path("output") / f"{source.stem}_animation")
@@ -157,6 +168,40 @@ def compile_character_animation_command(
         raise typer.BadParameter("character_detailはsparse、balanced、detailedのいずれかです", param_hint="--character-detail")
     if outline not in {"off", "black", "white"}:
         raise typer.BadParameter("outlineはoff、black、whiteのいずれかです", param_hint="--outline")
+    if placement_mode not in {"legacy_foot", "preserve_motion"}:
+        raise typer.BadParameter("placement_modeはlegacy_footまたはpreserve_motionです", param_hint="--placement-mode")
+
+    def parse_point(value: str | None, option: str) -> tuple[float, float] | None:
+        if value is None:
+            return None
+        try:
+            parts = tuple(float(item.strip()) for item in value.split(","))
+        except ValueError as exc:
+            raise typer.BadParameter("原点はx,y形式で指定してください", param_hint=option) from exc
+        if len(parts) != 2:
+            raise typer.BadParameter("原点はx,y形式で指定してください", param_hint=option)
+        return parts
+
+    parsed_source_origin = parse_point(source_origin, "--source-origin")
+    parsed_output_origin = parse_point(output_origin, "--output-origin")
+    shared_palette_enabled = (
+        placement_mode == "preserve_motion" if shared_palette is None else shared_palette
+    )
+    loaded_transform = None
+    if transform_file is not None:
+        try:
+            payload = json.loads(transform_file.read_text(encoding="utf-8"))
+            loaded_transform = CharacterAnimationTransform.from_dict(payload.get("transform", payload))
+        except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+            raise typer.BadParameter(f"transformを読み込めません: {exc}", param_hint="--transform") from exc
+    if loaded_transform is not None and any(
+        value is not None for value in (parsed_source_origin, parsed_output_origin, scale)
+    ):
+        raise typer.BadParameter("--transformは原点・--scaleと併用できません", param_hint="--transform")
+    effective_placement_mode = "preserve_motion" if loaded_transform is not None else placement_mode
+    shared_palette_enabled = (
+        effective_placement_mode == "preserve_motion" if shared_palette is None else shared_palette
+    )
     try:
         result = compile_character_animation_sheet(
             source,
@@ -166,6 +211,7 @@ def compile_character_animation_command(
                 split_mode=split_mode,  # type: ignore[arg-type]
                 grid_columns=columns,
                 grid_rows=rows,
+                canvas_size=(width, height),
                 fit_within=(fit_width, fit_height),
                 bottom_margin=bottom_margin,
                 alpha_threshold=alpha_threshold,
@@ -179,11 +225,18 @@ def compile_character_animation_command(
                 require_nonempty_each_cell=require_nonempty,
                 remainder_policy=remainder_policy,  # type: ignore[arg-type]
                 outline_width=1 if outline != "off" else 0,
+                placement_mode=effective_placement_mode,  # type: ignore[arg-type]
+                source_origin=parsed_source_origin,
+                output_origin=parsed_output_origin,
+                scale_override=scale,
+                shared_palette_enabled=shared_palette_enabled,
+                allow_empty_frames=allow_empty,
             ),
             palette_budget=palette,
             character_detail_level=character_detail,
             outline_color=outline,
             debug_enabled=debug,
+            transform=loaded_transform,
         )
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc

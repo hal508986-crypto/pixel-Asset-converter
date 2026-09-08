@@ -9,6 +9,7 @@ from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter, QPixma
 from PySide6.QtWidgets import (
     QFileDialog,
     QComboBox,
+    QDoubleSpinBox,
     QFormLayout,
     QFrame,
     QGraphicsPixmapItem,
@@ -263,9 +264,64 @@ class MainWindow(QMainWindow):
         self.animation_rows.setRange(1, 64)
         self.animation_rows.setValue(1)
         self.animation_rows_label = QLabel("分割行数")
+        self.animation_placement_mode = QComboBox()
+        self.animation_placement_mode.addItem("待機互換（足元固定）", userData="legacy_foot")
+        self.animation_placement_mode.addItem("戦闘（移動を保持）", userData="preserve_motion")
+        self.animation_placement_mode_label = QLabel("配置方式")
+        self.animation_width = QSpinBox()
+        self.animation_width.setRange(1, 4096)
+        self.animation_width.setValue(256)
+        self.animation_width_label = QLabel("戦闘Canvas幅")
+        self.animation_height = QSpinBox()
+        self.animation_height.setRange(1, 4096)
+        self.animation_height.setValue(192)
+        self.animation_height_label = QLabel("戦闘Canvas高さ")
+        self.animation_source_origin_x = QSpinBox()
+        self.animation_source_origin_x.setRange(-4096, 4096)
+        self.animation_source_origin_x.setValue(0)
+        self.animation_source_origin_y = QSpinBox()
+        self.animation_source_origin_y.setRange(-4096, 4096)
+        self.animation_source_origin_y.setValue(0)
+        self.animation_source_origin_y_label = QLabel("ソース原点Y")
+        self.animation_source_origin_label = QLabel("ソース原点（x,y）")
+        self.animation_output_origin_x = QSpinBox()
+        self.animation_output_origin_x.setRange(-4096, 4096)
+        self.animation_output_origin_x.setValue(0)
+        self.animation_output_origin_y = QSpinBox()
+        self.animation_output_origin_y.setRange(-4096, 4096)
+        self.animation_output_origin_y.setValue(0)
+        self.animation_output_origin_y_label = QLabel("出力原点Y")
+        self.animation_output_origin_label = QLabel("出力原点（x,y）")
+        self.animation_scale = QDoubleSpinBox()
+        self.animation_scale.setRange(0.01, 100.0)
+        self.animation_scale.setSingleStep(0.05)
+        self.animation_scale.setDecimals(3)
+        self.animation_scale.setValue(1.0)
+        self.animation_scale_label = QLabel("戦闘倍率")
+        self.animation_shared_palette = QComboBox()
+        self.animation_shared_palette.addItem("有効", userData=True)
+        self.animation_shared_palette.addItem("無効", userData=False)
+        self.animation_shared_palette_label = QLabel("共有palette")
+        self.animation_palette = QSpinBox()
+        self.animation_palette.setRange(4, 64)
+        self.animation_palette.setValue(24)
+        self.animation_palette_label = QLabel("アニメーションpalette上限")
         self.animation_split_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_columns.valueChanged.connect(self._update_purpose_controls)
         self.animation_rows.valueChanged.connect(self._update_purpose_controls)
+        self.animation_placement_mode.currentIndexChanged.connect(self._update_purpose_controls)
+        for widget in (
+            self.animation_width,
+            self.animation_height,
+            self.animation_source_origin_x,
+            self.animation_source_origin_y,
+            self.animation_output_origin_x,
+            self.animation_output_origin_y,
+            self.animation_scale,
+        ):
+            widget.valueChanged.connect(self._update_purpose_controls)
+        self.animation_shared_palette.currentIndexChanged.connect(self._update_purpose_controls)
+        self.animation_palette.valueChanged.connect(self._update_purpose_controls)
         self.auto_profile = QLabel()
         self.palette = QSpinBox()
         self.palette.setRange(4, 64)
@@ -326,6 +382,16 @@ class MainWindow(QMainWindow):
         settings_form.addRow(self.animation_split_mode_label, self.animation_split_mode)
         settings_form.addRow(self.animation_columns_label, self.animation_columns)
         settings_form.addRow(self.animation_rows_label, self.animation_rows)
+        settings_form.addRow(self.animation_placement_mode_label, self.animation_placement_mode)
+        settings_form.addRow(self.animation_width_label, self.animation_width)
+        settings_form.addRow(self.animation_height_label, self.animation_height)
+        settings_form.addRow(self.animation_source_origin_label, self.animation_source_origin_x)
+        settings_form.addRow(self.animation_source_origin_y_label, self.animation_source_origin_y)
+        settings_form.addRow(self.animation_output_origin_label, self.animation_output_origin_x)
+        settings_form.addRow(self.animation_output_origin_y_label, self.animation_output_origin_y)
+        settings_form.addRow(self.animation_scale_label, self.animation_scale)
+        settings_form.addRow(self.animation_palette_label, self.animation_palette)
+        settings_form.addRow(self.animation_shared_palette_label, self.animation_shared_palette)
         settings_form.addRow("自動最適化", self.auto_profile)
         settings_form.addRow(self.pixelization_mode_label, self.pixelization_mode)
         settings_form.addRow(self.palette_label, self.palette)
@@ -457,6 +523,7 @@ class MainWindow(QMainWindow):
         self.terrain_batch_button.setVisible(not is_character)
         self.secondary_preview_label.setText("アニメーションシート（8倍）" if is_animation else "繰り返し確認")
         self._update_animation_split_controls()
+        self._update_animation_geometry_controls()
         if is_character:
             self.repeat_opt.setCurrentIndex(1)
             self._update_canvas_selection()
@@ -477,6 +544,16 @@ class MainWindow(QMainWindow):
             return
         canvas_size = self.canvas_size.currentData()
         if purpose == "character_animation":
+            if self.animation_placement_mode.currentData() == "preserve_motion":
+                canvas_size = (self.animation_width.value(), self.animation_height.value())
+                self.canvas.set_canvas_size(canvas_size)
+                columns = self.animation_columns.value()
+                rows = self.animation_rows.value()
+                self.auto_profile.setText(
+                    f"戦闘 / {canvas_size[0]}×{canvas_size[1]} / {columns}列×{rows}行 / {self.animation_palette.value()}色 / 明示原点・移動保持"
+                )
+                self._clear_stale_result(canvas_size)
+                return
             columns = self.animation_columns.value()
             rows = self.animation_rows.value()
             profile = resolve_character_animation_gui_profile(canvas_size, frame_count=columns * rows)
@@ -516,6 +593,37 @@ class MainWindow(QMainWindow):
         self.animation_split_mode.setEnabled(is_animation)
         self.animation_columns.setEnabled(show_grid)
         self.animation_rows.setEnabled(show_grid)
+
+    def _update_animation_geometry_controls(self) -> None:
+        is_animation = self.purpose.currentData() == "character_animation"
+        is_motion = is_animation and self.animation_placement_mode.currentData() == "preserve_motion"
+        for widget in (
+            self.animation_placement_mode_label,
+            self.animation_placement_mode,
+        ):
+            widget.setVisible(is_animation)
+        for widget in (
+            self.animation_width_label,
+            self.animation_width,
+            self.animation_height_label,
+            self.animation_height,
+            self.animation_source_origin_label,
+            self.animation_source_origin_x,
+            self.animation_source_origin_y_label,
+            self.animation_source_origin_y,
+            self.animation_output_origin_label,
+            self.animation_output_origin_x,
+            self.animation_output_origin_y_label,
+            self.animation_output_origin_y,
+            self.animation_scale_label,
+            self.animation_scale,
+            self.animation_palette_label,
+            self.animation_palette,
+            self.animation_shared_palette_label,
+            self.animation_shared_palette,
+        ):
+            widget.setVisible(is_motion)
+            widget.setEnabled(is_motion)
 
     def _clear_stale_result(self, selected_size: tuple[int, int] | None = None) -> None:
         if self._compiled_canvas_size is None:
@@ -587,16 +695,38 @@ class MainWindow(QMainWindow):
             if purpose == "character_animation":
                 columns = self.animation_columns.value()
                 rows = self.animation_rows.value()
-                profile = resolve_character_animation_gui_profile(
-                    self.canvas_size.currentData(),
-                    frame_count=columns * rows,
-                )
-                width, height = profile.canvas_size
+                placement_mode = self.animation_placement_mode.currentData()
+                if placement_mode == "preserve_motion":
+                    width, height = self.animation_width.value(), self.animation_height.value()
+                    fit_within = (width, height)
+                    bottom_margin = 0
+                    source_origin = (
+                        float(self.animation_source_origin_x.value()),
+                        float(self.animation_source_origin_y.value()),
+                    )
+                    output_origin = (
+                        float(self.animation_output_origin_x.value()),
+                        float(self.animation_output_origin_y.value()),
+                    )
+                    scale_override = float(self.animation_scale.value())
+                    shared_palette_enabled = bool(self.animation_shared_palette.currentData())
+                else:
+                    profile = resolve_character_animation_gui_profile(
+                        self.canvas_size.currentData(),
+                        frame_count=columns * rows,
+                    )
+                    width, height = profile.canvas_size
+                    fit_within = profile.fit_within
+                    bottom_margin = profile.bottom_margin
+                    source_origin = None
+                    output_origin = None
+                    scale_override = None
+                    shared_palette_enabled = False
                 output = build_output_path(
                     output_root,
                     self.source_path,
                     purpose="character_animation",
-                    canvas_size=profile.canvas_size,
+                    canvas_size=(width, height),
                 )
                 animation = compile_character_animation_sheet(
                     self.source_path,
@@ -606,17 +736,22 @@ class MainWindow(QMainWindow):
                         split_mode=self.animation_split_mode.currentData(),  # type: ignore[arg-type]
                         grid_columns=columns,
                         grid_rows=rows,
-                        canvas_size=profile.canvas_size,
-                        fit_within=profile.fit_within,
-                        bottom_margin=profile.bottom_margin,
+                        canvas_size=(width, height),
+                        fit_within=fit_within,
+                        bottom_margin=bottom_margin,
+                        placement_mode=placement_mode,  # type: ignore[arg-type]
+                        source_origin=source_origin,
+                        output_origin=output_origin,
+                        scale_override=scale_override,
+                        shared_palette_enabled=shared_palette_enabled,
                     ),
-                    palette_budget=profile.palette_budget,
-                    character_detail_level=profile.detail_level,
+                    palette_budget=self.animation_palette.value(),
+                    character_detail_level="balanced",
                     debug_enabled=True,
                 )
                 first_frame = animation.frame_paths[0]
-                self.canvas.set_image(first_frame, profile.canvas_size)
-                self._compiled_canvas_size = profile.canvas_size
+                self.canvas.set_image(first_frame, (width, height))
+                self._compiled_canvas_size = (width, height)
                 self.result_preview.set_image(first_frame)
                 self.tile_preview.set_image(animation.preview_8x_path)
                 self.metrics.setText(
@@ -629,7 +764,10 @@ class MainWindow(QMainWindow):
                         ]
                     )
                 )
-                self.status.setText("完了: 分割・共通bbox・足元アンカーで待機アニメーションを出力しました")
+                if placement_mode == "preserve_motion":
+                    self.status.setText("完了: 明示原点・共通倍率で移動を保持した戦闘アニメーションを出力しました")
+                else:
+                    self.status.setText("完了: 分割・共通bbox・足元アンカーで待機アニメーションを出力しました")
                 return
             if purpose == "character":
                 profile = resolve_character_gui_profile(self.canvas_size.currentData())

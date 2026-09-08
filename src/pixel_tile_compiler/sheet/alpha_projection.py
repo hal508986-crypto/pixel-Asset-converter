@@ -103,20 +103,36 @@ def alpha_occupancy_mask(
     alpha_threshold: int = 16,
     remove_small_components: bool = True,
     min_component_area_px: int = 3,
+    protected_mask: Image.Image | None = None,
 ) -> tuple[np.ndarray, int]:
     """Build a binary alpha mask and return the number of removed pixels."""
     if not 0 <= alpha_threshold <= 255:
         raise ValueError("alpha_threshold must be between 0 and 255")
     if min_component_area_px < 1:
         raise ValueError("min_component_area_px must be positive")
-    alpha = np.asarray(image.convert("RGBA").getchannel("A"), dtype=np.uint8)
-    mask = alpha >= alpha_threshold
+    rgba = image.convert("RGBA")
+    alpha = np.asarray(rgba.getchannel("A"), dtype=np.uint8)
+    protected = _as_protected_mask(protected_mask, rgba.size)
+    mask = (alpha >= alpha_threshold) | (protected & (alpha > 0))
     if not remove_small_components:
         return mask, 0
-    return _remove_small_components(mask, min_component_area_px)
+    return _remove_small_components(mask, min_component_area_px, protected_mask=protected)
 
 
-def _remove_small_components(mask: np.ndarray, min_area: int) -> tuple[np.ndarray, int]:
+def _as_protected_mask(mask: Image.Image | None, size: tuple[int, int]) -> np.ndarray:
+    if mask is None:
+        return np.zeros((size[1], size[0]), dtype=bool)
+    if mask.size != size:
+        raise ValueError("protected mask must have the same size as the source image")
+    return np.asarray(mask.convert("L"), dtype=np.uint8) > 0
+
+
+def _remove_small_components(
+    mask: np.ndarray,
+    min_area: int,
+    *,
+    protected_mask: np.ndarray | None = None,
+) -> tuple[np.ndarray, int]:
     if min_area <= 1 or not mask.any():
         return mask.copy(), 0
 
@@ -140,7 +156,10 @@ def _remove_small_components(mask: np.ndarray, min_area: int) -> tuple[np.ndarra
                         continue
                     visited[next_y, next_x] = True
                     stack.append((next_y, next_x))
-        if len(component) >= min_area:
+        component_protected = protected_mask is not None and any(
+            bool(protected_mask[y, x]) for y, x in component
+        )
+        if len(component) >= min_area or component_protected:
             for y, x in component:
                 kept[y, x] = True
         else:

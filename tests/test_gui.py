@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from pixel_tile_compiler.gui.canvas import CanvasState
@@ -79,6 +81,14 @@ def test_build_output_path_uses_selected_root_and_source_stem(tmp_path):
         purpose="character",
         canvas_size=(128, 128),
     ) == tmp_path / "compiled" / source.stem / "character_128x128_b24"
+
+    assert build_output_path(
+        tmp_path / "compiled",
+        source,
+        purpose="character",
+        canvas_size=(128, 128),
+        palette_token="0123456789abcdef-rest",
+    ) == tmp_path / "compiled" / source.stem / "character_128x128_b24_shared-0123456789ab"
 
     assert build_output_path(
         tmp_path / "compiled",
@@ -425,4 +435,80 @@ def test_main_window_compiles_animation_asynchronously_and_can_play_frames(monke
         assert window._animation_frame_index != initial_index
         window.animation_play_button.click()
     finally:
+        window.close()
+
+
+def test_main_window_applies_map_palette_to_character_compile(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QThread
+    from PySide6.QtWidgets import QApplication
+    from PIL import Image
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    source = tmp_path / "character.png"
+    image = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+    for y in range(24, 104):
+        for x in range(40, 88):
+            image.putpixel((x, y), (30, 120, 80, 255) if y < 64 else (180, 70, 50, 255))
+    image.save(source)
+    shared = ((30, 120, 80), (180, 70, 50))
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "outputs"))
+        window.set_shared_palette(shared, source_label="マップタイル基準")
+        assert window.shared_palette_colors == shared
+        assert window.shared_palette_info.text().startswith("マップタイル基準")
+
+        window.compile_image()
+        deadline = 5000
+        elapsed = 0
+        while window._compile_thread is not None and elapsed < deadline:
+            app.processEvents()
+            QThread.msleep(10)
+            elapsed += 10
+
+        assert window._compile_thread is None
+        assert "完了" in window.status.text()
+        output_dirs = list((tmp_path / "outputs" / source.stem).iterdir())
+        assert len(output_dirs) == 1
+        metadata = json.loads((output_dirs[0] / "metadata.json").read_text(encoding="utf-8"))
+        assert metadata["config"]["palette_colors"] == [list(color) for color in shared]
+    finally:
+        window.close()
+
+
+def test_main_window_receives_terrain_reference_palette(monkeypatch):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    terrain_window = None
+    try:
+        window.open_terrain_batch()
+        terrain_window = window._terrain_batch_window
+        assert terrain_window is not None
+        colors = ((12, 34, 56), (200, 180, 160))
+        terrain_window.reference_palette_changed.emit(colors)
+        app.processEvents()
+        assert window.shared_palette_colors == colors
+        assert window.shared_palette_view.count() == len(colors)
+        terrain_window.reference_palette_changed.emit(())
+        app.processEvents()
+        assert window.shared_palette_colors == ()
+    finally:
+        if terrain_window is not None:
+            terrain_window.close()
         window.close()

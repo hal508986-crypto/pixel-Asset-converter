@@ -24,7 +24,7 @@ from pixel_tile_compiler.gui.terrain_batch_model import (
     TerrainBatchResult,
     TerrainBatchRun,
 )
-from pixel_tile_compiler.gui.terrain_batch_palette import (
+from pixel_tile_compiler.palette_contract import (
     extract_final_palette,
     fixed_palette_config,
     metadata_palette_matches_final,

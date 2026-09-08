@@ -98,15 +98,17 @@ def build_output_path(
     pixelization_mode: str | None = None,
     palette_budget: int | None = None,
     repeat_opt_enabled: bool | None = None,
+    palette_token: str | None = None,
 ) -> Path:
     """Build the stable GUI output layout below the user-selected root."""
     root = Path(output_root).expanduser()
     source = Path(source_path)
     width, height = int(canvas_size[0]), int(canvas_size[1])
+    palette_suffix = f"_shared-{palette_token[:12]}" if palette_token else ""
     if purpose == "character":
-        variant = f"character_{width}x{height}_b24"
+        variant = f"character_{width}x{height}_b24{palette_suffix}"
     elif purpose == "character_animation":
-        variant = f"character_animation_{width}x{height}_b24"
+        variant = f"character_animation_{width}x{height}_b24{palette_suffix}"
     elif purpose == "terrain":
         if pixelization_mode is None and palette_budget is None and repeat_opt_enabled is None:
             return root / source.stem / "terrain_64x64"

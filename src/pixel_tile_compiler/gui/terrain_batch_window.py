@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
 from pixel_tile_compiler.config import CanvasSpec, CompilerConfig, compiler_config_for_purpose
 from pixel_tile_compiler.gui.policy import GUI_TERRAIN_PIXELIZATION_OPTIONS, resolve_terrain_gui_profile
 from pixel_tile_compiler.gui.terrain_batch_model import TerrainBatch, TerrainBatchProgress, TerrainBatchRun
-from pixel_tile_compiler.gui.terrain_batch_palette import palette_id, validate_reference_palette
+from pixel_tile_compiler.palette_contract import palette_id, validate_reference_palette
 from pixel_tile_compiler.gui.terrain_batch_service import TerrainBatchService, load_legacy_manifest
 
 
@@ -160,6 +160,8 @@ class TerrainBatchWorker(QObject):
 
 class TerrainBatchWindow(QMainWindow):
     """Terrain-only batch workflow; the core service remains Qt independent."""
+
+    reference_palette_changed = Signal(object)
 
     def __init__(
         self,
@@ -347,6 +349,9 @@ class TerrainBatchWindow(QMainWindow):
         """Set the model displayed by the window, including imported read-only state."""
         self.batch = batch
         self.reference_result_id = None
+        self.reference_info.setText("基準パレット: 未選択")
+        self.reference_palette.clear()
+        self.reference_palette_changed.emit(())
         self._sync_controls_from_batch()
         self._refresh_table()
         self.status.setText("バッチを読み込みました。行を選択して比較できます")
@@ -441,6 +446,7 @@ class TerrainBatchWindow(QMainWindow):
         self.reference_result_id = result.result_id
         self.reference_info.setText(f"基準: {item.display_name} / {result.result_id} / {len(colors)}色 / {palette_id(colors)[:12]}")
         self._set_palette_list(colors)
+        self.reference_palette_changed.emit(colors)
         self.status.setText("基準パレットを設定しました。対象をチェックして再変換できます")
         self._update_actions()
 
@@ -450,6 +456,7 @@ class TerrainBatchWindow(QMainWindow):
         self.reference_result_id = None
         self.reference_info.setText("基準パレット: 未選択")
         self.reference_palette.clear()
+        self.reference_palette_changed.emit(())
         self.status.setText("基準パレットを解除しました")
         self._update_actions()
 

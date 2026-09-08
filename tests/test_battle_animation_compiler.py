@@ -496,7 +496,11 @@ def test_animation_sheet_pixel_cap_fails_before_frame_compilation(tmp_path: Path
 
 @pytest.mark.parametrize(
     "fixture_name",
-    ("battle_animation_generated_fixture.png", "battle_animation_review_fixture.png"),
+    (
+        "battle_animation_generated_fixture.png",
+        "battle_animation_review_fixture.png",
+        "palette_unification_generated_fixture.png",
+    ),
 )
 def test_imagegen_fixture_runs_through_battle_animation_smoke(tmp_path: Path, fixture_name: str) -> None:
     source = Path("assets/test") / fixture_name

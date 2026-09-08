@@ -9,6 +9,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 from pixel_tile_compiler.config import CompilerConfig
+from pixel_tile_compiler.palette_contract import load_palette_json
 from pixel_tile_compiler.gui.terrain_batch_palette import (
     extract_final_palette,
     fixed_palette_config,
@@ -44,6 +45,29 @@ def test_palette_id_is_stable_for_normalized_rgb_sequence() -> None:
 
     assert palette_id(colors) == hashlib.sha256(payload).hexdigest()
     assert palette_id(colors) == palette_id(tuple(reversed(colors)))
+
+
+def test_palette_json_loads_map_reference_colors_and_rejects_wrong_id(tmp_path: Path) -> None:
+    colors = ((10, 20, 30), (30, 40, 50))
+    path = tmp_path / "palette.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "palette_id": palette_id(colors),
+                "colors": [list(color) for color in colors],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert load_palette_json(path) == colors
+    path.write_text(
+        json.dumps({"schema_version": 1, "palette_id": "wrong", "colors": [list(color) for color in colors]}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="palette_id"):
+        load_palette_json(path)
 
 
 def test_fixed_palette_config_uses_actual_colors_without_budget_padding(tmp_path: Path) -> None:

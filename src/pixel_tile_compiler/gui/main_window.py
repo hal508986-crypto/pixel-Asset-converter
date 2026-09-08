@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QProgressBar,
     QPushButton,
@@ -41,6 +43,7 @@ from pixel_tile_compiler.gui.policy import (
     resolve_character_gui_profile,
     resolve_terrain_gui_profile,
 )
+from pixel_tile_compiler.palette_contract import load_palette_json, palette_id, validate_reference_palette
 from pixel_tile_compiler.pipeline.compiler import CompilationResult, PixelTileCompiler
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
@@ -311,6 +314,7 @@ class MainWindow(QMainWindow):
         self.source_path: Path | None = None
         self._compiled_canvas_size: tuple[int, int] | None = None
         self._terrain_batch_window = None
+        self._shared_palette_colors: tuple[tuple[int, int, int], ...] = ()
         self._origin_pick_target: str | None = None
         self._compile_thread: _CompileWorker | None = None
         self._compile_context: dict[str, object] | None = None
@@ -326,6 +330,14 @@ class MainWindow(QMainWindow):
         self.canvas.point_clicked.connect(self._on_output_origin_clicked)
         self.status = QLabel("元絵を読み込むと始められます")
         self.metrics = QLabel("出力情報はここに表示されます")
+        self.shared_palette_info = QLabel("未設定（地形タイルの基準paletteを反映できます）")
+        self.shared_palette_view = QListWidget()
+        self.shared_palette_view.setFlow(QListWidget.Flow.LeftToRight)
+        self.shared_palette_view.setMaximumHeight(66)
+        self.shared_palette_load_button = QPushButton("palette.jsonを読み込む")
+        self.shared_palette_load_button.clicked.connect(self.load_shared_palette)
+        self.shared_palette_clear_button = QPushButton("共有を解除")
+        self.shared_palette_clear_button.clicked.connect(self.clear_shared_palette)
         self.output_root_field = QLineEdit(str(self.default_output_root))
         self.output_root_field.setToolTip("コンパイル結果を保存するフォルダ")
         self.output_root_field.setCursorPosition(0)
@@ -463,6 +475,11 @@ class MainWindow(QMainWindow):
         self._update_purpose_controls()
         self._apply_ui_font()
 
+    @property
+    def shared_palette_colors(self) -> tuple[tuple[int, int, int], ...]:
+        """地形workflowから共有された正確なRGB paletteを返す。"""
+        return self._shared_palette_colors
+
     def _apply_ui_font(self) -> None:
         """Prefer a Windows Japanese UI font so labels never fall back to tofu boxes."""
         for family in ("Yu Gothic UI", "Meiryo UI", "Noto Sans JP", "MS UI Gothic"):
@@ -533,10 +550,22 @@ class MainWindow(QMainWindow):
         output_row_layout.addWidget(self.output_browse_button)
         settings_form.addRow("保存先", output_row)
 
+        shared_palette_group = QGroupBox("マップタイルのpaletteをキャラクターにも適用")
+        shared_palette_layout = QVBoxLayout(shared_palette_group)
+        shared_palette_layout.addWidget(self.shared_palette_info)
+        shared_palette_layout.addWidget(self.shared_palette_view)
+        shared_palette_buttons = QHBoxLayout()
+        shared_palette_buttons.addWidget(self.shared_palette_load_button)
+        shared_palette_buttons.addWidget(self.shared_palette_clear_button)
+        shared_palette_layout.addLayout(shared_palette_buttons)
+        shared_palette_layout.addWidget(QLabel("地形のfinal.pngから実測したRGBだけを使います。未設定なら従来の自動paletteです。"))
+        self.shared_palette_group = shared_palette_group
+
         controls_content = QWidget()
         controls = QVBoxLayout(controls_content)
         controls.addWidget(source_group)
         controls.addWidget(settings_group)
+        controls.addWidget(shared_palette_group)
         controls.addStretch(1)
         controls_scroll = QScrollArea()
         controls_scroll.setObjectName("animationControlsScroll")
@@ -668,6 +697,7 @@ class MainWindow(QMainWindow):
         self.repeat_opt_label.setVisible(not is_character)
         self.repeat_opt.setVisible(not is_character)
         self.terrain_batch_button.setVisible(not is_character)
+        self.shared_palette_group.setVisible(is_character)
         self.animation_play_button.setVisible(is_animation)
         self.animation_playback_label.setVisible(is_animation)
         self.secondary_preview_label.setText("アニメーションシート" if is_animation else "繰り返し確認")
@@ -895,6 +925,49 @@ class MainWindow(QMainWindow):
             raise ValueError("保存先を指定してください")
         return Path(raw_path).expanduser()
 
+    def set_shared_palette(
+        self,
+        colors,
+        *,
+        source_label: str = "共有palette",
+    ) -> None:  # type: ignore[no-untyped-def]
+        """キャラクターコンパイルに使う可視RGB paletteを固定する。"""
+        normalized = validate_reference_palette(colors)
+        self._shared_palette_colors = normalized
+        self.shared_palette_info.setText(
+            f"{source_label} / {len(normalized)}色 / {palette_id(normalized)[:12]}"
+        )
+        self._set_shared_palette_view(normalized)
+        self._clear_stale_result()
+        self.status.setText(f"{source_label}をキャラクター用共有paletteに設定しました")
+
+    def clear_shared_palette(self) -> None:
+        """キャラクターpaletteの自動選択へ戻す。"""
+        self._shared_palette_colors = ()
+        self.shared_palette_info.setText("未設定（地形タイルの基準paletteを反映できます）")
+        self.shared_palette_view.clear()
+        self._clear_stale_result()
+        self.status.setText("キャラクター用共有paletteを解除しました")
+
+    def load_shared_palette(self) -> None:
+        """terrain batchが出力したpalette.jsonを読み込む。"""
+        path, _ = QFileDialog.getOpenFileName(self, "共有paletteを読み込む", "", "palette.json (*.json)")
+        if not path:
+            return
+        try:
+            self.set_shared_palette(load_palette_json(Path(path)), source_label=Path(path).name)
+        except (OSError, ValueError) as exc:
+            self.status.setText(f"共有paletteを読み込めませんでした: {exc}")
+
+    def _set_shared_palette_view(self, colors) -> None:  # type: ignore[no-untyped-def]
+        self.shared_palette_view.clear()
+        for red, green, blue in colors:
+            item = QListWidgetItem(f"#{red:02X}{green:02X}{blue:02X}")
+            item.setBackground(QColor(red, green, blue))
+            item.setForeground(QColor("#ffffff" if red + green + blue < 390 else "#20252c"))
+            item.setToolTip(f"RGB ({red}, {green}, {blue})")
+            self.shared_palette_view.addItem(item)
+
     def _on_output_root_changed(self, _text: str) -> None:
         if self._compiled_canvas_size is None:
             return
@@ -1072,11 +1145,14 @@ class MainWindow(QMainWindow):
                     output_origin = None
                     scale_override = None
                     shared_palette_enabled = False
+                shared_palette = self._shared_palette_colors or None
+                shared_palette_enabled = shared_palette_enabled or shared_palette is not None
                 output = build_output_path(
                     output_root,
                     source,
                     purpose="character_animation",
                     canvas_size=(width, height),
+                    palette_token=palette_id(shared_palette) if shared_palette is not None else None,
                 )
                 config = CharacterAnimationConfig(
                     frame_count=columns * rows,
@@ -1092,12 +1168,13 @@ class MainWindow(QMainWindow):
                     scale_override=scale_override,
                     shared_palette_enabled=shared_palette_enabled,
                 )
-                palette_budget = self.animation_palette.value()
+                palette_budget = max(self.animation_palette.value(), len(shared_palette or ()))
                 operation = lambda: compile_character_animation_sheet(
                     source,
                     output,
                     config=config,
                     palette_budget=palette_budget,
+                    palette_colors=shared_palette,
                     character_detail_level="balanced",
                     debug_enabled=True,
                 )
@@ -1114,17 +1191,20 @@ class MainWindow(QMainWindow):
             if purpose == "character":
                 profile = resolve_character_gui_profile(self.canvas_size.currentData())
                 width, height = profile.canvas_size
+                shared_palette = self._shared_palette_colors or None
                 output = build_output_path(
                     output_root,
                     source,
                     purpose="character",
                     canvas_size=(width, height),
+                    palette_token=palette_id(shared_palette) if shared_palette is not None else None,
                 )
                 config = compiler_config_for_purpose(
                     "character",
                     output_root=output,
                     canvas=CanvasSpec(width, height),
-                    palette_budget=profile.palette_budget,
+                    palette_budget=max(profile.palette_budget, len(shared_palette or ())),
+                    palette_colors=shared_palette,
                     character_detail_level=profile.detail_level,  # type: ignore[arg-type]
                     debug_enabled=True,
                 )
@@ -1180,6 +1260,14 @@ class MainWindow(QMainWindow):
             from pixel_tile_compiler.gui.terrain_batch_window import TerrainBatchWindow
 
             self._terrain_batch_window = TerrainBatchWindow(output_root=output_root)
+            self._terrain_batch_window.reference_palette_changed.connect(self._on_terrain_palette_changed)
         self._terrain_batch_window.show()
         self._terrain_batch_window.raise_()
         self._terrain_batch_window.activateWindow()
+
+    def _on_terrain_palette_changed(self, colors: object) -> None:
+        """地形ウィンドウで選択した可視RGB paletteを転送する。"""
+        if colors:
+            self.set_shared_palette(colors, source_label="マップタイル基準")
+        else:
+            self.clear_shared_palette()

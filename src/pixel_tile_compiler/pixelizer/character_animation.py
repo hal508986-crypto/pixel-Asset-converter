@@ -607,6 +607,8 @@ def _replace_output_root(staging_root: Path, output_root: Path) -> None:
     )
     moved_old: list[tuple[Path, Path]] = []
     installed: list[Path] = []
+    replacement_succeeded = False
+    restore_completed = False
     try:
         for name in _MANAGED_ANIMATION_OUTPUTS:
             destination = output_root / name
@@ -618,17 +620,26 @@ def _replace_output_root(staging_root: Path, output_root: Path) -> None:
             if staged.exists() or staged.is_symlink():
                 staged.rename(destination)
                 installed.append(destination)
+        replacement_succeeded = True
     except BaseException:
-        for destination in reversed(installed):
-            _remove_output_path(destination)
-        for destination, backup in reversed(moved_old):
-            if backup.exists() or backup.is_symlink():
-                backup.rename(destination)
-        if output_was_missing and output_root.exists() and not any(output_root.iterdir()):
-            output_root.rmdir()
+        try:
+            for destination in reversed(installed):
+                _remove_output_path(destination)
+            for destination, backup in reversed(moved_old):
+                if backup.exists() or backup.is_symlink():
+                    backup.rename(destination)
+            if output_was_missing and output_root.exists() and not any(output_root.iterdir()):
+                output_root.rmdir()
+        except BaseException as restore_error:
+            raise RuntimeError(
+                "出力の入れ替えに失敗し、旧出力を復元できませんでした。"
+                f"復旧用バックアップを保持しています: {backup_root}"
+            ) from restore_error
+        restore_completed = True
         raise
     finally:
-        shutil.rmtree(backup_root, ignore_errors=True)
+        if replacement_succeeded or restore_completed:
+            shutil.rmtree(backup_root, ignore_errors=True)
 
 
 def _remove_output_path(path: Path) -> None:

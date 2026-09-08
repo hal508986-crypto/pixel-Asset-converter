@@ -5,6 +5,7 @@ from PIL import Image
 
 from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
 from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+from pixel_tile_compiler.pixelizer import character_animation as character_animation_module
 from pixel_tile_compiler.pixelizer.character_animation import (
     AlphaBoundingBox,
     CharacterAnimationConfig,
@@ -199,3 +200,34 @@ def test_compile_character_animation_failure_preserves_previous_success_output(t
     assert previous_final.exists()
     assert previous_final.read_bytes() == previous_bytes
     assert (output / "compiled" / "F1" / "final.png").exists()
+
+
+def test_output_replacement_preserves_backup_when_restore_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    staging_root = tmp_path / "staging"
+    staging_root.mkdir()
+    (staging_root / "aligned_sheet.png").write_bytes(b"new")
+    output_root = tmp_path / "output"
+    output_root.mkdir()
+    (output_root / "aligned_sheet.png").write_bytes(b"old")
+
+    original_rename = Path.rename
+
+    def fail_install_and_restore(self: Path, target: Path) -> Path:
+        if self == staging_root / "aligned_sheet.png":
+            raise OSError("injected install rename failure")
+        if self.name == "aligned_sheet.png" and self.parent.name.startswith(".output.previous-"):
+            raise OSError("injected restore rename failure")
+        return original_rename(self, target)
+
+    monkeypatch.setattr(Path, "rename", fail_install_and_restore)
+
+    with pytest.raises(RuntimeError, match="復旧用バックアップを保持しています") as exc_info:
+        character_animation_module._replace_output_root(staging_root, output_root)
+
+    backup_roots = list(tmp_path.glob(".output.previous-*"))
+    assert len(backup_roots) == 1
+    assert (backup_roots[0] / "aligned_sheet.png").read_bytes() == b"old"
+    assert str(backup_roots[0]) in str(exc_info.value)
+    assert not (output_root / "aligned_sheet.png").exists()

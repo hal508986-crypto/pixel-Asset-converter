@@ -234,3 +234,41 @@ def test_main_window_exposes_animation_split_modes_and_fixed_grid_controls(monke
         assert window.animation_rows.isVisible()
     finally:
         window.close()
+
+
+def test_main_window_shows_animation_restore_backup_error(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = tmp_path / "idle.png"
+    source.write_bytes(b"placeholder")
+    backup_root = tmp_path / ".output.previous-recovery"
+
+    def fail_animation_compile(*args, **kwargs):
+        raise RuntimeError(
+            "出力の入れ替えに失敗し、旧出力を復元できませんでした。"
+            f"復旧用バックアップを保持しています: {backup_root}"
+        )
+
+    monkeypatch.setattr(main_window_module, "compile_character_animation_sheet", fail_animation_compile)
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        app.processEvents()
+
+        window.compile_image()
+
+        assert "コンパイルできませんでした" in window.status.text()
+        assert "復元できませんでした" in window.status.text()
+        assert "復旧用バックアップ" in window.status.text()
+        assert str(backup_root) in window.status.text()
+    finally:
+        window.close()

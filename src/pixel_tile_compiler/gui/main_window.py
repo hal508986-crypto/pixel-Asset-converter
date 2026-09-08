@@ -672,7 +672,7 @@ class MainWindow(QMainWindow):
                     debug_enabled=True,
                 )
             result = PixelTileCompiler().compile(self.source_path, config)
-        except (OSError, ValueError) as exc:
+        except (OSError, RuntimeError, ValueError) as exc:
             self.status.setText(f"コンパイルできませんでした: {exc}")
             return
 

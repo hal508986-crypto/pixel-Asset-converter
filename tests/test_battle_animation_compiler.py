@@ -494,11 +494,43 @@ def test_animation_sheet_pixel_cap_fails_before_frame_compilation(tmp_path: Path
         )
 
 
+def test_animation_pixel_cap_fails_before_large_canvas_allocation(monkeypatch, tmp_path: Path) -> None:
+    import pixel_tile_compiler.pixelizer.character_animation as animation_module
+
+    source = tmp_path / "allocation-cap.png"
+    Image.new("RGBA", (20, 20), (80, 140, 220, 255)).save(source)
+    actual_new = animation_module.Image.new
+    large_allocations: list[tuple[int, int]] = []
+
+    def tracking_new(mode, size, *args, **kwargs):
+        if size[0] * size[1] > animation_module.MAX_ANIMATION_OUTPUT_SHEET_PIXELS:
+            large_allocations.append(size)
+            raise AssertionError(f"large output allocation occurred: {size}")
+        return actual_new(mode, size, *args, **kwargs)
+
+    monkeypatch.setattr(animation_module.Image, "new", tracking_new)
+    with pytest.raises(ValueError, match="総画素数が上限"):
+        compile_character_animation_sheet(
+            source,
+            tmp_path / "allocation-cap-output",
+            config=CharacterAnimationConfig(
+                frame_count=1,
+                canvas_size=(4097, 4096),
+                fit_within=(4090, 4090),
+                bottom_margin=0,
+                remove_isolated_components=False,
+            ),
+        )
+
+    assert large_allocations == []
+
+
 @pytest.mark.parametrize(
     "fixture_name",
     (
         "battle_animation_generated_fixture.png",
         "battle_animation_review_fixture.png",
+        "origin_mapping_generated_fixture.png",
         "palette_unification_generated_fixture.png",
     ),
 )

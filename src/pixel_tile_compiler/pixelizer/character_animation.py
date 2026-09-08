@@ -19,6 +19,7 @@ from pixel_tile_compiler.io.exporter import save_json, save_png
 from pixel_tile_compiler.pixelizer.palette import extract_palette
 from pixel_tile_compiler.sheet.alpha_projection import (
     SplitMode,
+    SpriteSheetSplitResult,
     alpha_occupancy_mask,
     split_sprite_sheet,
 )
@@ -466,6 +467,51 @@ def split_horizontal_sheet(
         remainder_policy=remainder_policy,
     )
     return result.frames, result.crop_box, result.normalized_size
+
+
+def _split_character_animation_source(
+    image: Image.Image,
+    config: CharacterAnimationConfig,
+) -> SpriteSheetSplitResult:
+    """現在のアニメーション設定で元絵を分割する。"""
+    columns, rows = config.grid_size
+    return split_sprite_sheet(
+        image,
+        mode=config.split_mode,
+        columns=columns,
+        rows=rows,
+        alpha_threshold=config.alpha_threshold,
+        remove_small_components=config.remove_isolated_components,
+        min_component_area_px=config.min_component_area_px,
+        empty_column_threshold=config.empty_column_threshold,
+        empty_row_threshold=config.empty_row_threshold,
+        min_gutter_width_px=config.min_gutter_width_px,
+        max_cell_size_variance_ratio=config.max_cell_size_variance_ratio,
+        require_nonempty_each_cell=config.require_nonempty_each_cell,
+        remainder_policy=config.remainder_policy,
+    )
+
+
+def animation_source_frame_boxes(
+    image: Image.Image,
+    config: CharacterAnimationConfig | None = None,
+) -> tuple[tuple[int, int, int, int], ...]:
+    """元絵上の各フレームのsource座標を返す。"""
+    resolved_config = config or CharacterAnimationConfig()
+    split = _split_character_animation_source(image, resolved_config)
+    return tuple(cell.source_box for cell in split.cells)
+
+
+def map_source_point_to_frame(
+    point: tuple[int, int],
+    frame_boxes: tuple[tuple[int, int, int, int], ...],
+) -> tuple[int, tuple[int, int]]:
+    """シート上のクリック座標を、含まれるフレームのローカル座標へ変換する。"""
+    x, y = int(point[0]), int(point[1])
+    for index, (left, top, right, bottom) in enumerate(frame_boxes):
+        if left <= x < right and top <= y < bottom:
+            return index, (x - left, y - top)
+    raise ValueError("フレームのセル内をクリックしてください")
 
 
 def analyze_frame_alpha(
@@ -989,25 +1035,11 @@ def prepare_character_animation_sheet(
     *,
     protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
     transform: CharacterAnimationTransform | None = None,
+    split_result: SpriteSheetSplitResult | None = None,
 ) -> CharacterAnimationResult:
     """Split a regular sheet and align all frames against one layout."""
     config = config or CharacterAnimationConfig()
-    columns, rows = config.grid_size
-    split = split_sprite_sheet(
-        image,
-        mode=config.split_mode,
-        columns=columns,
-        rows=rows,
-        alpha_threshold=config.alpha_threshold,
-        remove_small_components=config.remove_isolated_components,
-        min_component_area_px=config.min_component_area_px,
-        empty_column_threshold=config.empty_column_threshold,
-        empty_row_threshold=config.empty_row_threshold,
-        min_gutter_width_px=config.min_gutter_width_px,
-        max_cell_size_variance_ratio=config.max_cell_size_variance_ratio,
-        require_nonempty_each_cell=config.require_nonempty_each_cell,
-        remainder_policy=config.remainder_policy,
-    )
+    split = split_result or _split_character_animation_source(image, config)
     alignment_config = replace(config, frame_count=split.frame_count)
     result = align_character_frames(
         split.frames,
@@ -1096,6 +1128,19 @@ def compile_character_animation_sheet(
             shutil.rmtree(staging_root, ignore_errors=True)
 
 
+def _validate_animation_output_sheet_size(
+    canvas_size: tuple[int, int],
+    frame_count: int,
+) -> None:
+    """出力Canvas確保前にSheetの総画素数を検証する。"""
+    compiled_sheet_pixels = canvas_size[0] * frame_count * canvas_size[1]
+    if compiled_sheet_pixels > MAX_ANIMATION_OUTPUT_SHEET_PIXELS:
+        raise ValueError(
+            "アニメーションSheetの総画素数が上限を超えています: "
+            f"{compiled_sheet_pixels} > {MAX_ANIMATION_OUTPUT_SHEET_PIXELS}"
+        )
+
+
 def _compile_character_animation_to_root(
     source: Path,
     output_root: Path,
@@ -1115,11 +1160,14 @@ def _compile_character_animation_to_root(
     from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 
     with Image.open(source) as opened:
+        split = _split_character_animation_source(opened, config)
+        _validate_animation_output_sheet_size(config.canvas_size, split.frame_count)
         prepared = prepare_character_animation_sheet(
             opened,
             config,
             protected_masks=protected_masks,
             transform=transform,
+            split_result=split,
         )
     if not 4 <= palette_budget <= 64:
         raise ValueError("palette_budget must be between 4 and 64")
@@ -1141,12 +1189,6 @@ def _compile_character_animation_to_root(
         detection_overlay_path = save_png(prepared.detection_overlay, output_root / "detection_overlay.png")
 
     compiled_sheet_size = (config.canvas_size[0] * len(prepared.aligned_frames), config.canvas_size[1])
-    compiled_sheet_pixels = compiled_sheet_size[0] * compiled_sheet_size[1]
-    if compiled_sheet_pixels > MAX_ANIMATION_OUTPUT_SHEET_PIXELS:
-        raise ValueError(
-            "アニメーションSheetの総画素数が上限を超えています: "
-            f"{compiled_sheet_pixels} > {MAX_ANIMATION_OUTPUT_SHEET_PIXELS}"
-        )
 
     frame_paths: list[Path] = []
     compiler = PixelTileCompiler()
@@ -1368,9 +1410,11 @@ __all__ = [
     "CharacterAnimationResult",
     "CharacterAnimationTransform",
     "align_character_frames",
+    "animation_source_frame_boxes",
     "analyze_frame_alpha",
     "compile_character_animation_sheet",
     "load_character_animation_transform",
+    "map_source_point_to_frame",
     "prepare_character_animation_sheet",
     "resolve_action_scale",
     "save_character_animation_transform",

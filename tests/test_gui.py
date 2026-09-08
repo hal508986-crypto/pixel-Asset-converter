@@ -1,4 +1,5 @@
 import json
+import threading
 
 import pytest
 
@@ -319,6 +320,32 @@ def test_main_window_keeps_animation_actions_visible_with_scrollable_settings(mo
         window.close()
 
 
+def test_main_window_keeps_animation_settings_within_narrow_controls_view(monkeypatch):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QPoint
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.resize(800, 600)
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_placement_mode.setCurrentIndex(
+            window.animation_placement_mode.findData("preserve_motion")
+        )
+        app.processEvents()
+        viewport = window.animation_controls_scroll.viewport()
+        button_origin = window.animation_source_origin_pick_button.mapTo(viewport, QPoint(0, 0))
+        assert button_origin.x() + window.animation_source_origin_pick_button.width() <= viewport.width()
+    finally:
+        window.close()
+
+
 def test_main_window_origin_guides_select_points_and_expose_scale_modes(monkeypatch, tmp_path):
     pytest.importorskip("PySide6")
     monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
@@ -341,6 +368,8 @@ def test_main_window_origin_guides_select_points_and_expose_scale_modes(monkeypa
         window.animation_placement_mode.setCurrentIndex(
             window.animation_placement_mode.findData("preserve_motion")
         )
+        window.animation_columns.setValue(2)
+        window.animation_rows.setValue(1)
         app.processEvents()
         assert window.animation_scale_mode.currentData() == "auto"
         assert not window.animation_scale.isEnabled()
@@ -353,7 +382,7 @@ def test_main_window_origin_guides_select_points_and_expose_scale_modes(monkeypa
         QTest.mouseClick(
             window.source_preview,
             Qt.MouseButton.LeftButton,
-            pos=QPoint(left + width // 2, top + height // 2),
+            pos=QPoint(left + (width * 3) // 4, top + height // 2),
         )
         window.start_output_origin_pick()
         window.canvas.set_zoom(1)
@@ -366,13 +395,62 @@ def test_main_window_origin_guides_select_points_and_expose_scale_modes(monkeypa
         app.processEvents()
 
         assert window.animation_source_origin_set.isChecked()
-        assert (window.animation_source_origin_x.value(), window.animation_source_origin_y.value()) == (20, 10)
+        assert (window.animation_source_origin_x.value(), window.animation_source_origin_y.value()) == (10, 10)
         assert window.animation_output_origin_set.isChecked()
         assert (window.animation_output_origin_x.value(), window.animation_output_origin_y.value()) == (128, 180)
         window.animation_scale_mode.setCurrentIndex(window.animation_scale_mode.findData("fixed"))
         app.processEvents()
         assert window.animation_scale.isEnabled()
     finally:
+        window.close()
+
+
+def test_main_window_does_not_show_stale_async_result_after_setting_change(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QThread
+    from PySide6.QtWidgets import QApplication
+    from PIL import Image
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    source = tmp_path / "delayed.png"
+    Image.new("RGBA", (64, 64), (80, 140, 220, 255)).save(source)
+    started = threading.Event()
+    release = threading.Event()
+    original_compile = main_window_module.PixelTileCompiler.compile
+
+    def delayed_compile(self, source_path, config):
+        started.set()
+        assert release.wait(5)
+        return original_compile(self, source_path, config)
+
+    monkeypatch.setattr(main_window_module.PixelTileCompiler, "compile", delayed_compile)
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "outputs"))
+        window.compile_image()
+        assert started.wait(2)
+        window.canvas_size.setCurrentIndex(1)
+        app.processEvents()
+        release.set()
+        deadline = 5000
+        elapsed = 0
+        while window._compile_thread is not None and elapsed < deadline:
+            app.processEvents()
+            QThread.msleep(10)
+            elapsed += 10
+
+        assert window._compile_thread is None
+        assert window._compiled_canvas_size is None
+        assert "現在のプレビュー" in window.status.text()
+    finally:
+        release.set()
         window.close()
 
 

@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PIL import Image
 
 from pixel_tile_compiler.config import CanvasSpec, compiler_config_for_purpose
 from pixel_tile_compiler.gui.canvas import CanvasState, ZOOMS
@@ -48,7 +49,9 @@ from pixel_tile_compiler.pipeline.compiler import CompilationResult, PixelTileCo
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
     CharacterAnimationCompileResult,
+    animation_source_frame_boxes,
     compile_character_animation_sheet,
+    map_source_point_to_frame,
 )
 CHECKER_LIGHT = QColor("#d6d9dd")
 CHECKER_DARK = QColor("#b9bec5")
@@ -318,8 +321,11 @@ class MainWindow(QMainWindow):
         self._origin_pick_target: str | None = None
         self._compile_thread: _CompileWorker | None = None
         self._compile_context: dict[str, object] | None = None
+        self._configuration_revision = 0
         self._animation_frame_paths: tuple[Path, ...] = ()
         self._animation_frame_index = 0
+        self._source_origin_frame_box: tuple[int, int, int, int] | None = None
+        self._source_origin_frame_signature: tuple[object, ...] | None = None
         self.default_output_root = Path.cwd() / "output"
         self.source_preview = SourceImagePreview("元絵を読み込んでください\nまたはここにドロップ")
         self.source_preview.image_dropped.connect(self.set_source_path)
@@ -331,6 +337,7 @@ class MainWindow(QMainWindow):
         self.status = QLabel("元絵を読み込むと始められます")
         self.metrics = QLabel("出力情報はここに表示されます")
         self.shared_palette_info = QLabel("未設定（地形タイルの基準paletteを反映できます）")
+        self.shared_palette_info.setWordWrap(True)
         self.shared_palette_view = QListWidget()
         self.shared_palette_view.setFlow(QListWidget.Flow.LeftToRight)
         self.shared_palette_view.setMaximumHeight(66)
@@ -383,6 +390,8 @@ class MainWindow(QMainWindow):
         self.animation_source_origin_y = QSpinBox()
         self.animation_source_origin_y.setRange(-4096, 4096)
         self.animation_source_origin_y.setValue(0)
+        self.animation_source_origin_x.setFixedWidth(88)
+        self.animation_source_origin_y.setFixedWidth(88)
         self.animation_source_origin_y_label = QLabel("ソース原点Y")
         self.animation_source_origin_label = QLabel("ソース原点（x,y）")
         self.animation_source_origin_set = QCheckBox("指定")
@@ -394,6 +403,8 @@ class MainWindow(QMainWindow):
         self.animation_output_origin_y = QSpinBox()
         self.animation_output_origin_y.setRange(-4096, 4096)
         self.animation_output_origin_y.setValue(0)
+        self.animation_output_origin_x.setFixedWidth(88)
+        self.animation_output_origin_y.setFixedWidth(88)
         self.animation_output_origin_y_label = QLabel("出力原点Y")
         self.animation_output_origin_label = QLabel("出力原点（x,y）")
         self.animation_output_origin_set = QCheckBox("指定")
@@ -417,6 +428,8 @@ class MainWindow(QMainWindow):
         self.animation_palette.setRange(4, 64)
         self.animation_palette.setValue(24)
         self.animation_palette_label = QLabel("アニメーションpalette上限")
+        self.auto_profile = QLabel()
+        self.auto_profile.setWordWrap(True)
         self.animation_source_origin_set.toggled.connect(self._update_purpose_controls)
         self.animation_output_origin_set.toggled.connect(self._update_purpose_controls)
         self.animation_split_mode.currentIndexChanged.connect(self._update_purpose_controls)
@@ -436,7 +449,6 @@ class MainWindow(QMainWindow):
         self.animation_scale_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_shared_palette.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_palette.valueChanged.connect(self._update_purpose_controls)
-        self.auto_profile = QLabel()
         self.palette = QSpinBox()
         self.palette.setRange(4, 64)
         self.palette.setValue(24)
@@ -466,6 +478,7 @@ class MainWindow(QMainWindow):
         self.pixelization_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.palette.valueChanged.connect(self._on_terrain_setting_changed)
         self.repeat_opt.currentIndexChanged.connect(self._on_terrain_setting_changed)
+        self._connect_configuration_revision_signals()
         self.zoom = QComboBox()
         for value in ZOOMS:
             self.zoom.addItem(f"{value}×", userData=value)
@@ -480,6 +493,43 @@ class MainWindow(QMainWindow):
         """地形workflowから共有された正確なRGB paletteを返す。"""
         return self._shared_palette_colors
 
+    def _connect_configuration_revision_signals(self) -> None:
+        """コンパイル結果がどの設定世代のものか追跡する。"""
+        for widget in (
+            self.purpose,
+            self.canvas_size,
+            self.animation_split_mode,
+            self.animation_placement_mode,
+            self.animation_scale_mode,
+            self.animation_shared_palette,
+            self.pixelization_mode,
+            self.repeat_opt,
+        ):
+            widget.currentIndexChanged.connect(self._mark_configuration_changed)
+        for widget in (
+            self.animation_columns,
+            self.animation_rows,
+            self.animation_width,
+            self.animation_height,
+            self.animation_source_origin_x,
+            self.animation_source_origin_y,
+            self.animation_output_origin_x,
+            self.animation_output_origin_y,
+            self.animation_scale,
+            self.animation_palette,
+            self.palette,
+        ):
+            widget.valueChanged.connect(self._mark_configuration_changed)
+        for widget in (
+            self.animation_source_origin_set,
+            self.animation_output_origin_set,
+        ):
+            widget.toggled.connect(self._mark_configuration_changed)
+
+    def _mark_configuration_changed(self, *_args: object) -> None:
+        """設定変更の世代を進め、実行中の古い結果を識別できるようにする。"""
+        self._configuration_revision += 1
+
     def _apply_ui_font(self) -> None:
         """Prefer a Windows Japanese UI font so labels never fall back to tofu boxes."""
         for family in ("Yu Gothic UI", "Meiryo UI", "Noto Sans JP", "MS UI Gothic"):
@@ -490,9 +540,9 @@ class MainWindow(QMainWindow):
                 return
 
     def _build_ui(self) -> None:
-        open_button = QPushButton("元絵を読み込む")
-        open_button.setObjectName("primaryButton")
-        open_button.clicked.connect(self.open_image)
+        self.open_button = QPushButton("元絵を読み込む")
+        self.open_button.setObjectName("primaryButton")
+        self.open_button.clicked.connect(self.open_image)
         self.compile_button = QPushButton("コンパイルする")
         self.compile_button.setObjectName("primaryButton")
         self.compile_button.clicked.connect(self.compile_image)
@@ -502,12 +552,12 @@ class MainWindow(QMainWindow):
 
         source_group = QGroupBox("1. 元絵")
         source_layout = QVBoxLayout(source_group)
-        source_layout.addWidget(open_button)
+        source_layout.addWidget(self.open_button)
         source_layout.addWidget(self.source_preview)
 
         settings_group = QGroupBox("2. 出力設定")
         settings_form = QFormLayout(settings_group)
-        settings_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+        settings_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
         settings_form.addRow("用途", self.purpose)
         settings_form.addRow("論理ピクセル", self.canvas_size)
         settings_form.addRow(self.animation_split_mode_label, self.animation_split_mode)
@@ -517,21 +567,25 @@ class MainWindow(QMainWindow):
         settings_form.addRow(self.animation_width_label, self.animation_width)
         settings_form.addRow(self.animation_height_label, self.animation_height)
         self.animation_source_origin_row = QWidget()
-        source_origin_layout = QHBoxLayout(self.animation_source_origin_row)
+        source_origin_layout = QVBoxLayout(self.animation_source_origin_row)
         source_origin_layout.setContentsMargins(0, 0, 0, 0)
-        source_origin_layout.addWidget(self.animation_source_origin_set)
-        source_origin_layout.addWidget(self.animation_source_origin_x)
-        source_origin_layout.addWidget(QLabel(","))
-        source_origin_layout.addWidget(self.animation_source_origin_y)
+        source_origin_values = QHBoxLayout()
+        source_origin_values.addWidget(self.animation_source_origin_set)
+        source_origin_values.addWidget(self.animation_source_origin_x)
+        source_origin_values.addWidget(QLabel(","))
+        source_origin_values.addWidget(self.animation_source_origin_y)
+        source_origin_layout.addLayout(source_origin_values)
         source_origin_layout.addWidget(self.animation_source_origin_pick_button)
         settings_form.addRow(self.animation_source_origin_label, self.animation_source_origin_row)
         self.animation_output_origin_row = QWidget()
-        output_origin_layout = QHBoxLayout(self.animation_output_origin_row)
+        output_origin_layout = QVBoxLayout(self.animation_output_origin_row)
         output_origin_layout.setContentsMargins(0, 0, 0, 0)
-        output_origin_layout.addWidget(self.animation_output_origin_set)
-        output_origin_layout.addWidget(self.animation_output_origin_x)
-        output_origin_layout.addWidget(QLabel(","))
-        output_origin_layout.addWidget(self.animation_output_origin_y)
+        output_origin_values = QHBoxLayout()
+        output_origin_values.addWidget(self.animation_output_origin_set)
+        output_origin_values.addWidget(self.animation_output_origin_x)
+        output_origin_values.addWidget(QLabel(","))
+        output_origin_values.addWidget(self.animation_output_origin_y)
+        output_origin_layout.addLayout(output_origin_values)
         output_origin_layout.addWidget(self.animation_output_origin_pick_button)
         settings_form.addRow(self.animation_output_origin_label, self.animation_output_origin_row)
         settings_form.addRow(self.animation_scale_mode_label, self.animation_scale_mode)
@@ -550,15 +604,19 @@ class MainWindow(QMainWindow):
         output_row_layout.addWidget(self.output_browse_button)
         settings_form.addRow("保存先", output_row)
 
-        shared_palette_group = QGroupBox("マップタイルのpaletteをキャラクターにも適用")
+        shared_palette_group = QGroupBox("共有palette")
         shared_palette_layout = QVBoxLayout(shared_palette_group)
         shared_palette_layout.addWidget(self.shared_palette_info)
         shared_palette_layout.addWidget(self.shared_palette_view)
-        shared_palette_buttons = QHBoxLayout()
+        shared_palette_buttons = QVBoxLayout()
         shared_palette_buttons.addWidget(self.shared_palette_load_button)
         shared_palette_buttons.addWidget(self.shared_palette_clear_button)
         shared_palette_layout.addLayout(shared_palette_buttons)
-        shared_palette_layout.addWidget(QLabel("地形のfinal.pngから実測したRGBだけを使います。未設定なら従来の自動paletteです。"))
+        shared_palette_description = QLabel(
+            "地形のfinal.pngから実測したRGBだけを使います。未設定なら従来の自動paletteです。"
+        )
+        shared_palette_description.setWordWrap(True)
+        shared_palette_layout.addWidget(shared_palette_description)
         self.shared_palette_group = shared_palette_group
 
         controls_content = QWidget()
@@ -682,7 +740,7 @@ class MainWindow(QMainWindow):
             """
         )
 
-    def _update_purpose_controls(self) -> None:
+    def _update_purpose_controls(self, *_args: object, clear_result: bool = True) -> None:
         purpose = self.purpose.currentData()
         is_character = purpose in {"character", "character_animation"}
         is_animation = purpose == "character_animation"
@@ -712,7 +770,8 @@ class MainWindow(QMainWindow):
             profile = resolve_terrain_gui_profile(self.pixelization_mode.currentData())
             self.auto_profile.setText(f"地形は64×64 / {profile.label} / {self.palette.value()}色")
             self.canvas.set_canvas_size((64, 64))
-        self._clear_stale_result()
+        if clear_result:
+            self._clear_stale_result()
 
     def _on_terrain_setting_changed(self, _value: object = None) -> None:
         if self.purpose.currentData() != "terrain":
@@ -782,6 +841,45 @@ class MainWindow(QMainWindow):
         self.animation_columns.setEnabled(show_grid)
         self.animation_rows.setEnabled(show_grid)
 
+    def _animation_split_signature(self) -> tuple[object, ...]:
+        """元絵の分割結果を識別するGUI設定の組を返す。"""
+        return (
+            self.source_path,
+            self.animation_split_mode.currentData(),
+            self.animation_columns.value(),
+            self.animation_rows.value(),
+        )
+
+    def _source_frame_boxes(self) -> tuple[tuple[int, int, int, int], ...]:
+        """現在の分割設定で元絵上のフレーム矩形を取得する。"""
+        if self.source_path is None:
+            return ()
+        columns = self.animation_columns.value()
+        rows = self.animation_rows.value()
+        config = CharacterAnimationConfig(
+            frame_count=columns * rows,
+            split_mode=self.animation_split_mode.currentData(),  # type: ignore[arg-type]
+            grid_columns=columns,
+            grid_rows=rows,
+        )
+        with Image.open(self.source_path) as opened:
+            return animation_source_frame_boxes(opened, config)
+
+    def _source_origin_display_point(self) -> tuple[int, int] | None:
+        """フレーム内原点を元絵プレビュー上の座標へ戻す。"""
+        if not self.animation_source_origin_set.isChecked():
+            return None
+        box = self._source_origin_frame_box
+        if box is None or self._source_origin_frame_signature != self._animation_split_signature():
+            try:
+                box = self._source_frame_boxes()[0]
+            except (OSError, ValueError, IndexError):
+                box = None
+        local = (self.animation_source_origin_x.value(), self.animation_source_origin_y.value())
+        if box is None:
+            return local
+        return (box[0] + local[0], box[1] + local[1])
+
     def _update_animation_geometry_controls(self) -> None:
         is_animation = self.purpose.currentData() == "character_animation"
         is_motion = is_animation and self.animation_placement_mode.currentData() == "preserve_motion"
@@ -828,11 +926,7 @@ class MainWindow(QMainWindow):
             widget.setEnabled(is_motion and self.animation_output_origin_set.isChecked())
         self.animation_scale.setEnabled(is_motion and self.animation_scale_mode.currentData() == "fixed")
         self.animation_scale_mode.setEnabled(is_motion)
-        self.source_preview.set_guide_point(
-            (self.animation_source_origin_x.value(), self.animation_source_origin_y.value())
-            if is_motion and self.animation_source_origin_set.isChecked()
-            else None
-        )
+        self.source_preview.set_guide_point(self._source_origin_display_point() if is_motion else None)
         self.canvas.set_guide_point(
             (self.animation_output_origin_x.value(), self.animation_output_origin_y.value())
             if is_motion and self.animation_output_origin_set.isChecked()
@@ -851,11 +945,25 @@ class MainWindow(QMainWindow):
         if self._origin_pick_target != "source":
             return
         x, y = point  # type: ignore[misc]
+        try:
+            frame_boxes = self._source_frame_boxes()
+            frame_index, local_point = map_source_point_to_frame(
+                (int(x), int(y)),
+                frame_boxes,
+            )
+        except (OSError, ValueError) as exc:
+            self.status.setText(f"ソース原点を指定できませんでした: {exc}")
+            return
+        self._source_origin_frame_box = frame_boxes[frame_index]
+        self._source_origin_frame_signature = self._animation_split_signature()
         self.animation_source_origin_set.setChecked(True)
-        self.animation_source_origin_x.setValue(int(x))
-        self.animation_source_origin_y.setValue(int(y))
+        self.animation_source_origin_x.setValue(local_point[0])
+        self.animation_source_origin_y.setValue(local_point[1])
         self._origin_pick_target = None
-        self.status.setText(f"ソース原点を指定しました: ({int(x)}, {int(y)})")
+        self._update_animation_geometry_controls()
+        self.status.setText(
+            f"F{frame_index + 1}のソース原点を指定しました: ({local_point[0]}, {local_point[1]})"
+        )
 
     def _on_output_origin_clicked(self, point: object) -> None:
         if self._origin_pick_target != "output":
@@ -933,6 +1041,7 @@ class MainWindow(QMainWindow):
     ) -> None:  # type: ignore[no-untyped-def]
         """キャラクターコンパイルに使う可視RGB paletteを固定する。"""
         normalized = validate_reference_palette(colors)
+        self._mark_configuration_changed()
         self._shared_palette_colors = normalized
         self.shared_palette_info.setText(
             f"{source_label} / {len(normalized)}色 / {palette_id(normalized)[:12]}"
@@ -943,6 +1052,7 @@ class MainWindow(QMainWindow):
 
     def clear_shared_palette(self) -> None:
         """キャラクターpaletteの自動選択へ戻す。"""
+        self._mark_configuration_changed()
         self._shared_palette_colors = ()
         self.shared_palette_info.setText("未設定（地形タイルの基準paletteを反映できます）")
         self.shared_palette_view.clear()
@@ -969,6 +1079,7 @@ class MainWindow(QMainWindow):
             self.shared_palette_view.addItem(item)
 
     def _on_output_root_changed(self, _text: str) -> None:
+        self._mark_configuration_changed()
         if self._compiled_canvas_size is None:
             return
         self._clear_stale_result()
@@ -989,8 +1100,11 @@ class MainWindow(QMainWindow):
         if source is None:
             self.status.setText("対応している画像ファイルを指定してください（PNG/JPEG/WebP）")
             return False
+        self._mark_configuration_changed()
         self.source_path = source
         self.source_preview.set_image(source)
+        self._source_origin_frame_box = None
+        self._source_origin_frame_signature = None
         self._clear_stale_result()
         self.compile_button.setEnabled(True)
         self.status.setText(f"元絵を読み込みました: {source.name}")
@@ -1010,8 +1124,13 @@ class MainWindow(QMainWindow):
     def _start_compile(self, operation: Callable[[], object], context: dict[str, object]) -> None:
         if self._compile_thread is not None:
             return
-        self._compile_context = context
+        self._compile_context = {
+            **context,
+            "configuration_revision": self._configuration_revision,
+        }
+        self._set_compile_controls_enabled(False)
         self.compile_button.setEnabled(False)
+        self.animation_play_button.setEnabled(False)
         self.compile_progress.setRange(0, 0)
         self.compile_progress.setFormat("変換中...")
         self.status.setText("変換中...")
@@ -1025,6 +1144,16 @@ class MainWindow(QMainWindow):
     def _on_compile_succeeded(self, result: object) -> None:
         context = self._compile_context
         if context is None:
+            return
+        if context.get("configuration_revision") != self._configuration_revision:
+            self._clear_stale_result()
+            self.compile_progress.setRange(0, 1)
+            self.compile_progress.setValue(1)
+            self.compile_progress.setFormat("設定変更")
+            self.status.setText(
+                "変換は完了しましたが、実行中に設定が変更されたため現在のプレビューへ反映しませんでした。"
+                "再コンパイルしてください"
+            )
             return
         self.compile_progress.setRange(0, 1)
         self.compile_progress.setValue(1)
@@ -1094,7 +1223,46 @@ class MainWindow(QMainWindow):
         self._compile_context = None
         if worker is not None:
             worker.deleteLater()
+        self._set_compile_controls_enabled(True)
         self.compile_button.setEnabled(self.source_path is not None)
+
+    def _set_compile_controls_enabled(self, enabled: bool) -> None:
+        """コンパイル中は入力変更を受け付けず、結果の世代を固定する。"""
+        for widget in (
+            self.open_button,
+            self.source_preview,
+            self.purpose,
+            self.canvas_size,
+            self.animation_split_mode,
+            self.animation_columns,
+            self.animation_rows,
+            self.animation_placement_mode,
+            self.animation_width,
+            self.animation_height,
+            self.animation_source_origin_set,
+            self.animation_source_origin_x,
+            self.animation_source_origin_y,
+            self.animation_source_origin_pick_button,
+            self.animation_output_origin_set,
+            self.animation_output_origin_x,
+            self.animation_output_origin_y,
+            self.animation_output_origin_pick_button,
+            self.animation_scale_mode,
+            self.animation_scale,
+            self.animation_shared_palette,
+            self.animation_palette,
+            self.pixelization_mode,
+            self.palette,
+            self.repeat_opt,
+            self.output_root_field,
+            self.output_browse_button,
+            self.terrain_batch_button,
+            self.shared_palette_load_button,
+            self.shared_palette_clear_button,
+        ):
+            widget.setEnabled(enabled)
+        if enabled:
+            self._update_purpose_controls(clear_result=False)
 
     def compile_image(self) -> None:
         if self.source_path is None:

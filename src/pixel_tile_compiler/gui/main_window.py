@@ -587,7 +587,7 @@ class MainWindow(QMainWindow):
         self.canvas_effective_note.setWordWrap(True)
         self.background_mode = NoWheelComboBox()
         self.background_mode.addItem("単色背景を自動で透過にする", userData="auto")
-        self.background_mode.addItem("元絵の透明をそのまま使う", userData="alpha")
+        self.background_mode.addItem("背景を残す（元絵の透明はそのまま）", userData="alpha")
         self.background_mode.addItem("指定した色を透過にする", userData="color")
         self.background_mode_label = QLabel("背景の扱い")
         self.background_mode.currentIndexChanged.connect(self._update_purpose_controls)
@@ -845,6 +845,7 @@ class MainWindow(QMainWindow):
 
     SPLIT_TAB_INDEX = 1
     PLACEMENT_TAB_INDEX = 2
+    PALETTE_TAB_INDEX = 3
 
     def _build_ui(self) -> None:
         """上下分割ワークベンチを組み立てる。
@@ -2086,12 +2087,16 @@ class MainWindow(QMainWindow):
             self.animation_scale_mode,
             self.animation_scale_label,
             self.animation_scale,
+        ):
+            widget.setVisible(is_motion)
+        # palette上限とコマ間の統一は配置方式に依存しないので、どちらのモードでも出す。
+        for widget in (
             self.animation_palette_label,
             self.animation_palette,
             self.animation_shared_palette_label,
             self.animation_shared_palette,
         ):
-            widget.setVisible(is_motion)
+            widget.setVisible(is_animation)
         for widget in (
             self.animation_source_origin_set,
             self.animation_source_origin_pick_button,
@@ -2551,8 +2556,13 @@ class MainWindow(QMainWindow):
                         frame_count=columns * rows,
                     )
                     width, height = profile.canvas_size
-                    fit_within = profile.fit_within
-                    bottom_margin = profile.bottom_margin
+                    if self.composition_mode.currentData() == "pre_aligned":
+                        # 画面全体構図では被写体フレームと足元余白を使わず、Canvasを埋め切る。
+                        fit_within = (width, height)
+                        bottom_margin = 0
+                    else:
+                        fit_within = profile.fit_within
+                        bottom_margin = profile.bottom_margin
                     source_origin = None
                     output_origin = None
                     scale_override = None

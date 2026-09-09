@@ -675,3 +675,174 @@ def test_main_window_background_and_composition_reach_the_compiler_config(monkey
         assert captured["config"].canvas.size == (64, 64)
     finally:
         window.close()
+
+
+def test_main_window_shows_animation_palette_in_every_placement_mode(monkeypatch):
+    """palette上限とコマ間palette統一は配置方式と無関係なので、足元固定でも操作できる。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.settings_tabs.setCurrentIndex(window.PALETTE_TAB_INDEX)
+        for mode in ("legacy_foot", "preserve_motion"):
+            window.animation_placement_mode.setCurrentIndex(
+                window.animation_placement_mode.findData(mode)
+            )
+            app.processEvents()
+            assert window.animation_palette.isVisible(), mode
+            assert window.animation_palette_label.isVisible(), mode
+            assert window.animation_shared_palette.isVisible(), mode
+    finally:
+        window.close()
+
+
+def test_main_window_animation_composition_can_fill_the_canvas(monkeypatch, tmp_path):
+    """アニメーションでも構図を選べ、画面全体ならCanvasを埋め切る。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PIL import Image
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    source = tmp_path / "sheet.png"
+    sheet = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+    for cell_y in range(2):
+        for cell_x in range(2):
+            for y in range(8, 56):
+                for x in range(8, 56):
+                    sheet.putpixel(
+                        (cell_x * 64 + x, cell_y * 64 + y),
+                        (90 + cell_x * 40, 120, 200 - cell_y * 30, 255),
+                    )
+    sheet.save(source)
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "out"))
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_placement_mode.setCurrentIndex(
+            window.animation_placement_mode.findData("legacy_foot")
+        )
+        window.animation_columns.setValue(2)
+        window.animation_rows.setValue(2)
+        window.canvas_size.setCurrentIndex(_canvas_index(window, (64, 64)))
+        app.processEvents()
+
+        captured = {}
+
+        def fake_compile(source_path, output_root, **kwargs):
+            captured["config"] = kwargs["config"]
+            captured["palette_budget"] = kwargs["palette_budget"]
+            raise RuntimeError("停止")
+
+        monkeypatch.setattr(main_window_module, "compile_character_animation_sheet", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+
+        window.composition_mode.setCurrentIndex(
+            window.composition_mode.findData("single_frame")
+        )
+        app.processEvents()
+        try:
+            window.compile_image()
+        except RuntimeError:
+            pass
+        subject = captured["config"]
+        assert subject.fit_within != subject.canvas_size
+        assert subject.bottom_margin > 0
+
+        window.composition_mode.setCurrentIndex(
+            window.composition_mode.findData("pre_aligned")
+        )
+        app.processEvents()
+        try:
+            window.compile_image()
+        except RuntimeError:
+            pass
+        full = captured["config"]
+        assert full.fit_within == full.canvas_size
+        assert full.bottom_margin == 0
+    finally:
+        window.close()
+
+
+def test_main_window_animation_palette_value_reaches_the_compiler(monkeypatch, tmp_path):
+    """足元固定でもpalette上限の指定がコンパイラへ届く（既定24に固定されない）。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PIL import Image
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    source = tmp_path / "sheet.png"
+    sheet = Image.new("RGBA", (128, 64), (0, 0, 0, 0))
+    for cell_x in range(2):
+        for y in range(8, 56):
+            for x in range(8, 56):
+                sheet.putpixel((cell_x * 64 + x, y), (80 + cell_x * 60, 140, 190, 255))
+    sheet.save(source)
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "out"))
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_placement_mode.setCurrentIndex(
+            window.animation_placement_mode.findData("legacy_foot")
+        )
+        window.animation_columns.setValue(2)
+        window.animation_rows.setValue(1)
+        window.animation_palette.setValue(36)
+        app.processEvents()
+
+        captured = {}
+
+        def fake_compile(source_path, output_root, **kwargs):
+            captured["palette_budget"] = kwargs["palette_budget"]
+            raise RuntimeError("停止")
+
+        monkeypatch.setattr(main_window_module, "compile_character_animation_sheet", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+        try:
+            window.compile_image()
+        except RuntimeError:
+            pass
+        assert captured["palette_budget"] == 36
+    finally:
+        window.close()
+
+
+def test_background_choice_leads_with_keeping_the_background(monkeypatch):
+    """背景の選択肢が透過操作だけに見えないよう、背景を残す選択を明示する。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        labels = {
+            window.background_mode.itemData(index): window.background_mode.itemText(index)
+            for index in range(window.background_mode.count())
+        }
+        assert labels["alpha"].startswith("背景を残す")
+        assert "透過" in labels["auto"]
+        assert "透過" in labels["color"]
+    finally:
+        window.close()

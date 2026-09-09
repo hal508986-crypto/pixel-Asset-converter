@@ -226,6 +226,7 @@ def test_main_window_exposes_animation_split_modes_and_fixed_grid_controls(monke
     app.processEvents()
     try:
         window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.settings_tabs.setCurrentIndex(window.SPLIT_TAB_INDEX)
         app.processEvents()
         assert [window.animation_split_mode.itemData(index) for index in range(window.animation_split_mode.count())] == [
             "fixed_grid",
@@ -319,7 +320,7 @@ def test_main_window_keeps_animation_actions_visible_with_scrollable_settings(mo
         )
         app.processEvents()
         assert window.animation_controls_scroll.widgetResizable()
-        assert window.animation_controls_scroll.verticalScrollBar().maximum() > 0
+        assert window.animation_controls_scroll.widget() is window.settings_tabs
         assert window.minimumSizeHint().height() <= 860
         assert window.compile_button.geometry().bottom() < window.height()
         assert window.compile_progress.isVisible()
@@ -346,6 +347,7 @@ def test_main_window_keeps_animation_settings_within_narrow_controls_view(monkey
         window.animation_placement_mode.setCurrentIndex(
             window.animation_placement_mode.findData("preserve_motion")
         )
+        window.settings_tabs.setCurrentIndex(window.PLACEMENT_TAB_INDEX)
         app.processEvents()
         viewport = window.animation_controls_scroll.viewport()
         button_origin = window.animation_source_origin_pick_button.mapTo(viewport, QPoint(0, 0))
@@ -385,12 +387,10 @@ def test_main_window_origin_guides_select_points_and_expose_scale_modes(monkeypa
         assert not window.animation_output_origin_set.isChecked()
 
         window.start_source_origin_pick()
-        image, (left, top, width, height) = window.source_preview._display_geometry()
-        del image
         QTest.mouseClick(
             window.source_preview,
             Qt.MouseButton.LeftButton,
-            pos=QPoint(left + (width * 3) // 4, top + height // 2),
+            pos=_preview_pos_for_pixel(window.source_preview, 30, 10),
         )
         window.start_output_origin_pick()
         window.canvas.set_zoom(1)
@@ -447,11 +447,10 @@ def test_main_window_row_split_origin_click_uses_logical_coordinates(monkeypatch
         app.processEvents()
 
         window.start_source_origin_pick()
-        _image, (left, top, width, height) = window.source_preview._display_geometry()
         QTest.mouseClick(
             window.source_preview,
             Qt.MouseButton.LeftButton,
-            pos=QPoint(left + (width * 3) // 4, top + height // 2),
+            pos=_preview_pos_for_pixel(window.source_preview, 30, 10),
         )
         app.processEvents()
 
@@ -705,6 +704,17 @@ def _component_assignment_source(tmp_path):
     return source
 
 
+def _preview_pos_for_pixel(preview, pixel_x: int, pixel_y: int):
+    """元絵プレビュー上で、指定した画素の中心に当たるウィジェット座標を返す。"""
+    from PySide6.QtCore import QPoint
+
+    image, (left, top, width, height) = preview._display_geometry()
+    return QPoint(
+        left + int((pixel_x + 0.5) * width / image.width()),
+        top + int((pixel_y + 0.5) * height / image.height()),
+    )
+
+
 def _prepare_component_assignment_window(window, source, mode="row_alpha_components"):
     window.show()
     window.set_source_path(source)
@@ -768,7 +778,7 @@ def test_main_window_component_assignment_change_requires_reconfirmation(monkeyp
         window.compile_image()
         assert not started
         assert "未解決" in window.status.text()
-        assert "再度所属" in window.animation_component_assignment_status.text()
+        assert "再度割り当て" in window.animation_component_assignment_status.text()
 
         window.confirm_component_assignments()
         assert window._component_assignment_confirmed is True
@@ -879,18 +889,18 @@ def test_main_window_component_split_cards_preview_and_rect_selection(monkeypatc
         cards_layout = window.animation_frame_cards_layout
         assert cards_layout.count() == 2
 
-        # 元絵クリックで成分選択
+        # 元絵クリックでパーツ選択
         window._on_source_preview_clicked((27, 7))
         assert len(window._selected_component_ids) == 1
         assert len(window.source_preview._highlight_boxes) == 1
         assert "選択中: C" in window.animation_component_selection_info.text()
 
-        # 矩形選択で交差成分選択
+        # 矩形選択で交差パーツ選択
         window._on_source_preview_rect_selected((0, 0, 64, 40))
         assert len(window._selected_component_ids) >= 2
         assert len(window.source_preview._highlight_boxes) >= 2
 
-        # 所属変更
+        # 割り当て変更
         window._on_source_preview_clicked((27, 7))
         window.animation_component_target_combo.setCurrentIndex(
             window.animation_component_target_combo.findData("F2")
@@ -903,7 +913,7 @@ def test_main_window_component_split_cards_preview_and_rect_selection(monkeypatc
         # 一括確定
         window.confirm_component_assignments()
         assert window._component_assignment_confirmed is True
-        assert "全コマの所属を一括確定しました" in window.animation_component_assignment_status.text()
+        assert "全コマの割り当てを確定しました" in window.animation_component_assignment_status.text()
 
         # コンパイル実行
         captured = {}
@@ -950,7 +960,7 @@ def test_main_window_confirm_and_compile_without_manual_override(monkeypatch, tm
         window.analyze_component_assignments()
         assert window.wait_for_analysis()
         assert window._component_analysis is not None
-        # 疑わしい成分（衛星成分）があるため初期は needs_assignment
+        # 要確認パーツ（衛星パーツ）があるため初期は needs_assignment
         assert window._component_analysis.status == "needs_assignment"
 
         # 2. 手動変更なしで一括確定

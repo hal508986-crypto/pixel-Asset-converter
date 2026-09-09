@@ -418,7 +418,7 @@ class TerrainBatchService:
         self._ensure_writable(batch)
         reference = batch.result_by_id(reference_result_id)
         if reference is None or reference.status != "success":
-            raise ValueError("基準パレットを選択してください")
+            raise ValueError("基準paletteを選択してください")
         colors = validate_reference_palette(reference.actual_palette)
         target_ids = tuple(target_item_ids)
         if not target_ids:

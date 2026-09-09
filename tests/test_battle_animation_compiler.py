@@ -254,6 +254,7 @@ def test_gui_exposes_battle_motion_geometry_controls(monkeypatch) -> None:
         window.animation_placement_mode.setCurrentIndex(
             window.animation_placement_mode.findData("preserve_motion")
         )
+        window.settings_tabs.setCurrentIndex(window.PLACEMENT_TAB_INDEX)
         app_qt.processEvents()
         assert window.animation_width.isVisible()
         assert window.animation_height.isVisible()

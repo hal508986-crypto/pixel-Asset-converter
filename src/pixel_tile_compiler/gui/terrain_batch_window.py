@@ -32,6 +32,12 @@ from PySide6.QtWidgets import (
 from pixel_tile_compiler.config import CanvasSpec, CompilerConfig, compiler_config_for_purpose
 from pixel_tile_compiler.gui.policy import GUI_TERRAIN_PIXELIZATION_OPTIONS, resolve_terrain_gui_profile
 from pixel_tile_compiler.gui.terrain_batch_model import TerrainBatch, TerrainBatchProgress, TerrainBatchRun
+from pixel_tile_compiler.gui.widgets import (
+    NoWheelComboBox,
+    NoWheelSpinBox,
+    PaletteSwatchList,
+    swatch_text_color,
+)
 from pixel_tile_compiler.palette_contract import palette_id, validate_reference_palette
 from pixel_tile_compiler.gui.terrain_batch_service import TerrainBatchService, load_legacy_manifest
 
@@ -115,7 +121,7 @@ class PaletteSwatches(QWidget):
             label.setFixedHeight(24)
             label.setStyleSheet(
                 f"background-color: rgb({red}, {green}, {blue}); "
-                f"color: {'#ffffff' if red + green + blue < 390 else '#20252c'}; "
+                f"color: {swatch_text_color(red, green, blue)}; "
                 "border: 1px solid #6d7682; border-radius: 3px;"
             )
             label.setToolTip(f"RGB ({red}, {green}, {blue}) / {hex_color}")
@@ -183,31 +189,31 @@ class TerrainBatchWindow(QMainWindow):
         self.output_root_field = QLineEdit(str(output_root or (Path.cwd() / "Output" / "batches")))
         self.output_browse_button = QPushButton("参照...")
         self.output_browse_button.clicked.connect(self.choose_output_directory)
-        self.pixelization_mode = QComboBox()
+        self.pixelization_mode = NoWheelComboBox()
         for label, mode in GUI_TERRAIN_PIXELIZATION_OPTIONS:
             self.pixelization_mode.addItem(label, userData=mode)
-        self.palette = QSpinBox()
+        self.palette = NoWheelSpinBox()
         self.palette.setRange(4, 64)
         self.palette.setValue(24)
-        self.repeat_opt = QComboBox()
+        self.repeat_opt = NoWheelComboBox()
         self.repeat_opt.addItem("有効", userData=True)
         self.repeat_opt.addItem("無効", userData=False)
         self.repeat_opt.setCurrentIndex(1)
 
         self.add_button = QPushButton("画像を追加")
         self.add_button.clicked.connect(self.add_images)
-        self.load_manifest_button = QPushButton("試作結果を読み込む")
+        self.load_manifest_button = QPushButton("既存の結果を読み込む")
         self.load_manifest_button.clicked.connect(self.load_manifest)
         self.remove_button = QPushButton("選択項目を削除")
         self.remove_button.clicked.connect(self.remove_selected)
-        self.run_button = QPushButton("まとめて変換")
+        self.run_button = QPushButton("まとめてコンパイル")
         self.run_button.setObjectName("primaryButton")
         self.run_button.clicked.connect(self.run_initial)
-        self.reference_button = QPushButton("基準パレットにする")
+        self.reference_button = QPushButton("基準paletteにする")
         self.reference_button.clicked.connect(self.set_reference_from_selection)
         self.clear_reference_button = QPushButton("基準を解除")
         self.clear_reference_button.clicked.connect(self.clear_reference)
-        self.fixed_button = QPushButton("基準パレットで再変換")
+        self.fixed_button = QPushButton("基準paletteで再コンパイル")
         self.fixed_button.setObjectName("primaryButton")
         self.fixed_button.clicked.connect(self.run_fixed)
         self.cancel_button = QPushButton("現在の処理後に中止")
@@ -215,7 +221,7 @@ class TerrainBatchWindow(QMainWindow):
         self.cancel_button.setEnabled(False)
 
         self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["対象", "ファイル名", "状態", "使用色数", "パレット"])
+        self.table.setHorizontalHeaderLabels(["対象", "ファイル名", "状態", "使用色数", "palette"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.currentCellChanged.connect(self._on_current_row_changed)
@@ -225,18 +231,17 @@ class TerrainBatchWindow(QMainWindow):
 
         self.original_preview = BatchImagePreview("元絵")
         self.final_preview = BatchImagePreview("final.png")
-        self.comparison_mode = QComboBox()
-        self.comparison_mode.addItem("統一後", userData="after")
-        self.comparison_mode.addItem("統一前", userData="before")
+        self.comparison_mode = NoWheelComboBox()
+        self.comparison_mode.addItem("基準palette適用後", userData="after")
+        self.comparison_mode.addItem("適用前", userData="before")
         self.comparison_mode.currentIndexChanged.connect(self._on_comparison_mode_changed)
         self.selected_info = QLabel("項目を選択すると比較を表示します")
-        self.reference_info = QLabel("基準パレット: 未選択")
-        self.reference_palette = QListWidget()
-        self.reference_palette.setFlow(QListWidget.Flow.LeftToRight)
+        self.reference_info = QLabel("基準palette: 未選択")
+        self.reference_palette = PaletteSwatchList()
         self.reference_palette.setMaximumHeight(66)
         self.progress = QProgressBar()
         self.progress.setRange(0, 1)
-        self.status = QLabel("画像を追加するか、既存の試作結果を読み込んでください")
+        self.status = QLabel("画像を追加するか、既存の結果を読み込んでください")
         self.batch_info = QLabel("バッチ未作成")
         self._build_ui()
         self._update_actions()
@@ -247,10 +252,10 @@ class TerrainBatchWindow(QMainWindow):
         source_buttons.addWidget(self.load_manifest_button)
         source_buttons.addWidget(self.remove_button)
 
-        settings = QGroupBox("1. 一括変換条件")
+        settings = QGroupBox("1. 一括コンパイル条件")
         form = QFormLayout(settings)
-        form.addRow("変換方法", self.pixelization_mode)
-        form.addRow("パレット色数", self.palette)
+        form.addRow("ドット化の方法", self.pixelization_mode)
+        form.addRow("palette上限（色数）", self.palette)
         form.addRow("繰り返し最適化", self.repeat_opt)
         output_row = QWidget()
         output_layout = QHBoxLayout(output_row)
@@ -284,7 +289,7 @@ class TerrainBatchWindow(QMainWindow):
         previews.addLayout(after)
         compare_layout.addLayout(previews)
 
-        palette_group = QGroupBox("4. 基準パレット")
+        palette_group = QGroupBox("4. 基準palette")
         palette_layout = QVBoxLayout(palette_group)
         palette_layout.addWidget(self.reference_button)
         palette_layout.addWidget(self.clear_reference_button)
@@ -349,7 +354,7 @@ class TerrainBatchWindow(QMainWindow):
         """Set the model displayed by the window, including imported read-only state."""
         self.batch = batch
         self.reference_result_id = None
-        self.reference_info.setText("基準パレット: 未選択")
+        self.reference_info.setText("基準palette: 未選択")
         self.reference_palette.clear()
         self.reference_palette_changed.emit(())
         self._sync_controls_from_batch()
@@ -411,7 +416,7 @@ class TerrainBatchWindow(QMainWindow):
 
     def _ensure_writable(self) -> None:
         if self.batch is None:
-            raise ValueError("先に画像を追加するか試作結果を読み込んでください")
+            raise ValueError("先に画像を追加するか既存の結果を読み込んでください")
         if self.batch.read_only:
             self.batch = self.service.make_writable(self.batch, output_root=self._output_root())
 
@@ -441,23 +446,23 @@ class TerrainBatchWindow(QMainWindow):
         try:
             colors = validate_reference_palette(result.actual_palette)
         except ValueError as exc:
-            self.status.setText(f"基準パレットにできません: {exc}")
+            self.status.setText(f"基準paletteにできません: {exc}")
             return
         self.reference_result_id = result.result_id
         self.reference_info.setText(f"基準: {item.display_name} / {result.result_id} / {len(colors)}色 / {palette_id(colors)[:12]}")
         self._set_palette_list(colors)
         self.reference_palette_changed.emit(colors)
-        self.status.setText("基準パレットを設定しました。対象をチェックして再変換できます")
+        self.status.setText("基準paletteを設定しました。対象をチェックして再コンパイルできます")
         self._update_actions()
 
     def clear_reference(self) -> None:
         if self._running:
             return
         self.reference_result_id = None
-        self.reference_info.setText("基準パレット: 未選択")
+        self.reference_info.setText("基準palette: 未選択")
         self.reference_palette.clear()
         self.reference_palette_changed.emit(())
-        self.status.setText("基準パレットを解除しました")
+        self.status.setText("基準paletteを解除しました")
         self._update_actions()
 
     def run_fixed(self) -> None:
@@ -474,7 +479,7 @@ class TerrainBatchWindow(QMainWindow):
             )
             self._start_execution(snapshot)
         except (OSError, ValueError, RuntimeError) as exc:
-            self.status.setText(f"固定パレット再変換を開始できませんでした: {exc}")
+            self.status.setText(f"基準paletteでの再コンパイルを開始できませんでした: {exc}")
 
     def cancel_run(self) -> None:
         if self._running:
@@ -621,13 +626,7 @@ class TerrainBatchWindow(QMainWindow):
         self.final_preview.set_image(result.final_path if result is not None else None)
 
     def _set_palette_list(self, colors) -> None:  # type: ignore[no-untyped-def]
-        self.reference_palette.clear()
-        for red, green, blue in colors:
-            item = QListWidgetItem(f"#{red:02X}{green:02X}{blue:02X}")
-            item.setBackground(QColor(red, green, blue))
-            item.setForeground(QColor("#ffffff" if red + green + blue < 390 else "#20252c"))
-            item.setToolTip(f"RGB ({red}, {green}, {blue})")
-            self.reference_palette.addItem(item)
+        self.reference_palette.set_colors(colors)
 
     def _update_actions(self) -> None:
         if self._running:

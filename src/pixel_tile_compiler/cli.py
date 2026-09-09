@@ -86,11 +86,21 @@ def compile(
     pixelization: str = typer.Option("region", "--pixelization", help="region/nearest"),
     outline: str = typer.Option("off", "--outline", help="off/black/white"),
     character_detail: Optional[str] = typer.Option(None, "--character-detail", help="sparse/balanced/detailed"),
+    character_input_mode: str = typer.Option(
+        "single_frame",
+        "--character-input-mode",
+        help="構図: single_frame(被写体を収める)/pre_aligned(画面全体をそのまま使う)",
+    ),
 ) -> None:
     """入力画像を指定した単体Output Canvasへ変換します。"""
     output_dir = output or (Path("output") / source.stem)
     if preset not in {"none", "b24"}:
         raise typer.BadParameter("presetはnoneまたはb24です", param_hint="--preset")
+    if character_input_mode not in {"single_frame", "pre_aligned"}:
+        raise typer.BadParameter(
+            "character_input_modeはsingle_frameまたはpre_alignedです",
+            param_hint="--character-input-mode",
+        )
     palette_budget = palette if palette is not None else (24 if preset == "b24" else 16)
     detail_level = character_detail or ("balanced" if preset == "b24" else "detailed")
     try:
@@ -111,6 +121,7 @@ def compile(
             pixelization_mode=pixelization,  # type: ignore[arg-type]
             outline_color=outline,  # type: ignore[arg-type]
             character_detail_level=detail_level,  # type: ignore[arg-type]
+            character_input_mode=character_input_mode,  # type: ignore[arg-type]
         )
         result = PixelTileCompiler().compile(source, config)
     except (OSError, ValueError) as exc:

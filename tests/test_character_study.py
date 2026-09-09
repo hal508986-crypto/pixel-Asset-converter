@@ -7,10 +7,22 @@ from PIL import Image
 
 from pixel_tile_compiler.character_study.config import load_character_study_config
 from pixel_tile_compiler.character_study.native_resolution import (
+    NativeResolutionStudyConfig,
     NativeResolutionStudyRunner,
     load_native_resolution_study_config,
 )
 from pixel_tile_compiler.character_study.runner import CharacterPaletteDensityStudyRunner
+
+
+def _write_native_study_source(path: Path) -> None:
+    """native_resolution study向けの合成キャラクター素材を書き出す。"""
+    image = Image.new("RGBA", (160, 120), (245, 245, 245, 0))
+    for y in range(10, 108):
+        for x in range(42, 118):
+            image.putpixel((x, y), (66 + (x % 5) * 9, 80 + (y % 7) * 6, 150, 255))
+    for x, y in ((61, 39), (93, 39), (77, 53), (53, 75), (101, 75), (77, 91)):
+        image.putpixel((x, y), (240, 210, 170, 255))
+    image.save(path)
 
 
 def _write_character_source(path: Path) -> None:
@@ -152,3 +164,160 @@ def test_native_resolution_study_produces_direct_128_control_and_review_artifact
     assert (root / "previews" / "native_64_actual.png").exists()
     assert (root / "previews" / "native_128_actual.png").exists()
     assert (root / "review" / "review_template.json").exists()
+
+
+def test_native_resolution_study_accepts_configured_canvas_sizes(tmp_path: Path) -> None:
+    """canvas_sizes を設定から読み、指定した組み合わせで成果物が出ること。"""
+    source = tmp_path / "character-native.png"
+    _write_native_study_source(source)
+    config_path = tmp_path / "native-study.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "study": {
+                    "output_root": "output",
+                    "source": "character-native.png",
+                    "palette_budget": 24,
+                    "detail_level": "balanced",
+                    "canvas_sizes": [[64, 64], [96, 96]],
+                    "seed": 42,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_native_resolution_study_config(config_path)
+    assert config.canvas_sizes == ((64, 64), (96, 96))
+
+    result = NativeResolutionStudyRunner().run(config)
+    root = result.output_root
+
+    native_64 = Image.open(root / "native" / "64x64" / "final.png")
+    native_96 = Image.open(root / "native" / "96x96" / "final.png")
+    control = Image.open(root / "controls" / "64x64_upscaled_to_96.png")
+
+    assert native_64.size == (64, 64)
+    assert native_96.size == (96, 96)
+    assert control.size == (96, 96)
+
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    assert set(manifest["native_outputs"].keys()) == {"64x64", "96x96"}
+
+
+def test_native_resolution_study_accepts_non_square_canvas(tmp_path: Path) -> None:
+    """非正方Canvas (256x128) を含めても成果物が出ること。"""
+    source = tmp_path / "character-native.png"
+    _write_native_study_source(source)
+    config_path = tmp_path / "native-study.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "study": {
+                    "output_root": "output",
+                    "source": "character-native.png",
+                    "palette_budget": 24,
+                    "detail_level": "balanced",
+                    "canvas_sizes": [[64, 64], [256, 128]],
+                    "seed": 42,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_native_resolution_study_config(config_path)
+    result = NativeResolutionStudyRunner().run(config)
+    root = result.output_root
+
+    native_wide = Image.open(root / "native" / "256x128" / "final.png")
+    control = Image.open(root / "controls" / "64x64_upscaled_to_256x128.png")
+
+    assert native_wide.size == (256, 128)
+    assert control.size == (256, 128)
+    # 比較ボードの名前は実際の最大Canvasを表す。128固定ではない。
+    assert (root / "previews" / "comparison_256x128_canvas.png").exists()
+    assert not (root / "previews" / "comparison_128_canvas.png").exists()
+
+
+def test_native_resolution_study_rejects_out_of_range_canvas(tmp_path: Path) -> None:
+    """各辺16未満・512超のCanvasサイズは ValueError になること。"""
+    source = tmp_path / "character-native.png"
+    _write_native_study_source(source)
+
+    with pytest.raises(ValueError):
+        NativeResolutionStudyConfig(source=source, canvas_sizes=((8, 64), (128, 128)))
+
+    with pytest.raises(ValueError):
+        NativeResolutionStudyConfig(source=source, canvas_sizes=((64, 64), (128, 600)))
+
+
+def test_native_resolution_study_config_accepts_palette_budgets_up_to_64(tmp_path: Path) -> None:
+    """palette_budget が4〜64に解放され、範囲外は ValueError になること。"""
+    source = tmp_path / "character-native.png"
+    _write_native_study_source(source)
+
+    for budget in (36, 48, 64):
+        config = NativeResolutionStudyConfig(source=source, palette_budget=budget)
+        assert config.palette_budget == budget
+
+    with pytest.raises(ValueError):
+        NativeResolutionStudyConfig(source=source, palette_budget=65)
+
+
+def test_native_resolution_study_keeps_default_artifact_names(tmp_path: Path) -> None:
+    """既定設定 (canvas_sizes未指定) では従来どおりの出力ファイル名になること。"""
+    source = tmp_path / "character-native.png"
+    _write_native_study_source(source)
+    config_path = tmp_path / "native-study.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "study": {
+                    "output_root": "output",
+                    "source": "character-native.png",
+                    "palette_budget": 24,
+                    "detail_level": "balanced",
+                    "seed": 42,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    config = load_native_resolution_study_config(config_path)
+    assert config.canvas_sizes == ((64, 64), (128, 128))
+
+    result = NativeResolutionStudyRunner().run(config)
+    root = result.output_root
+
+    assert (root / "controls" / "64x64_upscaled_to_128.png").exists()
+    assert (root / "previews" / "native_64_actual.png").exists()
+    assert (root / "previews" / "native_128_actual.png").exists()
+    assert (root / "previews" / "comparison_128_canvas.png").exists()
+
+
+def test_native_resolution_metrics_expose_generalized_canvas_keys(tmp_path: Path) -> None:
+    """既存の native_64_* / native_128_* は互換キーであり、実態に合う一般化キーを併記する。"""
+    source = tmp_path / "character-native.png"
+    _write_native_study_source(source)
+    config = NativeResolutionStudyConfig(
+        source=source,
+        output_root=tmp_path / "output",
+        canvas_sizes=((64, 64), (256, 256)),
+    )
+    result = NativeResolutionStudyRunner().run(config)
+    metrics = json.loads(result.metrics_path.read_text(encoding="utf-8"))
+
+    assert metrics["min_canvas"] == {"width": 64, "height": 64}
+    assert metrics["max_canvas"] == {"width": 256, "height": 256}
+    # 一般化キーは互換キーと同じ値を持つ（既定外のCanvasでも名前が実態と一致する）
+    assert metrics["max_canvas_equal_to_min_upscaled"] == metrics["native_128_equal_to_64_upscaled"]
+    assert (
+        metrics["max_canvas_two_by_two_uniform_block_ratio"]
+        == metrics["native_128_two_by_two_uniform_block_ratio"]
+    )
+    assert (
+        metrics["upscaled_min_two_by_two_uniform_block_ratio"]
+        == metrics["native_64_two_by_two_uniform_block_ratio"]
+    )

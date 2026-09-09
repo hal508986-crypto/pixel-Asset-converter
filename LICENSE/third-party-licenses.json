@@ -98,11 +98,11 @@
         "text": 2
       },
       "src": {
-        "code": 136,
-        "files": 136,
+        "code": 137,
+        "files": 137,
         "images": 0,
         "json": 0,
-        "text": 136
+        "text": 137
       },
       "start_gui.bat": {
         "code": 0,
@@ -112,11 +112,11 @@
         "text": 1
       },
       "tests": {
-        "code": 41,
-        "files": 41,
+        "code": 43,
+        "files": 43,
         "images": 0,
         "json": 0,
-        "text": 41
+        "text": 43
       }
     },
     "provenance_flags": {
@@ -124,7 +124,7 @@
       "external_path_mentions": 9,
       "image_2_mentions": 4
     },
-    "tracked_files": 263
+    "tracked_files": 266
   },
   "code_inventory": {
     "external_import_distributions": {
@@ -169,7 +169,7 @@
       "typer",
       "yaml"
     ],
-    "files": 180,
+    "files": 183,
     "import_roots": [
       "PIL",
       "PySide6",
@@ -187,6 +187,7 @@
       "fnmatch",
       "hashlib",
       "importlib",
+      "itertools",
       "json",
       "logging",
       "math",
@@ -219,11 +220,11 @@
       "tests/test_gui.py",
       "tests/test_license_audit.py"
     ],
-    "python_files": 180,
+    "python_files": 183,
     "script_python_files": 3,
-    "source_python_files": 136,
+    "source_python_files": 137,
     "syntax_errors": [],
-    "test_python_files": 41,
+    "test_python_files": 43,
     "undeclared_external_imports": []
   },
   "environment": {

@@ -206,15 +206,17 @@ def compiler_config_for_purpose(purpose: CompilerPurpose, **overrides: Any) -> C
     if purpose not in {"terrain", "character"}:
         raise ValueError("purpose must be terrain or character")
     if purpose == "character":
+        # キャラクター経路を成立させる骨格は呼び出し側から変えさせない。
         overrides.update(
             {
                 "tile_mode": "object",
                 "repeat_opt_enabled": False,
                 "dither": "off",
-                "background_mode": "auto",
                 "pixelization_mode": "nearest",
                 "outline_color": "off",
                 "smoothing_enabled": False,
             }
         )
+        # 背景の扱いと構図は用途で選ぶものなので、指定があればそれを尊重する。
+        overrides.setdefault("background_mode", "auto")
     return CompilerConfig(**overrides)

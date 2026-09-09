@@ -846,3 +846,159 @@ def test_background_choice_leads_with_keeping_the_background(monkeypatch):
         assert "透過" in labels["color"]
     finally:
         window.close()
+
+
+def test_palette_budget_slider_behaves_like_a_value_control(monkeypatch):
+    """スライダーは value/setValue/valueChanged を持ち、目安の見出しを添える。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.widgets import PaletteBudgetSlider
+
+    _app()
+    control = PaletteBudgetSlider()
+    seen = []
+    control.valueChanged.connect(seen.append)
+
+    assert control.value() == 24
+    control.setValue(48)
+    assert control.value() == 48
+    assert seen == [48]
+    assert "48" in control.readout_text()
+
+    control.setValue(1000)
+    assert control.value() == 64
+    control.setValue(1)
+    assert control.value() == 4
+
+    anchors = control.anchor_labels()
+    assert [value for value, _text in anchors] == [4, 24, 64]
+    assert "レトロ" in dict(anchors)[24]
+
+
+def test_palette_budget_slider_ignores_the_wheel(monkeypatch):
+    """他の入力と同じく、ホイールで値が変わらない。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.widgets import PaletteBudgetSlider
+
+    _app()
+    control = PaletteBudgetSlider()
+    control.setValue(24)
+    QApplication.sendEvent(control.slider, _wheel_event())
+    QApplication.sendEvent(control.slider, _wheel_event(-120))
+    assert control.value() == 24
+
+
+def test_main_window_palette_budgets_are_sliders(monkeypatch):
+    """地形とアニメーションのpalette上限はスライダーで、目安が読める。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+    from pixel_tile_compiler.gui.widgets import PaletteBudgetSlider
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert isinstance(window.palette, PaletteBudgetSlider)
+        assert isinstance(window.animation_palette, PaletteBudgetSlider)
+        assert window.palette.value() == 24
+        assert window.animation_palette.value() == 24
+    finally:
+        window.close()
+
+
+def test_main_window_offers_palette_budget_for_a_single_character(monkeypatch, tmp_path):
+    """単体キャラクターでもpalette上限を選べ、その値がコンパイラへ届く。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PIL import Image
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    source = tmp_path / "character.png"
+    image = Image.new("RGBA", (96, 96), (0, 0, 0, 0))
+    for y in range(12, 84):
+        for x in range(30, 66):
+            image.putpixel((x, y), ((x * 3) % 256, (y * 5) % 256, 160, 255))
+    image.save(source)
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character"))
+        app.processEvents()
+        # 単体キャラクターでもpalette上限の欄が出る
+        assert window.palette.isVisible()
+        assert window.palette_label.isVisible()
+
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "out"))
+        window.palette.setValue(48)
+        app.processEvents()
+
+        captured = {}
+        real_compile = main_window_module.PixelTileCompiler.compile
+
+        def fake_compile(self, source_path, config):
+            captured["config"] = config
+            return real_compile(self, source_path, config)
+
+        monkeypatch.setattr(main_window_module.PixelTileCompiler, "compile", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+        window.compile_image()
+        app.processEvents()
+        assert captured["config"].palette_budget == 48
+    finally:
+        window.close()
+
+
+def test_main_window_summary_follows_the_palette_slider(monkeypatch):
+    """palette上限を動かすと「この設定での出力」の色数表示も追随する。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character"))
+        window.palette.setValue(48)
+        app.processEvents()
+        assert "48色" in window.auto_profile.text()
+
+        window.purpose.setCurrentIndex(window.purpose.findData("terrain"))
+        window.palette.setValue(12)
+        app.processEvents()
+        assert "12色" in window.auto_profile.text()
+    finally:
+        window.close()
+
+
+def test_sliders_are_wheel_guarded_too(monkeypatch):
+    """スライダーもホイールで値が変わらない部品であること。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QSlider
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+    from pixel_tile_compiler.gui.widgets import NoWheelSlider
+
+    _app()
+    window = MainWindow()
+    try:
+        sliders = window.findChildren(QSlider)
+        assert sliders
+        assert all(isinstance(widget, NoWheelSlider) for widget in sliders)
+    finally:
+        window.close()

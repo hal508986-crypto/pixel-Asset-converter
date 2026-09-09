@@ -77,6 +77,7 @@ from pixel_tile_compiler.gui.widgets import (
     NoWheelComboBox,
     NoWheelDoubleSpinBox,
     NoWheelSpinBox,
+    PaletteBudgetSlider,
     PaletteSwatchList,
 )
 from pixel_tile_compiler.sheet.component_split import (
@@ -705,9 +706,7 @@ class MainWindow(QMainWindow):
         self.animation_shared_palette.addItem("有効", userData=True)
         self.animation_shared_palette.addItem("無効", userData=False)
         self.animation_shared_palette_label = QLabel("コマ間でpaletteを統一")
-        self.animation_palette = NoWheelSpinBox()
-        self.animation_palette.setRange(4, 64)
-        self.animation_palette.setValue(24)
+        self.animation_palette = PaletteBudgetSlider()
         self.animation_palette_label = QLabel("palette上限（色数）")
         self.auto_profile = QLabel()
         self.auto_profile.setWordWrap(True)
@@ -730,9 +729,7 @@ class MainWindow(QMainWindow):
         self.animation_scale_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_shared_palette.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_palette.valueChanged.connect(self._update_purpose_controls)
-        self.palette = NoWheelSpinBox()
-        self.palette.setRange(4, 64)
-        self.palette.setValue(24)
+        self.palette = PaletteBudgetSlider()
         self.palette_label = QLabel("palette上限（色数）")
         self.pixelization_mode = NoWheelComboBox()
         for label, mode in GUI_TERRAIN_PIXELIZATION_OPTIONS:
@@ -1321,12 +1318,14 @@ class MainWindow(QMainWindow):
             else "出力する論理ドットの一辺"
         )
         self.pixelization_mode.setEnabled(not is_character)
-        self.palette.setEnabled(not is_character)
+        self.palette.setEnabled(True)
         self.repeat_opt.setEnabled(not is_character)
         self.pixelization_mode_label.setVisible(not is_character)
         self.pixelization_mode.setVisible(not is_character)
-        self.palette_label.setVisible(not is_character)
-        self.palette.setVisible(not is_character)
+        # palette上限は地形と単体キャラで共通。アニメーションは専用欄を使う。
+        show_palette = not is_animation
+        self.palette_label.setVisible(show_palette)
+        self.palette.setVisible(show_palette)
         self.repeat_opt_label.setVisible(not is_character)
         self.repeat_opt.setVisible(not is_character)
         self.terrain_batch_button.setVisible(not is_character)
@@ -1374,7 +1373,9 @@ class MainWindow(QMainWindow):
         )
 
     def _on_terrain_setting_changed(self, _value: object = None) -> None:
-        if self.purpose.currentData() != "terrain":
+        """palette上限や地形設定の変更を、要約表示へ反映する。"""
+        # palette上限は地形と単体キャラの両方で使うため、キャラクターでも更新する。
+        if self.purpose.currentData() == "character_animation":
             return
         self._update_purpose_controls()
 
@@ -1420,7 +1421,8 @@ class MainWindow(QMainWindow):
         profile = resolve_character_gui_profile(canvas_size)
         self.canvas.set_canvas_size(profile.canvas_size)
         self.auto_profile.setText(
-            f"B24 / {profile.canvas_size[0]}×{profile.canvas_size[1]} / バランス / 元絵から直接"
+            f"{profile.canvas_size[0]}×{profile.canvas_size[1]} / {self.palette.value()}色 / "
+            "バランス / 元絵から直接"
         )
         self._clear_stale_result(profile.canvas_size)
 
@@ -2648,7 +2650,7 @@ class MainWindow(QMainWindow):
                     "character",
                     output_root=output,
                     canvas=CanvasSpec(width, height),
-                    palette_budget=max(profile.palette_budget, len(shared_palette or ())),
+                    palette_budget=max(self.palette.value(), len(shared_palette or ())),
                     palette_colors=shared_palette,
                     character_detail_level=profile.detail_level,  # type: ignore[arg-type]
                     background_mode=background_mode,

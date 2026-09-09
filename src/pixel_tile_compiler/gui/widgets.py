@@ -7,16 +7,20 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
     QApplication,
     QComboBox,
     QDoubleSpinBox,
+    QHBoxLayout,
+    QLabel,
     QListWidget,
     QListWidgetItem,
+    QSlider,
     QSpinBox,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -104,3 +108,87 @@ class PaletteSwatchList(QListWidget):
             item.setSizeHint(QSize(86, 34))
             item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.addItem(item)
+
+
+class NoWheelSlider(_NoWheelMixin, QSlider):
+    """ホイールで値が変わらないスライダー。"""
+
+    def __init__(self, parent=None) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(Qt.Orientation.Horizontal, parent)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+
+# palette上限の目安。数値だけでは何色が何を意味するのか読めないため、
+# 代表値に用途の見出しを添える。
+PALETTE_BUDGET_ANCHORS: tuple[tuple[int, str], ...] = (
+    (4, "4 GB風"),
+    (24, "24 レトロ"),
+    (64, "64 絵画寄り"),
+)
+PALETTE_BUDGET_MIN = 4
+PALETTE_BUDGET_MAX = 64
+
+
+class PaletteBudgetSlider(QWidget):
+    """palette上限をスライダーで選ぶ。現在値と代表値の目安を併記する。
+
+    `value` / `setValue` / `valueChanged` はスピンボックスと同じ形で使える。
+    """
+
+    valueChanged = Signal(int)
+
+    def __init__(self, parent=None) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(parent)
+        self.slider = NoWheelSlider()
+        self.slider.setRange(PALETTE_BUDGET_MIN, PALETTE_BUDGET_MAX)
+        self.slider.setSingleStep(1)
+        self.slider.setPageStep(4)
+        self.slider.setTickInterval(4)
+        self.slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.slider.setMinimumWidth(180)
+        self.readout = QLabel()
+        self.readout.setObjectName("paletteReadout")
+        self.readout.setMinimumWidth(52)
+
+        # 目安は凡例として1行にまとめる。等分割で並べると、24が実際の目盛り位置
+        # （4〜64のうち33%）ではなく中央に見えてしまうため。
+        self.legend = QLabel(" / ".join(text for _value, text in PALETTE_BUDGET_ANCHORS))
+        self.legend.setObjectName("mutedText")
+
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(8)
+        row.addWidget(self.slider, 1)
+        row.addWidget(self.readout)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        layout.addLayout(row)
+        layout.addWidget(self.legend)
+
+        self.slider.valueChanged.connect(self._on_slider_changed)
+        self.setValue(24)
+
+    def _on_slider_changed(self, value: int) -> None:
+        self.readout.setText(self.readout_text())
+        self.valueChanged.emit(int(value))
+
+    def value(self) -> int:
+        """現在のpalette上限を返す。"""
+        return int(self.slider.value())
+
+    def setValue(self, value: int) -> None:  # noqa: N802 - Qtの命名に合わせる
+        """palette上限を設定する。範囲外は端に丸める。"""
+        clamped = max(PALETTE_BUDGET_MIN, min(PALETTE_BUDGET_MAX, int(value)))
+        self.slider.setValue(clamped)
+        self.readout.setText(self.readout_text())
+
+    def readout_text(self) -> str:
+        """スライダーの右に出す現在値の表示文字列。"""
+        return f"{self.value()}色"
+
+    @staticmethod
+    def anchor_labels() -> tuple[tuple[int, str], ...]:
+        """代表値と、その色数が向く用途の見出し。"""
+        return PALETTE_BUDGET_ANCHORS

@@ -45,6 +45,9 @@ from pixel_tile_compiler.gui.input import first_supported_image_path
 from pixel_tile_compiler.gui.theme import build_stylesheet
 from pixel_tile_compiler.gui.policy import (
     GUI_ANIMATION_SPLIT_OPTIONS,
+    GUI_CANVAS_MAX_SIDE,
+    GUI_CANVAS_MIN_SIDE,
+    GUI_CHARACTER_CANVAS_PRESETS,
     GUI_TERRAIN_PIXELIZATION_OPTIONS,
     build_output_path,
     resolve_character_animation_gui_profile,
@@ -560,9 +563,47 @@ class MainWindow(QMainWindow):
         self.purpose.currentIndexChanged.connect(self._update_purpose_controls)
         self.canvas_size_label = QLabel("出力Canvasサイズ")
         self.canvas_size = NoWheelComboBox()
-        self.canvas_size.addItem("128 × 128（推奨）", userData=(128, 128))
-        self.canvas_size.addItem("64 × 64", userData=(64, 64))
+        for label, size in GUI_CHARACTER_CANVAS_PRESETS:
+            self.canvas_size.addItem(label, userData=size)
+        # 末尾は自由入力。サイズは幅・高さの入力から取る。
+        self.canvas_size.addItem("自由入力", userData=None)
         self.canvas_size.currentIndexChanged.connect(self._update_canvas_selection)
+        self.canvas_size.currentIndexChanged.connect(self._update_canvas_controls)
+        self.canvas_width = NoWheelSpinBox()
+        self.canvas_width.setRange(GUI_CANVAS_MIN_SIDE, GUI_CANVAS_MAX_SIDE)
+        self.canvas_width.setValue(128)
+        self.canvas_height = NoWheelSpinBox()
+        self.canvas_height.setRange(GUI_CANVAS_MIN_SIDE, GUI_CANVAS_MAX_SIDE)
+        self.canvas_height.setValue(128)
+        self.canvas_custom_label = QLabel("幅 × 高さ")
+        self.canvas_width.valueChanged.connect(self._update_canvas_selection)
+        self.canvas_height.valueChanged.connect(self._update_canvas_selection)
+        self.canvas_width.valueChanged.connect(self._update_canvas_controls)
+        self.canvas_height.valueChanged.connect(self._update_canvas_controls)
+        self.canvas_effective_note = QLabel(
+            "実効解像度は短辺で決まります（256×128の被写体は128×128相当）"
+        )
+        self.canvas_effective_note.setObjectName("mutedText")
+        self.canvas_effective_note.setWordWrap(True)
+        self.background_mode = NoWheelComboBox()
+        self.background_mode.addItem("単色背景を自動で透過にする", userData="auto")
+        self.background_mode.addItem("元絵の透明をそのまま使う", userData="alpha")
+        self.background_mode.addItem("指定した色を透過にする", userData="color")
+        self.background_mode_label = QLabel("背景の扱い")
+        self.background_mode.currentIndexChanged.connect(self._update_purpose_controls)
+        self.background_color_field = QLineEdit("#ffffff")
+        self.background_color_field.setToolTip("透過にする色を #RRGGBB で指定します")
+        self.background_color_field.setMaximumWidth(120)
+        self.background_color_label = QLabel("背景色")
+        self.composition_mode = NoWheelComboBox()
+        self.composition_mode.addItem("被写体を収める（余白あり）", userData="single_frame")
+        self.composition_mode.addItem("画面全体をそのまま使う（余白なし）", userData="pre_aligned")
+        self.composition_mode.setToolTip(
+            "画面全体をそのまま使うと、元絵の隅々まで出力へ入ります。"
+            "背景ごと1枚のアセットにしたいときに選んでください"
+        )
+        self.composition_mode_label = QLabel("構図")
+        self.composition_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_split_mode = NoWheelComboBox()
         for label, mode in GUI_ANIMATION_SPLIT_OPTIONS:
             self.animation_split_mode.addItem(label, userData=mode)
@@ -755,6 +796,8 @@ class MainWindow(QMainWindow):
             self.animation_shared_palette,
             self.pixelization_mode,
             self.repeat_opt,
+            self.background_mode,
+            self.composition_mode,
         ):
             widget.currentIndexChanged.connect(self._mark_configuration_changed)
         for widget in (
@@ -767,6 +810,8 @@ class MainWindow(QMainWindow):
             self.animation_scale,
             self.animation_palette,
             self.palette,
+            self.canvas_width,
+            self.canvas_height,
         ):
             widget.valueChanged.connect(self._mark_configuration_changed)
         for widget in (
@@ -856,6 +901,13 @@ class MainWindow(QMainWindow):
         total = sum(self.workbench_splitter.sizes())
         needed = max(self.animation_controls_scroll.minimumHeight(), min(needed, total - 240))
         self.workbench_splitter.setSizes([total - needed, needed])
+
+    def selected_canvas_size(self) -> tuple[int, int]:
+        """現在選ばれている出力Canvasサイズを返す。自由入力なら幅・高さの値。"""
+        preset = self.canvas_size.currentData()
+        if preset is not None:
+            return (int(preset[0]), int(preset[1]))
+        return (self.canvas_width.value(), self.canvas_height.value())
 
     def _build_header(self) -> QWidget:
         """用途セグメントと元絵の読み込み導線を並べたヘッダ。"""
@@ -1086,15 +1138,29 @@ class MainWindow(QMainWindow):
         """用途に関わらず必ず効く設定と、現在の自動最適化の要約。"""
         auto_profile_caption = QLabel("この設定での出力")
         auto_profile_caption.setObjectName("subsectionTitle")
+        custom_row = QWidget()
+        custom_layout = QHBoxLayout(custom_row)
+        custom_layout.setContentsMargins(0, 0, 0, 0)
+        custom_layout.setSpacing(4)
+        custom_layout.addWidget(self.canvas_width)
+        custom_layout.addWidget(QLabel("×"))
+        custom_layout.addWidget(self.canvas_height)
+        custom_layout.addStretch(1)
+        self.canvas_custom_row = custom_row
+
         return self._settings_page(
             [
                 [
                     (self.canvas_size_label, self.canvas_size),
+                    (self.canvas_custom_label, custom_row),
+                    (self.background_mode_label, self.background_mode),
+                    (self.background_color_label, self.background_color_field),
+                    (self.composition_mode_label, self.composition_mode),
                     (self.pixelization_mode_label, self.pixelization_mode),
                     (self.palette_label, self.palette),
                     (self.repeat_opt_label, self.repeat_opt),
                 ],
-                [auto_profile_caption, self.auto_profile],
+                [auto_profile_caption, self.auto_profile, self.canvas_effective_note],
             ]
         )
 
@@ -1245,8 +1311,7 @@ class MainWindow(QMainWindow):
         is_character = purpose in {"character", "character_animation"}
         is_animation = purpose == "character_animation"
         is_motion = is_animation and self.animation_placement_mode.currentData() == "preserve_motion"
-        self.canvas_size_label.setVisible(is_character)
-        self.canvas_size.setVisible(is_character)
+        self._update_canvas_controls()
         # 移動を保持する配置では「配置・原点」タブの幅・高さが実際の出力を決める。
         self.canvas_size.setEnabled(is_character and not is_motion)
         self.canvas_size.setToolTip(
@@ -1285,6 +1350,28 @@ class MainWindow(QMainWindow):
         if clear_result:
             self._clear_stale_result()
 
+    def _update_canvas_controls(self, *_args: object) -> None:
+        """出力Canvasと背景・構図まわりの表示を、現在の選択に合わせる。"""
+        is_character = self.purpose.currentData() in {"character", "character_animation"}
+        is_custom_canvas = is_character and self.canvas_size.currentData() is None
+        is_full_frame = self.composition_mode.currentData() == "pre_aligned"
+        width, height = self.selected_canvas_size()
+        self.canvas_size_label.setVisible(is_character)
+        self.canvas_size.setVisible(is_character)
+        self.canvas_custom_label.setVisible(is_custom_canvas)
+        self.canvas_custom_row.setVisible(is_custom_canvas)
+        self.background_mode_label.setVisible(is_character)
+        self.background_mode.setVisible(is_character)
+        show_background_color = is_character and self.background_mode.currentData() == "color"
+        self.background_color_label.setVisible(show_background_color)
+        self.background_color_field.setVisible(show_background_color)
+        self.composition_mode_label.setVisible(is_character)
+        self.composition_mode.setVisible(is_character)
+        # 非正方は短辺が実効解像度を決める。画面全体構図では余白が出ないので出さない。
+        self.canvas_effective_note.setVisible(
+            is_character and not is_full_frame and width != height
+        )
+
     def _on_terrain_setting_changed(self, _value: object = None) -> None:
         if self.purpose.currentData() != "terrain":
             return
@@ -1294,7 +1381,7 @@ class MainWindow(QMainWindow):
         purpose = self.purpose.currentData()
         if purpose not in {"character", "character_animation"}:
             return
-        canvas_size = self.canvas_size.currentData()
+        canvas_size = self.selected_canvas_size()
         if purpose == "character_animation":
             if self.animation_placement_mode.currentData() == "preserve_motion":
                 canvas_size = (self.animation_width.value(), self.animation_height.value())
@@ -2460,7 +2547,7 @@ class MainWindow(QMainWindow):
                     shared_palette_enabled = bool(self.animation_shared_palette.currentData())
                 else:
                     profile = resolve_character_animation_gui_profile(
-                        self.canvas_size.currentData(),
+                        self.selected_canvas_size(),
                         frame_count=columns * rows,
                     )
                     width, height = profile.canvas_size
@@ -2536,7 +2623,7 @@ class MainWindow(QMainWindow):
                 )
                 return
             if purpose == "character":
-                profile = resolve_character_gui_profile(self.canvas_size.currentData())
+                profile = resolve_character_gui_profile(self.selected_canvas_size())
                 width, height = profile.canvas_size
                 shared_palette = self._shared_palette_colors or None
                 output = build_output_path(
@@ -2546,6 +2633,7 @@ class MainWindow(QMainWindow):
                     canvas_size=(width, height),
                     palette_token=palette_id(shared_palette) if shared_palette is not None else None,
                 )
+                background_mode = self.background_mode.currentData()
                 config = compiler_config_for_purpose(
                     "character",
                     output_root=output,
@@ -2553,6 +2641,13 @@ class MainWindow(QMainWindow):
                     palette_budget=max(profile.palette_budget, len(shared_palette or ())),
                     palette_colors=shared_palette,
                     character_detail_level=profile.detail_level,  # type: ignore[arg-type]
+                    background_mode=background_mode,
+                    background_color=(
+                        self.background_color_field.text().strip()
+                        if background_mode == "color"
+                        else None
+                    ),
+                    character_input_mode=self.composition_mode.currentData(),
                     debug_enabled=True,
                 )
             else:

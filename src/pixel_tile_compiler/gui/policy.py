@@ -38,7 +38,22 @@ class TerrainGuiProfile:
     repeat_opt_enabled: bool = False
 
 
-GUI_CHARACTER_CANVAS_SIZES = ((64, 64), (128, 128))
+GUI_CANVAS_MIN_SIDE = 16
+GUI_CANVAS_MAX_SIDE = 512
+
+# GUIの出力Canvasサイズプリセット。表示ラベルと実サイズの組。
+# 先頭2件の順序は既存GUIと同じ（index 0 が推奨の128、index 1 が64）にすること。
+GUI_CHARACTER_CANVAS_PRESETS: tuple[tuple[str, tuple[int, int]], ...] = (
+    ("128 × 128（推奨）", (128, 128)),
+    ("64 × 64", (64, 64)),
+    ("256 × 256", (256, 256)),
+    ("256 × 128", (256, 128)),
+    ("128 × 256", (128, 256)),
+    ("224 × 126（16:9）", (224, 126)),
+    ("224 × 168（4:3）", (224, 168)),
+)
+
+GUI_CHARACTER_CANVAS_SIZES = tuple(size for _label, size in GUI_CHARACTER_CANVAS_PRESETS)
 GUI_TERRAIN_PIXELIZATION_OPTIONS = (
     ("元絵を保持", "nearest"),
     ("領域を整理", "region"),
@@ -53,10 +68,14 @@ GUI_ANIMATION_SPLIT_OPTIONS = (
 
 
 def resolve_character_gui_profile(canvas_size: tuple[int, int] = (128, 128)) -> CharacterGuiProfile:
-    """Resolve the GUI's square Character preset without exposing unsupported geometry."""
+    """Resolve the GUI's Character Canvasサイズを検証する（仕様4.1節: 正方限定をやめ、辺の範囲だけを見る）。"""
     normalized = (int(canvas_size[0]), int(canvas_size[1]))
-    if normalized not in GUI_CHARACTER_CANVAS_SIZES:
-        raise ValueError("GUI currently supports only square 64x64 or 128x128 Character canvases")
+    # 正方限定をやめ、辺の範囲だけを見る（仕様4.1節）
+    if not all(GUI_CANVAS_MIN_SIDE <= side <= GUI_CANVAS_MAX_SIDE for side in normalized):
+        raise ValueError(
+            f"出力Canvasの各辺は{GUI_CANVAS_MIN_SIDE}以上{GUI_CANVAS_MAX_SIDE}以下でなければなりません: "
+            f"{normalized[0]}x{normalized[1]}"
+        )
     return CharacterGuiProfile(canvas_size=normalized)
 
 
@@ -130,6 +149,9 @@ __all__ = [
     "CharacterAnimationGuiProfile",
     "CharacterGuiProfile",
     "GUI_ANIMATION_SPLIT_OPTIONS",
+    "GUI_CANVAS_MAX_SIDE",
+    "GUI_CANVAS_MIN_SIDE",
+    "GUI_CHARACTER_CANVAS_PRESETS",
     "GUI_CHARACTER_CANVAS_SIZES",
     "GUI_TERRAIN_PIXELIZATION_OPTIONS",
     "TerrainGuiProfile",

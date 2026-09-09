@@ -464,3 +464,214 @@ def test_output_palette_unions_every_animation_frame(monkeypatch, tmp_path):
         assert "2色" in window.output_palette_info.text()
     finally:
         window.close()
+
+
+def _canvas_index(window, size):
+    """出力Canvasサイズのindexを返す。findDataはタプルのuserDataに効かないため走査する。"""
+    for index in range(window.canvas_size.count()):
+        if window.canvas_size.itemData(index) == size:
+            return index
+    raise AssertionError(f"プリセットに {size} がありません")
+
+
+def test_main_window_exposes_extended_canvas_presets(monkeypatch):
+    """出力Canvasサイズに256と非正方のプリセットが並び、自由入力も選べる。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        sizes = [
+            window.canvas_size.itemData(index)
+            for index in range(window.canvas_size.count())
+        ]
+        assert (256, 256) in sizes
+        assert (256, 128) in sizes
+        assert (224, 126) in sizes
+        # 既存の並び（先頭が推奨の128、次が64）は維持する
+        assert sizes[0] == (128, 128)
+        assert sizes[1] == (64, 64)
+        # 末尾は自由入力（サイズを持たない）
+        assert sizes[-1] is None
+        assert "自由入力" in window.canvas_size.itemText(window.canvas_size.count() - 1)
+    finally:
+        window.close()
+
+
+def test_main_window_custom_canvas_size_drives_the_profile(monkeypatch):
+    """自由入力を選ぶと幅・高さの入力が現れ、その値が出力Canvasになる。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.selected_canvas_size() == (128, 128)
+        # 親の行ごと隠れるため、子ウィジェット自身のisHiddenではなくisVisibleで見る
+        assert not window.canvas_width.isVisible()
+
+        window.canvas_size.setCurrentIndex(window.canvas_size.count() - 1)
+        app.processEvents()
+        assert window.canvas_width.isVisible()
+        assert window.canvas_height.isVisible()
+
+        window.canvas_width.setValue(320)
+        window.canvas_height.setValue(180)
+        app.processEvents()
+        assert window.selected_canvas_size() == (320, 180)
+        assert window.canvas.state.canvas_size == (320, 180)
+    finally:
+        window.close()
+
+
+def test_main_window_warns_effective_resolution_for_non_square(monkeypatch):
+    """非正方を選ぶと、実効解像度が短辺で決まることを表示する。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        window.canvas_size.setCurrentIndex(_canvas_index(window, (128, 128)))
+        app.processEvents()
+        assert window.canvas_effective_note.isHidden()
+
+        window.canvas_size.setCurrentIndex(_canvas_index(window, (256, 128)))
+        app.processEvents()
+        assert window.canvas_effective_note.isVisible()
+        assert "短辺" in window.canvas_effective_note.text()
+    finally:
+        window.close()
+
+
+def test_main_window_exposes_background_and_composition_choices(monkeypatch):
+    """背景3択と構図2択がGUIに並ぶ。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        backgrounds = [
+            window.background_mode.itemData(index)
+            for index in range(window.background_mode.count())
+        ]
+        compositions = [
+            window.composition_mode.itemData(index)
+            for index in range(window.composition_mode.count())
+        ]
+        assert backgrounds == ["auto", "alpha", "color"]
+        assert compositions == ["single_frame", "pre_aligned"]
+        # 既定は従来の挙動
+        assert window.background_mode.currentData() == "auto"
+        assert window.composition_mode.currentData() == "single_frame"
+        assert window.settings_tabs.isAncestorOf(window.background_mode)
+        assert window.settings_tabs.isAncestorOf(window.composition_mode)
+    finally:
+        window.close()
+
+
+def test_main_window_background_color_field_appears_only_for_color_mode(monkeypatch):
+    """背景色の入力は「指定した色を透過にする」を選んだときだけ出す。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.background_color_field.isHidden()
+        window.background_mode.setCurrentIndex(window.background_mode.findData("color"))
+        app.processEvents()
+        assert window.background_color_field.isVisible()
+    finally:
+        window.close()
+
+
+def test_main_window_hides_the_margin_note_for_full_frame_composition(monkeypatch):
+    """画面全体構図では余白が出ないので、短辺の注記も出さない。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        window.canvas_size.setCurrentIndex(_canvas_index(window, (256, 128)))
+        app.processEvents()
+        assert window.canvas_effective_note.isVisible()
+
+        window.composition_mode.setCurrentIndex(
+            window.composition_mode.findData("pre_aligned")
+        )
+        app.processEvents()
+        assert window.canvas_effective_note.isHidden()
+    finally:
+        window.close()
+
+
+def test_main_window_background_and_composition_reach_the_compiler_config(monkeypatch, tmp_path):
+    """GUIの選択がそのままコンパイラ設定へ渡る。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PIL import Image
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    source = tmp_path / "asset.png"
+    Image.new("RGBA", (64, 64), (120, 90, 60, 255)).save(source)
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "out"))
+        window.background_mode.setCurrentIndex(window.background_mode.findData("alpha"))
+        window.composition_mode.setCurrentIndex(
+            window.composition_mode.findData("pre_aligned")
+        )
+        window.canvas_size.setCurrentIndex(_canvas_index(window, (64, 64)))
+        app.processEvents()
+
+        captured = {}
+        real_compile = main_window_module.PixelTileCompiler.compile
+
+        def fake_compile(self, source_path, config):
+            captured["config"] = config
+            return real_compile(self, source_path, config)
+
+        monkeypatch.setattr(main_window_module.PixelTileCompiler, "compile", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+        window.compile_image()
+        app.processEvents()
+
+        assert captured["config"].background_mode == "alpha"
+        assert captured["config"].character_input_mode == "pre_aligned"
+        assert captured["config"].canvas.size == (64, 64)
+    finally:
+        window.close()

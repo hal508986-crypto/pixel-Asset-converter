@@ -7,6 +7,7 @@ import pytest
 from pixel_tile_compiler.gui.canvas import CanvasState
 from pixel_tile_compiler.gui.input import first_supported_image_path
 from pixel_tile_compiler.gui.policy import (
+    GUI_CHARACTER_CANVAS_PRESETS,
     build_output_path,
     resolve_character_animation_gui_profile,
     resolve_character_gui_profile,
@@ -43,11 +44,30 @@ def test_character_gui_profile_defaults_to_native_128_b24():
     assert profile.pixelization_mode == "nearest"
 
 
-def test_character_gui_profile_accepts_only_square_experimental_sizes():
-    assert resolve_character_gui_profile((64, 64)).canvas_size == (64, 64)
+def test_character_gui_profile_accepts_the_new_presets():
+    # 先頭2件は既存GUIと同じ順序（index 0 が推奨の128、index 1 が64）であること
+    assert GUI_CHARACTER_CANVAS_PRESETS[0][1] == (128, 128)
+    assert GUI_CHARACTER_CANVAS_PRESETS[1][1] == (64, 64)
 
-    with pytest.raises(ValueError, match="square"):
-        resolve_character_gui_profile((128, 96))
+    for _label, size in GUI_CHARACTER_CANVAS_PRESETS:
+        assert resolve_character_gui_profile(size).canvas_size == size
+
+    # 非正方も通ること
+    assert resolve_character_gui_profile((256, 128)).canvas_size == (256, 128)
+    assert resolve_character_gui_profile((224, 126)).canvas_size == (224, 126)
+
+
+def test_character_gui_profile_rejects_out_of_range_canvas():
+    with pytest.raises(ValueError):
+        resolve_character_gui_profile((15, 64))
+
+    with pytest.raises(ValueError):
+        resolve_character_gui_profile((64, 513))
+
+    with pytest.raises(ValueError):
+        resolve_character_gui_profile((0, 0))
+
+    assert resolve_character_gui_profile((16, 512)).canvas_size == (16, 512)
 
 
 def test_character_animation_gui_profile_scales_shared_layout_for_64_and_128():

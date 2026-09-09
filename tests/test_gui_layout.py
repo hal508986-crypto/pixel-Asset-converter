@@ -1002,3 +1002,129 @@ def test_sliders_are_wheel_guarded_too(monkeypatch):
         assert all(isinstance(widget, NoWheelSlider) for widget in sliders)
     finally:
         window.close()
+
+
+def _wide_source(tmp_path, name="wide.png", size=(640, 360)):
+    from PIL import Image
+
+    path = tmp_path / name
+    image = Image.new("RGBA", size, (30, 40, 60, 255))
+    for y in range(size[1] // 3, size[1] * 2 // 3):
+        for x in range(size[0] // 3, size[0] * 2 // 3):
+            image.putpixel((x, y), (230, 200, 120, 255))
+    image.save(path)
+    return path
+
+
+def test_main_window_shows_source_information(monkeypatch, tmp_path):
+    """元絵を読み込むと、画素数・色数・アスペクト比・格子が読める。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.source_info_label.text() == ""
+        assert window.set_source_path(_wide_source(tmp_path))
+        app.processEvents()
+
+        text = window.source_info_label.text()
+        assert "640×360" in text
+        assert "16:9" in text
+        assert "230,400" in text
+        assert "色" in text
+    finally:
+        window.close()
+
+
+def test_main_window_canvas_can_follow_the_source_aspect(monkeypatch, tmp_path):
+    """「元絵に合わせる」を選ぶと長辺の指定から出力Canvasが決まる。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(_wide_source(tmp_path))
+        index = _canvas_index(window, "source")
+        window.canvas_size.setCurrentIndex(index)
+        app.processEvents()
+
+        assert window.canvas_long_side.isVisible()
+        window.canvas_long_side.setValue(256)
+        app.processEvents()
+        # 640x360 の長辺256 → 短辺 round(256*360/640) = 144
+        assert window.selected_canvas_size() == (256, 144)
+
+        window.canvas_long_side.setValue(128)
+        app.processEvents()
+        assert window.selected_canvas_size() == (128, 72)
+    finally:
+        window.close()
+
+
+def test_main_window_source_aspect_canvas_handles_a_tall_source(monkeypatch, tmp_path):
+    """縦長の元絵では高さが長辺になる。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(_wide_source(tmp_path, "tall.png", (300, 600)))
+        window.canvas_size.setCurrentIndex(_canvas_index(window, "source"))
+        window.canvas_long_side.setValue(256)
+        app.processEvents()
+        assert window.selected_canvas_size() == (128, 256)
+    finally:
+        window.close()
+
+
+def test_main_window_warns_when_full_frame_composition_would_distort(monkeypatch, tmp_path):
+    """画面全体構図でアスペクト比が食い違うと、歪むことを警告する。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        assert window.set_source_path(_wide_source(tmp_path))
+        window.composition_mode.setCurrentIndex(
+            window.composition_mode.findData("pre_aligned")
+        )
+        window.canvas_size.setCurrentIndex(_canvas_index(window, (128, 128)))
+        app.processEvents()
+        assert window.aspect_warning.isVisible()
+        assert "歪" in window.aspect_warning.text()
+
+        # 元絵に合わせれば歪まないので警告は消える
+        window.canvas_size.setCurrentIndex(_canvas_index(window, "source"))
+        window.canvas_long_side.setValue(256)
+        app.processEvents()
+        assert window.aspect_warning.isHidden()
+
+        # 被写体を収める構図では引き伸ばさないので警告しない
+        window.canvas_size.setCurrentIndex(_canvas_index(window, (128, 128)))
+        window.composition_mode.setCurrentIndex(
+            window.composition_mode.findData("single_frame")
+        )
+        app.processEvents()
+        assert window.aspect_warning.isHidden()
+    finally:
+        window.close()

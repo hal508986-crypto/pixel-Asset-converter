@@ -43,6 +43,7 @@ from PIL import Image
 from pixel_tile_compiler.config import CanvasSpec, compiler_config_for_purpose
 from pixel_tile_compiler.gui.canvas import CanvasState, ZOOMS
 from pixel_tile_compiler.gui.input import first_supported_image_path
+from pixel_tile_compiler.analysis.source_info import describe_source
 from pixel_tile_compiler.gui.palette_editor import PaletteEditorDialog
 from pixel_tile_compiler.gui.theme import build_stylesheet
 from pixel_tile_compiler.gui.policy import (
@@ -532,6 +533,10 @@ class MainWindow(QMainWindow):
         self._component_assignment_combos: dict[int, QComboBox] = {}
         self.default_output_root = Path.cwd() / "output"
         self.source_preview = SourceImagePreview("元絵を読み込んでください\nまたはここにドロップ")
+        self.source_info_label = QLabel("")
+        self.source_info_label.setObjectName("mutedText")
+        self.source_info_label.setWordWrap(True)
+        self._source_info = None
         self.source_preview.image_dropped.connect(self.set_source_path)
         self.source_preview.image_point_clicked.connect(self._on_source_preview_clicked)
         self.source_preview.rect_selected.connect(self._on_source_preview_rect_selected)
@@ -573,6 +578,7 @@ class MainWindow(QMainWindow):
         for label, size in GUI_CHARACTER_CANVAS_PRESETS:
             self.canvas_size.addItem(label, userData=size)
         # 末尾は自由入力。サイズは幅・高さの入力から取る。
+        self.canvas_size.addItem("元絵に合わせる（長辺を指定）", userData="source")
         self.canvas_size.addItem("自由入力", userData=None)
         self.canvas_size.currentIndexChanged.connect(self._update_canvas_selection)
         self.canvas_size.currentIndexChanged.connect(self._update_canvas_controls)
@@ -587,6 +593,15 @@ class MainWindow(QMainWindow):
         self.canvas_height.valueChanged.connect(self._update_canvas_selection)
         self.canvas_width.valueChanged.connect(self._update_canvas_controls)
         self.canvas_height.valueChanged.connect(self._update_canvas_controls)
+        self.canvas_long_side = NoWheelSpinBox()
+        self.canvas_long_side.setRange(GUI_CANVAS_MIN_SIDE, GUI_CANVAS_MAX_SIDE)
+        self.canvas_long_side.setValue(256)
+        self.canvas_long_side_label = QLabel("長辺")
+        self.canvas_long_side.valueChanged.connect(self._update_canvas_selection)
+        self.canvas_long_side.valueChanged.connect(self._update_canvas_controls)
+        self.aspect_warning = QLabel()
+        self.aspect_warning.setObjectName("warningText")
+        self.aspect_warning.setWordWrap(True)
         self.canvas_effective_note = QLabel(
             "実効解像度は短辺で決まります（256×128の被写体は128×128相当）"
         )
@@ -909,9 +924,21 @@ class MainWindow(QMainWindow):
     def selected_canvas_size(self) -> tuple[int, int]:
         """現在選ばれている出力Canvasサイズを返す。自由入力なら幅・高さの値。"""
         preset = self.canvas_size.currentData()
+        if preset == "source":
+            return self._canvas_from_source_aspect()
         if preset is not None:
             return (int(preset[0]), int(preset[1]))
         return (self.canvas_width.value(), self.canvas_height.value())
+
+    def _canvas_from_source_aspect(self) -> tuple[int, int]:
+        """元絵の縦横比を保ったまま、長辺を指定値に合わせたCanvasを返す。"""
+        long_side = self.canvas_long_side.value()
+        if self._source_info is None:
+            return (long_side, long_side)
+        width, height = self._source_info.size
+        if width >= height:
+            return (long_side, max(GUI_CANVAS_MIN_SIDE, round(long_side * height / width)))
+        return (max(GUI_CANVAS_MIN_SIDE, round(long_side * width / height)), long_side)
 
     def _build_header(self) -> QWidget:
         """用途セグメントと元絵の読み込み導線を並べたヘッダ。"""
@@ -970,6 +997,7 @@ class MainWindow(QMainWindow):
         source_layout = QVBoxLayout(source_group)
         source_layout.setContentsMargins(0, 4, 0, 0)
         source_layout.addWidget(self.source_preview, 1)
+        source_layout.addWidget(self.source_info_label)
         source_group.setMinimumWidth(200)
         self.preview_splitter.addWidget(source_group)
 
@@ -1156,6 +1184,7 @@ class MainWindow(QMainWindow):
             [
                 [
                     (self.canvas_size_label, self.canvas_size),
+                    (self.canvas_long_side_label, self.canvas_long_side),
                     (self.canvas_custom_label, custom_row),
                     (self.background_mode_label, self.background_mode),
                     (self.background_color_label, self.background_color_field),
@@ -1164,7 +1193,12 @@ class MainWindow(QMainWindow):
                     (self.palette_label, self.palette),
                     (self.repeat_opt_label, self.repeat_opt),
                 ],
-                [auto_profile_caption, self.auto_profile, self.canvas_effective_note],
+                [
+                    auto_profile_caption,
+                    self.auto_profile,
+                    self.canvas_effective_note,
+                    self.aspect_warning,
+                ],
             ]
         )
 
@@ -1360,13 +1394,17 @@ class MainWindow(QMainWindow):
     def _update_canvas_controls(self, *_args: object) -> None:
         """出力Canvasと背景・構図まわりの表示を、現在の選択に合わせる。"""
         is_character = self.purpose.currentData() in {"character", "character_animation"}
-        is_custom_canvas = is_character and self.canvas_size.currentData() is None
+        preset = self.canvas_size.currentData()
+        is_custom_canvas = is_character and preset is None
+        is_source_canvas = is_character and preset == "source"
         is_full_frame = self.composition_mode.currentData() == "pre_aligned"
         width, height = self.selected_canvas_size()
         self.canvas_size_label.setVisible(is_character)
         self.canvas_size.setVisible(is_character)
         self.canvas_custom_label.setVisible(is_custom_canvas)
         self.canvas_custom_row.setVisible(is_custom_canvas)
+        self.canvas_long_side_label.setVisible(is_source_canvas)
+        self.canvas_long_side.setVisible(is_source_canvas)
         self.background_mode_label.setVisible(is_character)
         self.background_mode.setVisible(is_character)
         show_background_color = is_character and self.background_mode.currentData() == "color"
@@ -1378,6 +1416,25 @@ class MainWindow(QMainWindow):
         self.canvas_effective_note.setVisible(
             is_character and not is_full_frame and width != height
         )
+        self._update_aspect_warning(is_character and is_full_frame, (width, height))
+
+    def _update_aspect_warning(self, is_full_frame: bool, canvas_size: tuple[int, int]) -> None:
+        """画面全体構図で元絵が引き伸ばされるとき、歪むことを伝える。"""
+        info = self._source_info
+        if not is_full_frame or info is None:
+            self.aspect_warning.setVisible(False)
+            return
+        canvas_ratio = canvas_size[0] / max(1, canvas_size[1])
+        # 縦横比の差が5%を超えたら歪みとして扱う（仕様4.7節）
+        distorts = abs(canvas_ratio - info.aspect_ratio) / info.aspect_ratio > 0.05
+        if not distorts:
+            self.aspect_warning.setVisible(False)
+            return
+        self.aspect_warning.setText(
+            "画面全体構図では元絵が出力Canvasへ引き伸ばされます。"
+            f"元絵は{info.aspect_label}、出力は{canvas_size[0]}×{canvas_size[1]}なので絵が歪みます"
+        )
+        self.aspect_warning.setVisible(True)
 
     def _on_terrain_setting_changed(self, _value: object = None) -> None:
         """palette上限や地形設定の変更を、要約表示へ反映する。"""
@@ -2254,6 +2311,22 @@ class MainWindow(QMainWindow):
         identity = f" / palette ID {palette_id(colors)[:12]}" if len(colors) <= 64 else ""
         self.output_palette_info.setText(f"実測 {len(colors)}色{identity}")
 
+    def _refresh_source_info(self, source: Path) -> None:
+        """元絵の性質を測り、判断材料として表示する。"""
+        try:
+            info = describe_source(source)
+        except ValueError:
+            self._source_info = None
+            self.source_info_label.setText("")
+            return
+        self._source_info = info
+        grid = f"格子 約{info.apparent_grid}ドット" if info.has_block_grid else "格子なし"
+        self.source_info_label.setText(
+            f"{info.size[0]}×{info.size[1]} / {info.pixel_count:,}px / {info.aspect_label}\n"
+            f"可視{info.visible_colors:,}色 / {grid} / 半透明{info.semi_alpha_ratio:.0%}"
+        )
+        self._update_canvas_controls()
+
     def _clear_stale_result(self, selected_size: tuple[int, int] | None = None) -> None:
         if self._compiled_canvas_size is None:
             return
@@ -2372,6 +2445,7 @@ class MainWindow(QMainWindow):
         self.source_preview.clear_boxes()
         self._clear_stale_result()
         self.compile_button.setEnabled(True)
+        self._refresh_source_info(source)
         self.status.setText(f"元絵を読み込みました: {source.name}")
         return True
 

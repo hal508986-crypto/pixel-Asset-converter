@@ -48,6 +48,7 @@ _STYLESHEET = Template(
     QLabel#subsectionTitle { font-size: 13px; font-weight: 700; color: $accent; }
     QLabel#mutedText { color: $muted; font-size: 12px; }
     QLabel#statusText { color: $muted; }
+    QLabel#warningText { color: $warning; font-size: 12px; }
 
     QFrame#headerPanel, QFrame#actionPanel {
         background: $surface;

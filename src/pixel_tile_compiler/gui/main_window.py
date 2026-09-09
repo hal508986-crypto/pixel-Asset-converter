@@ -11,6 +11,7 @@ import numpy as np
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QDialog,
     QFileDialog,
     QCheckBox,
     QApplication,
@@ -42,6 +43,7 @@ from PIL import Image
 from pixel_tile_compiler.config import CanvasSpec, compiler_config_for_purpose
 from pixel_tile_compiler.gui.canvas import CanvasState, ZOOMS
 from pixel_tile_compiler.gui.input import first_supported_image_path
+from pixel_tile_compiler.gui.palette_editor import PaletteEditorDialog
 from pixel_tile_compiler.gui.theme import build_stylesheet
 from pixel_tile_compiler.gui.policy import (
     GUI_ANIMATION_SPLIT_OPTIONS,
@@ -506,6 +508,7 @@ class MainWindow(QMainWindow):
         self._compiled_canvas_size: tuple[int, int] | None = None
         self._terrain_batch_window = None
         self._shared_palette_colors: tuple[tuple[int, int, int], ...] = ()
+        self._output_palette_colors: tuple[tuple[int, int, int], ...] = ()
         self._origin_pick_target: str | None = None
         self._compile_thread: _CompileWorker | None = None
         self._compile_context: dict[str, object] | None = None
@@ -548,6 +551,9 @@ class MainWindow(QMainWindow):
         self.shared_palette_load_button = QPushButton("読み込む")
         self.shared_palette_load_button.setToolTip("地形の一括コンパイルが書き出したpalette.jsonを読み込みます")
         self.shared_palette_load_button.clicked.connect(self.load_shared_palette)
+        self.shared_palette_edit_button = QPushButton("編集...")
+        self.shared_palette_edit_button.setToolTip("色を選んで基準paletteを組み立てます")
+        self.shared_palette_edit_button.clicked.connect(self.edit_shared_palette)
         self.shared_palette_clear_button = QPushButton("解除")
         self.shared_palette_clear_button.setToolTip("基準paletteの指定を外し、自動paletteへ戻します")
         self.shared_palette_clear_button.clicked.connect(self.clear_shared_palette)
@@ -1256,6 +1262,7 @@ class MainWindow(QMainWindow):
         shared_palette_layout.addWidget(self.shared_palette_view)
         shared_palette_buttons = QHBoxLayout()
         shared_palette_buttons.setSpacing(6)
+        shared_palette_buttons.addWidget(self.shared_palette_edit_button)
         shared_palette_buttons.addWidget(self.shared_palette_load_button)
         shared_palette_buttons.addWidget(self.shared_palette_clear_button)
         shared_palette_layout.addLayout(shared_palette_buttons)
@@ -2239,6 +2246,7 @@ class MainWindow(QMainWindow):
             except (OSError, ValueError):
                 continue
         colors = tuple(sorted(measured))
+        self._output_palette_colors = colors
         self.output_palette_view.set_colors(colors)
         if not colors:
             self.output_palette_info.setText("コンパイルすると、使用したpaletteをここに表示します")
@@ -2298,6 +2306,20 @@ class MainWindow(QMainWindow):
         self.shared_palette_view.clear()
         self._clear_stale_result()
         self.status.setText("キャラクターの基準paletteを解除しました")
+
+    def edit_shared_palette(self) -> None:
+        """基準paletteエディタを開き、確定した色を取り込む。"""
+        dialog = PaletteEditorDialog(
+            colors=self._shared_palette_colors or ((0, 0, 0),),
+            output_palette=self._output_palette_colors,
+            parent=self,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        try:
+            self.set_shared_palette(dialog.colors(), source_label="エディタで作成")
+        except ValueError as exc:
+            self.status.setText(f"基準paletteを設定できませんでした: {exc}")
 
     def load_shared_palette(self) -> None:
         """terrain batchが出力したpalette.jsonを読み込む。"""

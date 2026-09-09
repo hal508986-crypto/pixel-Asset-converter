@@ -83,6 +83,20 @@ def load_palette_json(path: Path | str) -> tuple[tuple[int, int, int], ...]:
     return colors
 
 
+def save_palette_json(path: Path | str, colors: Iterable[Iterable[int]]) -> Path:
+    """RGB paletteをpalette.jsonとして書き出す。契約を通ったものだけを書く。"""
+    normalized = validate_reference_palette(colors)
+    palette_path = Path(path)
+    palette_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema_version": 1,
+        "colors": [list(color) for color in normalized],
+        "palette_id": palette_id(normalized),
+    }
+    palette_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return palette_path
+
+
 def fixed_palette_config(
     config: CompilerConfig,
     colors: Iterable[Iterable[int]],
@@ -127,6 +141,7 @@ __all__ = [
     "extract_final_palette",
     "fixed_palette_config",
     "load_palette_json",
+    "save_palette_json",
     "metadata_palette_matches_final",
     "normalize_palette",
     "palette_id",

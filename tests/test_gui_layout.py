@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 
@@ -1126,5 +1128,112 @@ def test_main_window_warns_when_full_frame_composition_would_distort(monkeypatch
         )
         app.processEvents()
         assert window.aspect_warning.isHidden()
+    finally:
+        window.close()
+
+
+def test_output_path_includes_the_actual_palette_budget(tmp_path):
+    """出力先に実際のpalette上限が入り、色数違いで上書きされない（仕様4.8節）。"""
+    from pixel_tile_compiler.gui.policy import build_output_path
+
+    source = tmp_path / "aria.png"
+    source.write_bytes(b"")
+
+    at_24 = build_output_path(
+        tmp_path / "out", source, purpose="character", canvas_size=(128, 128), palette_budget=24
+    )
+    at_48 = build_output_path(
+        tmp_path / "out", source, purpose="character", canvas_size=(128, 128), palette_budget=48
+    )
+    assert at_24 != at_48
+    assert at_24.name == "image_128x128_24c"
+    assert at_48.name == "image_128x128_48c"
+
+    animation = build_output_path(
+        tmp_path / "out",
+        source,
+        purpose="character_animation",
+        canvas_size=(256, 256),
+        palette_budget=36,
+    )
+    assert animation.name == "animation_256x256_36c"
+
+    shared = build_output_path(
+        tmp_path / "out",
+        source,
+        purpose="character",
+        canvas_size=(64, 64),
+        palette_budget=16,
+        palette_token="0123456789abcdef",
+    )
+    assert shared.name == "image_64x64_16c_shared-0123456789ab"
+
+
+def test_main_window_purpose_names_match_what_they_accept(monkeypatch):
+    """用途名が実態に合っていること（仕様4.8節・S-17）。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        labels = {
+            window.purpose.itemData(index): window.purpose.itemText(index)
+            for index in range(window.purpose.count())
+        }
+        assert labels["character"] == "単体画像"
+        assert labels["character_animation"] == "コマ割りアニメーション"
+        assert "地形" in labels["terrain"]
+        # セグメントボタンも同じ表示になる
+        assert window.purpose_segments["character"].text() == "単体画像"
+    finally:
+        window.close()
+
+
+def test_main_window_compile_output_uses_the_selected_palette(monkeypatch, tmp_path):
+    """GUIで選んだ色数が出力先に反映され、色数違いが別フォルダになる。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PIL import Image
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    source = tmp_path / "subject.png"
+    image = Image.new("RGBA", (96, 96), (0, 0, 0, 0))
+    for y in range(12, 84):
+        for x in range(30, 66):
+            image.putpixel((x, y), ((x * 3) % 256, (y * 5) % 256, 160, 255))
+    image.save(source)
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character"))
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "out"))
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+
+        seen = []
+        real_compile = main_window_module.PixelTileCompiler.compile
+
+        def fake_compile(self, source_path, config):
+            seen.append(Path(config.output_root).name)
+            return real_compile(self, source_path, config)
+
+        monkeypatch.setattr(main_window_module.PixelTileCompiler, "compile", fake_compile)
+
+        for budget in (24, 48):
+            window.palette.setValue(budget)
+            app.processEvents()
+            window.compile_image()
+            app.processEvents()
+
+        assert seen == ["image_128x128_24c", "image_128x128_48c"]
     finally:
         window.close()

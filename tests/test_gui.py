@@ -102,7 +102,7 @@ def test_build_output_path_uses_selected_root_and_source_stem(tmp_path):
         source,
         purpose="character",
         canvas_size=(128, 128),
-    ) == tmp_path / "compiled" / source.stem / "character_128x128_b24"
+    ) == tmp_path / "compiled" / source.stem / "image_128x128_24c"
 
     assert build_output_path(
         tmp_path / "compiled",
@@ -110,14 +110,14 @@ def test_build_output_path_uses_selected_root_and_source_stem(tmp_path):
         purpose="character",
         canvas_size=(128, 128),
         palette_token="0123456789abcdef-rest",
-    ) == tmp_path / "compiled" / source.stem / "character_128x128_b24_shared-0123456789ab"
+    ) == tmp_path / "compiled" / source.stem / "image_128x128_24c_shared-0123456789ab"
 
     assert build_output_path(
         tmp_path / "compiled",
         source,
         purpose="character_animation",
         canvas_size=(128, 128),
-    ) == tmp_path / "compiled" / source.stem / "character_animation_128x128_b24"
+    ) == tmp_path / "compiled" / source.stem / "animation_128x128_24c"
 
 
 def test_terrain_gui_profile_defaults_to_source_preserving_without_repeat_optimization():
@@ -1002,7 +1002,7 @@ def test_main_window_confirm_and_compile_without_manual_override(monkeypatch, tm
         assert "完了:" in window.status.text()
 
         # 出力アーティファクトの存在確認
-        expected_output = output_dir / source.stem / "character_animation_128x128_b24"
+        expected_output = output_dir / source.stem / "animation_128x128_24c"
         report_path = expected_output / "bbox_report.json"
         assert report_path.exists(), f"bbox_report.json not found in {expected_output}"
         aligned_sheet = expected_output / "aligned_sheet.png"

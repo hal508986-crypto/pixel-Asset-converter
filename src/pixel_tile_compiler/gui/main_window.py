@@ -569,8 +569,8 @@ class MainWindow(QMainWindow):
         self.output_browse_button = QPushButton("参照...")
         self.output_browse_button.clicked.connect(self.choose_output_directory)
         self.purpose = NoWheelComboBox()
-        self.purpose.addItem("キャラクター", userData="character")
-        self.purpose.addItem("キャラクターアニメーション", userData="character_animation")
+        self.purpose.addItem("単体画像", userData="character")
+        self.purpose.addItem("コマ割りアニメーション", userData="character_animation")
         self.purpose.addItem("地形（64×64）", userData="terrain")
         self.purpose.currentIndexChanged.connect(self._update_purpose_controls)
         self.canvas_size_label = QLabel("出力Canvasサイズ")
@@ -2672,6 +2672,7 @@ class MainWindow(QMainWindow):
                     source,
                     purpose="character_animation",
                     canvas_size=(width, height),
+                    palette_budget=max(self.animation_palette.value(), len(shared_palette or ())),
                     palette_token=palette_id(shared_palette) if shared_palette is not None else None,
                 )
                 component_assignments = None
@@ -2739,6 +2740,7 @@ class MainWindow(QMainWindow):
                     source,
                     purpose="character",
                     canvas_size=(width, height),
+                    palette_budget=max(self.palette.value(), len(shared_palette or ())),
                     palette_token=palette_id(shared_palette) if shared_palette is not None else None,
                 )
                 background_mode = self.background_mode.currentData()

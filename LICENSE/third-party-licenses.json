@@ -57,10 +57,10 @@
       },
       "docs": {
         "code": 0,
-        "files": 42,
+        "files": 44,
         "images": 0,
         "json": 0,
-        "text": 42
+        "text": 44
       },
       "experiments": {
         "code": 0,
@@ -98,11 +98,11 @@
         "text": 2
       },
       "src": {
-        "code": 133,
-        "files": 133,
+        "code": 136,
+        "files": 136,
         "images": 0,
         "json": 0,
-        "text": 133
+        "text": 136
       },
       "start_gui.bat": {
         "code": 0,
@@ -112,11 +112,11 @@
         "text": 1
       },
       "tests": {
-        "code": 39,
-        "files": 39,
+        "code": 41,
+        "files": 41,
         "images": 0,
         "json": 0,
-        "text": 39
+        "text": 41
       }
     },
     "provenance_flags": {
@@ -124,7 +124,7 @@
       "external_path_mentions": 8,
       "image_2_mentions": 4
     },
-    "tracked_files": 255
+    "tracked_files": 262
   },
   "code_inventory": {
     "external_import_distributions": {
@@ -169,7 +169,7 @@
       "typer",
       "yaml"
     ],
-    "files": 175,
+    "files": 180,
     "import_roots": [
       "PIL",
       "PySide6",
@@ -191,6 +191,7 @@
       "logging",
       "math",
       "numpy",
+      "os",
       "pathlib",
       "pixel_tile_compiler",
       "pydantic",
@@ -200,6 +201,7 @@
       "scripts",
       "shutil",
       "skimage",
+      "string",
       "subprocess",
       "sys",
       "tempfile",
@@ -214,13 +216,14 @@
     ],
     "process_or_network_references": [
       "scripts/generate_licenses.py",
+      "tests/test_gui.py",
       "tests/test_license_audit.py"
     ],
-    "python_files": 175,
+    "python_files": 180,
     "script_python_files": 3,
-    "source_python_files": 133,
+    "source_python_files": 136,
     "syntax_errors": [],
-    "test_python_files": 39,
+    "test_python_files": 41,
     "undeclared_external_imports": []
   },
   "environment": {

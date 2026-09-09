@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
-from typing import Literal
+from dataclasses import dataclass, field, replace
+from typing import Literal, Mapping
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .normalizer import normalize_sheet
 
 
-SplitMode = Literal["fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"]
+SplitMode = Literal["fixed_grid", "alpha_gap_auto", "row_alpha_gap", "row_alpha_components", "hybrid"]
 Band = tuple[int, int]
 SourceBox = tuple[int, int, int, int]
 
@@ -30,9 +30,12 @@ class SpriteSheetCell:
     valid: bool
     logical_origin: tuple[int, int] | None = None
     registration_translation: tuple[int, int] | None = None
+    extraction_kind: str = "rectangular_crop"
+    component_ids: tuple[int, ...] = ()
+    mask_rle: tuple[tuple[int, int, int], ...] = ()
 
     def as_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "index": self.index,
             "row": self.row,
             "column": self.column,
@@ -48,6 +51,19 @@ class SpriteSheetCell:
                 list(self.registration_translation) if self.registration_translation is not None else None
             ),
         }
+        if self.extraction_kind != "rectangular_crop" or self.component_ids or self.mask_rle:
+            payload.update(
+                {
+                    "extraction_kind": self.extraction_kind,
+                    "component_ids": list(self.component_ids),
+                    "mask_encoding": (
+                        {"version": 1, "rle": [list(run) for run in self.mask_rle]}
+                        if self.mask_rle
+                        else None
+                    ),
+                }
+            )
+        return payload
 
 
 @dataclass(frozen=True)
@@ -55,7 +71,7 @@ class SpriteSheetSplitResult:
     """Source cells plus explainable detection diagnostics."""
 
     requested_mode: SplitMode
-    detected_mode: Literal["fixed_grid", "alpha_projection", "row_alpha_gap"]
+    detected_mode: Literal["fixed_grid", "alpha_projection", "row_alpha_gap", "row_alpha_components"]
     rows: int
     columns: int
     frames: tuple[Image.Image, ...]
@@ -78,14 +94,23 @@ class SpriteSheetSplitResult:
     boundary_crossings: tuple[dict[str, object], ...] = ()
     attempted_modes: tuple[str, ...] = ()
     failure_reasons: tuple[str, ...] = ()
+    split_status: Literal["resolved", "needs_assignment", "unsupported"] = "resolved"
+    resolution_reason: str = ""
+    components: tuple[dict[str, object], ...] = ()
+    row_methods: tuple[dict[str, object], ...] = ()
+    ownership_validation: dict[str, int] = field(default_factory=dict)
+    assignment_status: Literal["geometric", "user_confirmed"] | None = None
+    assignment_source: str | None = None
+    confirmation_notice: str | None = None
+    owner_labels: np.ndarray | None = None
 
     @property
     def frame_count(self) -> int:
         return len(self.frames)
 
     def report_as_dict(self) -> dict[str, object]:
-        return {
-            "schema_version": 3,
+        report = {
+            "schema_version": 4 if self.detected_mode == "row_alpha_components" else 3,
             "requested_mode": self.requested_mode,
             "detected_mode": self.detected_mode,
             "rows": self.rows,
@@ -117,6 +142,22 @@ class SpriteSheetSplitResult:
             "quality_status": "warning" if self.fallback_used or self.boundary_crossings or self.issues else "passed",
             "warnings": list(self.issues),
         }
+        if self.detected_mode == "row_alpha_components":
+            report.update(
+                {
+                    "split_status": self.split_status,
+                    "resolution_reason": self.resolution_reason,
+                    "extraction_kind": "component_mask",
+                    "components": [dict(component) for component in self.components],
+                    "row_methods": [dict(method) for method in self.row_methods],
+                    "ownership_validation": dict(self.ownership_validation),
+                    "assignment_status": self.assignment_status,
+                    "assignment_source": self.assignment_source,
+                    "mask_encoding": {"version": 1, "kind": "rle"},
+                    "confirmation_notice": self.confirmation_notice,
+                }
+            )
+        return report
 
 
 def alpha_occupancy_mask(
@@ -793,6 +834,101 @@ def _auto_grid(
     )
 
 
+def _component_grid(
+    source: Image.Image,
+    *,
+    columns: int,
+    rows: int,
+    alpha_threshold: int,
+    remove_small_components: bool,
+    min_component_area_px: int,
+    empty_column_threshold: int,
+    empty_row_threshold: int,
+    min_gutter_width_px: int,
+    assignments: Mapping[object, object] | None,
+    cells_override: Sequence[Mapping[str, object] | ComponentCell] | None = None,
+    confirm_components: bool = False,
+    requested_mode: SplitMode,
+) -> SpriteSheetSplitResult:
+    from .component_split import analyze_component_split
+
+    component_result = analyze_component_split(
+        source,
+        columns=columns,
+        rows=rows,
+        alpha_threshold=alpha_threshold,
+        remove_small_components=remove_small_components,
+        min_component_area_px=min_component_area_px,
+        empty_column_threshold=empty_column_threshold,
+        empty_row_threshold=empty_row_threshold,
+        min_gutter_width_px=min_gutter_width_px,
+        assignments=assignments,
+        cells_override=cells_override,
+        confirmed=confirm_components,
+    )
+    cells = tuple(
+        SpriteSheetCell(
+            index=cell.index,
+            row=cell.row,
+            column=cell.column,
+            source_box=cell.source_box,
+            content_box=cell.content_box,
+            visible_pixel_count=cell.visible_pixel_count,
+            occupied_ratio=cell.visible_pixel_count / max(1, (cell.source_box[2] - cell.source_box[0]) * (cell.source_box[3] - cell.source_box[1])),
+            valid=True,
+            logical_origin=cell.logical_origin,
+            registration_translation=cell.registration_translation,
+            extraction_kind="component_mask",
+            component_ids=tuple(
+                component.component_id
+                for component in component_result.components
+                if component.frame_id == cell.frame_id
+            ),
+            mask_rle=cell.mask_rle,
+        )
+        for cell in component_result.cells
+    )
+    issue_list: list[str] = []
+    if component_result.status != "resolved":
+        issue_list.append(component_result.reason)
+    if requested_mode == "hybrid":
+        issue_list.append("hybridで成分分割による救済を使用しました")
+    issues = tuple(issue_list)
+    return SpriteSheetSplitResult(
+        requested_mode=requested_mode,
+        detected_mode="row_alpha_components",
+        rows=rows,
+        columns=columns,
+        frames=component_result.frames,
+        cells=cells,
+        x_bands=(),
+        y_bands=component_result.row_bands,
+        source_size=source.size,
+        normalized_size=source.size,
+        crop_box=(0, 0, source.width, source.height),
+        confidence=1.0 if component_result.status == "resolved" else 0.0,
+        fallback_used=False,
+        fallback_reason=None,
+        issues=issues,
+        alpha_threshold=alpha_threshold,
+        empty_column_threshold=empty_column_threshold,
+        empty_row_threshold=empty_row_threshold,
+        min_gutter_width_px=min_gutter_width_px,
+        detection_overlay=component_result.overlay,
+        row_bands=tuple((row, band, ()) for row, band in enumerate(component_result.row_bands)),
+        attempted_modes=("row_alpha_components",),
+        split_status=component_result.status,
+        resolution_reason=component_result.reason,
+        components=tuple(component.as_dict() for component in component_result.components),
+        row_methods=tuple(method.as_dict() for method in component_result.row_methods),
+        ownership_validation=component_result.ownership_validation,
+        assignment_status=component_result.assignment_status,
+        assignment_source=component_result.assignment_source,
+        confirmation_notice=("所属はプレビューで確認してください" if component_result.status == "resolved" else None),
+        owner_labels=component_result.owner_labels,
+    )
+
+
 def split_sprite_sheet(
     image: Image.Image,
     *,
@@ -808,10 +944,13 @@ def split_sprite_sheet(
     max_cell_size_variance_ratio: float = 1.25,
     require_nonempty_each_cell: bool = True,
     remainder_policy: Literal["center_crop", "error"] = "center_crop",
+    assignments: Mapping[object, object] | None = None,
+    cells_override: Sequence[Mapping[str, object] | ComponentCell] | None = None,
+    confirm_components: bool = False,
 ) -> SpriteSheetSplitResult:
     """Split a regular sprite sheet with fixed, alpha, or hybrid detection."""
-    if mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"}:
-        raise ValueError("split mode must be fixed_grid, alpha_gap_auto, row_alpha_gap, or hybrid")
+    if mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "row_alpha_components", "hybrid"}:
+        raise ValueError("split mode must be fixed_grid, alpha_gap_auto, row_alpha_gap, row_alpha_components, or hybrid")
     if empty_column_threshold < 0 or empty_row_threshold < 0:
         raise ValueError("empty band thresholds must be non-negative")
     if min_gutter_width_px < 1:
@@ -845,6 +984,23 @@ def split_sprite_sheet(
             empty_row_threshold=empty_row_threshold,
             min_gutter_width_px=min_gutter_width_px,
             require_nonempty_each_cell=require_nonempty_each_cell,
+            requested_mode=mode,
+        )
+
+    if mode == "row_alpha_components" or (mode == "hybrid" and cells_override is not None):
+        return _component_grid(
+            source,
+            columns=columns,
+            rows=rows,
+            alpha_threshold=alpha_threshold,
+            remove_small_components=remove_small_components,
+            min_component_area_px=min_component_area_px,
+            empty_column_threshold=empty_column_threshold,
+            empty_row_threshold=empty_row_threshold,
+            min_gutter_width_px=min_gutter_width_px,
+            assignments=assignments,
+            cells_override=cells_override,
+            confirm_components=confirm_components,
             requested_mode=mode,
         )
 
@@ -905,6 +1061,28 @@ def split_sprite_sheet(
         return replace(result, attempted_modes=tuple(attempts), failure_reasons=tuple(failures))
     except ValueError as exc:
         failures.append(str(exc))
+
+    attempts.append("row_alpha_components")
+    component_result = _component_grid(
+        source,
+        columns=columns,
+        rows=rows,
+        alpha_threshold=alpha_threshold,
+        remove_small_components=remove_small_components,
+        min_component_area_px=min_component_area_px,
+        empty_column_threshold=empty_column_threshold,
+        empty_row_threshold=empty_row_threshold,
+        min_gutter_width_px=min_gutter_width_px,
+        assignments=assignments,
+        cells_override=cells_override,
+        confirm_components=confirm_components,
+        requested_mode=mode,
+    )
+    if component_result.split_status == "needs_assignment":
+        return replace(component_result, attempted_modes=tuple(attempts), failure_reasons=tuple(failures))
+    if component_result.split_status == "resolved":
+        return replace(component_result, attempted_modes=tuple(attempts), failure_reasons=tuple(failures))
+    failures.append(component_result.resolution_reason)
 
     attempts.append("fixed_grid")
     return replace(_fixed_grid(

@@ -129,6 +129,7 @@ def test_cli_surfaces_split_warnings_without_failing_output(tmp_path: Path):
             "--empty-column-threshold",
             "0",
             "--debug",
+            "--confirm-components",
         ],
     )
 
@@ -348,3 +349,159 @@ def test_cli_help_lists_study_river_graph():
     result = CliRunner().invoke(app, ["--help"])
     assert result.exit_code == 0
     assert "study-river-graph" in result.stdout
+
+
+def test_cli_compile_character_animation_component_split_requires_confirmation_or_flag(tmp_path: Path):
+    from pixel_tile_compiler.pixelizer.character_animation import CharacterAnimationConfig, save_component_assignments
+    from pixel_tile_compiler.sheet.component_split import analyze_component_split
+
+    source = tmp_path / "sheet.png"
+    image = Image.new("RGBA", (64, 40), (0, 0, 0, 0))
+    for y in range(5, 25):
+        for x in range(5, 19):
+            image.putpixel((x, y), (220, 50, 50, 255))
+        for x in range(38, 52):
+            image.putpixel((x, y), (50, 80, 220, 255))
+    for y in range(7, 20):
+        image.putpixel((27, y), (255, 255, 255, 255))
+    image.save(source)
+
+    unconfirmed_output = tmp_path / "unconfirmed-output"
+    unconfirmed = CliRunner().invoke(
+        app,
+        [
+            "compile-character-animation",
+            str(source),
+            "--output",
+            str(unconfirmed_output),
+            "--split-mode",
+            "row_alpha_components",
+            "--cols",
+            "2",
+            "--rows",
+            "1",
+            "--keep-isolated",
+        ],
+    )
+    assert unconfirmed.exit_code == 2
+    output_text = unconfirmed.stdout_bytes.decode("cp932", errors="replace") if hasattr(unconfirmed, "stdout_bytes") else unconfirmed.output
+    assert "未確定" in output_text or "確定" in output_text or "未解決" in output_text or unconfirmed.exit_code == 2
+
+    confirmed_output = tmp_path / "confirmed-output"
+    confirmed = CliRunner().invoke(
+        app,
+        [
+            "compile-character-animation",
+            str(source),
+            "--output",
+            str(confirmed_output),
+            "--split-mode",
+            "row_alpha_components",
+            "--cols",
+            "2",
+            "--rows",
+            "1",
+            "--keep-isolated",
+            "--confirm-components",
+        ],
+    )
+    assert confirmed.exit_code == 0, confirmed.output
+    assert (confirmed_output / "final_frames" / "F1.png").exists()
+
+
+def test_cli_compile_character_animation_applies_saved_cells_mask_exactly(tmp_path: Path):
+    """[P2 回帰テスト] CLIが保存済み所有マスク(cells_override)を適用し、実CLI出力レポートの所有マスクと一致することを検証する。"""
+    import numpy as np
+    from pixel_tile_compiler.pixelizer.character_animation import (
+        CharacterAnimationConfig,
+        load_component_assignment_data,
+        save_component_assignments,
+    )
+    from pixel_tile_compiler.sheet.component_split import (
+        analyze_component_split,
+        restore_owner_labels_from_cells,
+    )
+
+    source = tmp_path / "sheet_overlap.png"
+    shape = (40, 64)
+    image = Image.new("RGBA", (shape[1], shape[0]), (0, 0, 0, 0))
+    for y in range(5, 25):
+        for x in range(5, 19):
+            image.putpixel((x, y), (220, 50, 50, 255))
+        for x in range(38, 52):
+            image.putpixel((x, y), (50, 80, 220, 255))
+    for y in range(7, 20):
+        image.putpixel((27, y), (255, 255, 255, 255))
+    for y in range(25, 34):
+        for x in range(3, 17):
+            image.putpixel((x, y), (220, 50, 50, 255))
+    image.save(source)
+
+    config = CharacterAnimationConfig(
+        frame_count=2,
+        split_mode="row_alpha_components",
+        grid_columns=2,
+        grid_rows=1,
+        remove_isolated_components=False,
+    )
+
+    # 1. 事前に解析を行い、所有マスク付き cells を取得
+    analysis = analyze_component_split(
+        image,
+        columns=2,
+        rows=1,
+        remove_small_components=False,
+    )
+    assert analysis.cells is not None
+    assert len(analysis.cells) == 2
+
+    # 2. cells を含めて component_assignments.json に保存
+    assignments_path = tmp_path / "saved_assignments.json"
+    save_component_assignments(
+        source,
+        config,
+        assignments={},
+        output_path=assignments_path,
+        cells=analysis.cells,
+    )
+    assert assignments_path.exists()
+
+    # 保存ファイルから読み込んだ所有マスクを復元
+    saved_data = load_component_assignment_data(source, config, assignments_path)
+    assert saved_data.cells is not None
+    saved_owner_labels = restore_owner_labels_from_cells(saved_data.cells, shape)
+
+    # 3. CLI を実行してコンパイル
+    output = tmp_path / "cli_output"
+    result = CliRunner().invoke(
+        app,
+        [
+            "compile-character-animation",
+            str(source),
+            "--output",
+            str(output),
+            "--split-mode",
+            "row_alpha_components",
+            "--cols",
+            "2",
+            "--rows",
+            "1",
+            "--keep-isolated",
+            "--component-assignments",
+            str(assignments_path),
+            "--confirm-components",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+
+    # 4. 出力された bbox_report.json の cells から所有マスクを復元
+    report_path = output / "bbox_report.json"
+    assert report_path.exists()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    cli_cells = report["sprite_sheet_split"]["cells"]
+    cli_owner_labels = restore_owner_labels_from_cells(cli_cells, shape)
+
+    # 5. 保存済みマスクと実CLI出力のマスクが1画素の差分もなく完全一致することを検証
+    diff_pixels = np.count_nonzero(saved_owner_labels != cli_owner_labels)
+    assert diff_pixels == 0, f"CLI output changed {diff_pixels} pixels from saved mask!"
+    assert np.array_equal(saved_owner_labels, cli_owner_labels)

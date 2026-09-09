@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 import threading
 
 import pytest
@@ -230,6 +231,7 @@ def test_main_window_exposes_animation_split_modes_and_fixed_grid_controls(monke
             "fixed_grid",
             "alpha_gap_auto",
             "row_alpha_gap",
+            "row_alpha_components",
             "hybrid",
         ]
         assert window.animation_columns.isVisible()
@@ -682,3 +684,511 @@ def test_main_window_receives_terrain_reference_palette(monkeypatch):
         if terrain_window is not None:
             terrain_window.close()
         window.close()
+
+
+def _component_assignment_source(tmp_path):
+    from PIL import Image
+
+    source = tmp_path / "sheet.png"
+    image = Image.new("RGBA", (64, 40), (0, 0, 0, 0))
+    for y in range(5, 25):
+        for x in range(5, 19):
+            image.putpixel((x, y), (220, 50, 50, 255))
+        for x in range(38, 52):
+            image.putpixel((x, y), (50, 80, 220, 255))
+    for y in range(7, 20):
+        image.putpixel((27, y), (255, 255, 255, 255))
+    for y in range(25, 34):
+        for x in range(3, 17):
+            image.putpixel((x, y), (220, 50, 50, 255))
+    image.save(source)
+    return source
+
+
+def _prepare_component_assignment_window(window, source, mode="row_alpha_components"):
+    window.show()
+    window.set_source_path(source)
+    window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+    window.animation_split_mode.setCurrentIndex(window.animation_split_mode.findData(mode))
+    window.animation_columns.setValue(2)
+    window.animation_rows.setValue(1)
+
+
+def _assign_component_rows(window, satellite_id, satellite_frame):
+    for component_id, combo in window._component_assignment_combos.items():
+        frame_id = satellite_frame if component_id == satellite_id else (
+            "F1" if window._component_analysis.components[component_id - 1].bbox[0] < 30 else "F2"
+        )
+        combo.setCurrentIndex(combo.findData(frame_id))
+
+
+def test_main_window_component_assignment_change_requires_reconfirmation(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = _component_assignment_source(tmp_path)
+    try:
+        _prepare_component_assignment_window(window, source)
+        window.analyze_component_assignments()
+        assert window.wait_for_analysis()
+        satellite_id = next(
+            component.component_id
+            for component in window._component_analysis.components
+            if component.bbox == (27, 7, 28, 20)
+        )
+        _assign_component_rows(window, satellite_id, "F1")
+        window.confirm_component_assignments()
+        assert window._component_assignment_confirmed is True
+        assert int(window._component_analysis.owner_labels[7, 27]) == 1
+
+        window._origin_pick_target = "source"
+        window._on_source_origin_clicked((27, 7))
+        assert window._source_origin_frame_index == 0
+        confirmed_overlay = window._component_analysis.overlay
+        combo = window._component_assignment_combos[satellite_id]
+        combo.setCurrentIndex(combo.findData("F2"))
+        app.processEvents()
+        assert window._component_assignment_confirmed is False
+        assert window._component_analysis.overlay is not confirmed_overlay
+        assert window.source_preview._image is not None
+        assert window._source_origin_frame_index is None
+        assert window.animation_source_origin_set.isChecked() is False
+        window._origin_pick_target = "source"
+        window._on_source_origin_clicked((27, 7))
+        assert window._source_origin_frame_index is None
+
+        started = []
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: started.append((operation, context)))
+        window.compile_image()
+        assert not started
+        assert "未解決" in window.status.text()
+        assert "再度所属" in window.animation_component_assignment_status.text()
+
+        window.confirm_component_assignments()
+        assert window._component_assignment_confirmed is True
+        assert int(window._component_analysis.owner_labels[7, 27]) == 2
+        window._origin_pick_target = "source"
+        window._on_source_origin_clicked((27, 7))
+        assert window._source_origin_frame_index == 1
+
+        captured = {}
+        def fake_compile(*args, **kwargs):
+            captured["assignments"] = kwargs["component_assignments"]
+            return object()
+
+        monkeypatch.setattr(main_window_module, "compile_character_animation_sheet", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+        window.compile_image()
+        assert captured["assignments"][satellite_id] == "F2"
+    finally:
+        window.close()
+
+
+def test_main_window_component_assignment_candidates_are_visible_and_ties_stay_unset(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication, QLabel
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = _component_assignment_source(tmp_path)
+    try:
+        _prepare_component_assignment_window(window, source)
+        window.analyze_component_assignments()
+        assert window.wait_for_analysis()
+        labels = [label.text() for label in window.animation_component_assignment_rows.findChildren(QLabel)]
+        assert any("候補" in text and "F1" in text and "F2" in text for text in labels)
+        satellite_id = next(
+            component.component_id
+            for component in window._component_analysis.components
+            if component.bbox == (27, 7, 28, 20)
+        )
+        assert window._component_assignment_combos[satellite_id].currentData() is None
+        assert window._component_assignment_confirmed is False
+    finally:
+        window.close()
+
+
+def test_main_window_hybrid_pending_can_be_confirmed_and_reexecuted(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = _component_assignment_source(tmp_path)
+    try:
+        _prepare_component_assignment_window(window, source, mode="hybrid")
+        window.analyze_component_assignments()
+        assert window.wait_for_analysis()
+        assert window._component_analysis.status == "needs_assignment"
+        assert window.animation_component_group.isVisible()
+        satellite_id = next(
+            component.component_id
+            for component in window._component_analysis.components
+            if component.bbox == (27, 7, 28, 20)
+        )
+        _assign_component_rows(window, satellite_id, "F2")
+        window.confirm_component_assignments()
+        assert window._component_assignment_confirmed is True
+        captured = {}
+
+        def fake_compile(*args, **kwargs):
+            captured["config"] = kwargs["config"]
+            captured["assignments"] = kwargs["component_assignments"]
+            return object()
+
+        monkeypatch.setattr(main_window_module, "compile_character_animation_sheet", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+        window.compile_image()
+        assert captured["config"].split_mode == "hybrid"
+        assert captured["assignments"][satellite_id] == "F2"
+    finally:
+        window.close()
+
+
+def test_main_window_component_split_cards_preview_and_rect_selection(monkeypatch, tmp_path):
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtWidgets import QApplication
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = _component_assignment_source(tmp_path)
+    try:
+        _prepare_component_assignment_window(window, source)
+        window.analyze_component_assignments()
+        assert window.wait_for_analysis()
+        app.processEvents()
+
+        # コマカード (F1, F2) が生成されている
+        cards_layout = window.animation_frame_cards_layout
+        assert cards_layout.count() == 2
+
+        # 元絵クリックで成分選択
+        window._on_source_preview_clicked((27, 7))
+        assert len(window._selected_component_ids) == 1
+        assert len(window.source_preview._highlight_boxes) == 1
+        assert "選択中: C" in window.animation_component_selection_info.text()
+
+        # 矩形選択で交差成分選択
+        window._on_source_preview_rect_selected((0, 0, 64, 40))
+        assert len(window._selected_component_ids) >= 2
+        assert len(window.source_preview._highlight_boxes) >= 2
+
+        # 所属変更
+        window._on_source_preview_clicked((27, 7))
+        window.animation_component_target_combo.setCurrentIndex(
+            window.animation_component_target_combo.findData("F2")
+        )
+        window.reassign_selected_components()
+        app.processEvents()
+        assert window._component_assignment_confirmed is False
+        assert window._component_assignment_overrides.get(window._selected_component_ids[0]) == "F2"
+
+        # 一括確定
+        window.confirm_component_assignments()
+        assert window._component_assignment_confirmed is True
+        assert "全コマの所属を一括確定しました" in window.animation_component_assignment_status.text()
+
+        # コンパイル実行
+        captured = {}
+        def fake_compile(*args, **kwargs):
+            captured["confirm_components"] = kwargs.get("confirm_components")
+            captured["assignments"] = kwargs.get("component_assignments")
+            captured["cells_override"] = kwargs.get("cells_override")
+            return object()
+
+        monkeypatch.setattr(main_window_module, "compile_character_animation_sheet", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+        window.compile_image()
+        assert captured["confirm_components"] is True
+        assert captured["assignments"][window._selected_component_ids[0]] == "F2"
+        assert captured["cells_override"] is not None
+    finally:
+        window.close()
+
+
+def test_main_window_confirm_and_compile_without_manual_override(monkeypatch, tmp_path):
+    """[P1-1 回帰テスト] 手動変更なしの「元絵読み込み→解析→一括確定→実コンパイル」が正常成功することを検証する。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QThread
+    from PySide6.QtWidgets import QApplication
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = _component_assignment_source(tmp_path)
+    output_dir = tmp_path / "compiled_output"
+    try:
+        window.show()
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(output_dir))
+        window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
+        window.animation_split_mode.setCurrentIndex(window.animation_split_mode.findData("row_alpha_components"))
+        window.animation_columns.setValue(2)
+        window.animation_rows.setValue(1)
+        app.processEvents()
+
+        # 1. 解析を実行
+        window.analyze_component_assignments()
+        assert window.wait_for_analysis()
+        assert window._component_analysis is not None
+        # 疑わしい成分（衛星成分）があるため初期は needs_assignment
+        assert window._component_analysis.status == "needs_assignment"
+
+        # 2. 手動変更なしで一括確定
+        window.confirm_component_assignments()
+        assert window._component_assignment_confirmed is True
+        assert window._component_analysis.status == "resolved"
+
+        # 3. 実コンパイルを実行
+        window.compile_image()
+        # 非同期コンパイルの完了を待機
+        deadline = 10000
+        elapsed = 0
+        while window._compile_thread is not None and elapsed < deadline:
+            app.processEvents()
+            QThread.msleep(10)
+            elapsed += 10
+
+        assert window._compile_thread is None
+        assert "完了:" in window.status.text()
+
+        # 出力アーティファクトの存在確認
+        expected_output = output_dir / source.stem / "character_animation_128x128_b24"
+        report_path = expected_output / "bbox_report.json"
+        assert report_path.exists(), f"bbox_report.json not found in {expected_output}"
+        aligned_sheet = expected_output / "aligned_sheet.png"
+        assert aligned_sheet.exists(), f"aligned_sheet.png not found in {expected_output}"
+    finally:
+        window.close()
+
+
+def test_main_window_analysis_worker_keeps_gui_responsive_and_discards_stale_revision(monkeypatch, tmp_path):
+    """[P2 回帰テスト] 解析ワーカーがGUIスレッドをブロックせず、設定変更時に古い解析結果を破棄することを検証する。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QThread, QTimer
+    from PySide6.QtWidgets import QApplication
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    source = _component_assignment_source(tmp_path)
+    try:
+        _prepare_component_assignment_window(window, source)
+
+        # タイマーの稼働確認用カウンタ
+        timer_ticks = 0
+        def on_tick():
+            nonlocal timer_ticks
+            timer_ticks += 1
+
+        timer = QTimer()
+        timer.setInterval(20)
+        timer.timeout.connect(on_tick)
+        timer.start()
+
+        # 時間のかかるモック解析処理を定義
+        original_analyze = main_window_module.analyze_component_split
+        def slow_analyze(*args, **kwargs):
+            # ワーカースレッド内で0.3秒スリープ
+            QThread.msleep(300)
+            return original_analyze(*args, **kwargs)
+
+        monkeypatch.setattr(main_window_module, "analyze_component_split", slow_analyze)
+
+        # 1. 非同期解析を開始
+        window.analyze_component_assignments()
+        assert window._analysis_thread is not None
+
+        # 2. 解析処理中もGUIイベントループが回り、タイマーが動作し続けることを検証
+        while window._analysis_thread is not None and window._analysis_thread.isRunning():
+            app.processEvents()
+            QThread.msleep(10)
+
+        timer.stop()
+        # 300msの間、20msタイマーが複数回（少なくとも5回以上）発火していること
+        assert timer_ticks >= 5, f"Timer should have ticked multiple times during async analysis, got {timer_ticks}"
+        assert window.wait_for_analysis()
+        assert window._component_analysis is not None
+
+        # 3. 世代管理テスト: 解析中に設定変更が発生した場合
+        old_revision = window._configuration_revision
+        window.analyze_component_assignments()
+        assert window._analysis_thread is not None
+
+        # 解析が走っている間に設定を変更して revision を進める
+        window.animation_columns.setValue(4)
+        assert window._configuration_revision > old_revision
+
+        # 解析の完了を待機
+        assert window.wait_for_analysis()
+        # 古い解析結果（columns=2向け）は破棄され、反映されていないこと
+        assert window._component_analysis is None
+    finally:
+        window.close()
+
+
+def test_main_window_analysis_worker_concurrency_rapid_calls_and_close_safety(monkeypatch, tmp_path):
+    """[P1 回帰テスト] 解析ワーカーの連打・解析中再設定・ウィンドウクローズでプロセスがクラッシュせず最新結果を採用することを検証する。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PySide6.QtCore import QThread
+    from PySide6.QtWidgets import QApplication
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    source = _component_assignment_source(tmp_path)
+
+    original_analyze = main_window_module.analyze_component_split
+
+    def slow_analyze(*args, **kwargs):
+        QThread.msleep(150)
+        return original_analyze(*args, **kwargs)
+
+    monkeypatch.setattr(main_window_module, "analyze_component_split", slow_analyze)
+
+    # 1. 連打テスト（同一設定で複数回連続呼び出し）
+    window = MainWindow()
+    try:
+        _prepare_component_assignment_window(window, source)
+        assert window.analyze_component_assignments()
+        # すぐに連打
+        assert window.analyze_component_assignments()
+        assert window.analyze_component_assignments()
+        # クラッシュせず安全に完了すること
+        assert window.wait_for_analysis()
+        assert window._component_analysis is not None
+        assert window._component_analysis.columns == 2
+
+        # 2. 解析中の再設定テスト（実行中に設定を変更して新ワーカーを起動）
+        window.analyze_component_assignments()
+        first_worker = window._analysis_thread
+        assert first_worker is not None
+
+        # 実行中に設定を変更（columns=4）して新しい解析を開始
+        window.animation_columns.setValue(4)
+        assert window.analyze_component_assignments()
+        second_worker = window._analysis_thread
+        assert second_worker is not first_worker
+        # 両方のワーカーが _analysis_workers に追跡されていること
+        assert first_worker in window._analysis_workers
+        assert second_worker in window._analysis_workers
+
+        # 全ワーカーの完了を待機
+        assert window.wait_for_analysis()
+        # 最終的に採用された結果は最新の columns=4 であること
+        assert window._component_analysis is not None
+        assert window._component_analysis.columns == 4
+
+        # 3. 解析中のウィンドウクローズテスト
+        window.analyze_component_assignments()
+        assert window._analysis_thread is not None
+        assert len(window._analysis_workers) >= 1
+        window.close()
+        # closeEvent により即座の破棄が保留（_close_pending）されること
+        assert window._close_pending is True
+        # 保留された終了がワーカー完了後に再実行され、安全に閉じること
+        assert window.wait_for_close()
+        assert not any(w.isRunning() for w in window._analysis_workers)
+        assert window._close_pending is False
+    finally:
+        window.close()
+
+
+def test_main_window_close_during_long_analysis_in_subprocess_preserves_thread_and_exits_cleanly(tmp_path: Path):
+    """[P1 回帰テスト] 2秒超（2.5秒）の解析ワーカー実行中にウィンドウ終了を行っても、終了が保留され破棄前に安全に完了して正常終了することを別プロセスで検証する。"""
+    import os
+    import subprocess
+    import sys
+
+    source = _component_assignment_source(tmp_path)
+    script = f"""
+import sys
+import time
+from pathlib import Path
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication
+
+import pixel_tile_compiler.gui.main_window as main_window_module
+from pixel_tile_compiler.gui.main_window import MainWindow
+
+# 2.5秒かかる解析をシミュレート（2秒のタイムアウトより長い）
+original_analyze = main_window_module.analyze_component_split
+def slow_analyze(*args, **kwargs):
+    time.sleep(2.5)
+    return original_analyze(*args, **kwargs)
+
+main_window_module.analyze_component_split = slow_analyze
+
+app = QApplication(sys.argv)
+window = MainWindow()
+window.show()
+
+source_path = Path(r"{source.as_posix()}")
+window.source_path = source_path
+window.purpose.setCurrentText("character")
+window.animation_split_mode.setCurrentText("row_alpha_components")
+window.animation_columns.setValue(2)
+window.animation_rows.setValue(1)
+
+# 解析開始
+started = window.analyze_component_assignments()
+assert started, "Analysis did not start"
+assert len(window._analysis_workers) >= 1, "No active workers"
+
+# 300ms 後にウィンドウ終了を要求（この時点ではワーカーはまだ2.2秒実行中）
+QTimer.singleShot(300, window.close)
+
+t0 = time.time()
+exit_code = app.exec()
+elapsed = time.time() - t0
+
+print(f"ELAPSED:{{elapsed:.2f}}")
+print(f"EXIT_CODE:{{exit_code}}")
+assert elapsed >= 2.3, f"Window closed prematurely after {{elapsed:.2f}}s (before worker finished)!"
+sys.exit(exit_code)
+"""
+    runner_script = tmp_path / "run_subprocess_close.py"
+    runner_script.write_text(script, encoding="utf-8")
+
+    env = dict(os.environ)
+    env["QT_QPA_PLATFORM"] = "offscreen"
+    env["PYTHONPATH"] = "src;."
+
+    result = subprocess.run(
+        [sys.executable, str(runner_script)],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=15,
+    )
+    assert result.returncode == 0, f"Subprocess failed with code {result.returncode}:\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+    assert "ELAPSED:" in result.stdout
+    for line in result.stdout.splitlines():
+        if line.startswith("ELAPSED:"):
+            elapsed = float(line.split(":")[1])
+            assert elapsed >= 2.3, f"Elapsed time was {elapsed}s, which is less than 2.3s!"
+

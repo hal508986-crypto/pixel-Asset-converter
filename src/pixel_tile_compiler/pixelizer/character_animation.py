@@ -256,8 +256,8 @@ class CharacterAnimationConfig:
     def __post_init__(self) -> None:
         if self.frame_count < 1:
             raise ValueError("frame_count must be positive")
-        if self.split_mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"}:
-            raise ValueError("split_mode must be fixed_grid, alpha_gap_auto, row_alpha_gap, or hybrid")
+        if self.split_mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "row_alpha_components", "hybrid"}:
+            raise ValueError("split_mode must be fixed_grid, alpha_gap_auto, row_alpha_gap, row_alpha_components, or hybrid")
         if self.grid_columns is not None and self.grid_columns < 1:
             raise ValueError("grid_columns must be positive")
         if self.grid_rows is not None and self.grid_rows < 1:
@@ -424,7 +424,7 @@ class CharacterAnimationResult:
                 "mode": "preserve_motion",
             }
         return {
-            "schema_version": 3,
+            "schema_version": 4 if self.split_report.get("schema_version") == 4 else 3,
             "frame_count": len(self.aligned_frames),
             "common_scale": self.scale,
             "common_anchor": common_anchor,
@@ -472,6 +472,10 @@ def split_horizontal_sheet(
 def _split_character_animation_source(
     image: Image.Image,
     config: CharacterAnimationConfig,
+    *,
+    component_assignments: Mapping[object, object] | None = None,
+    cells_override: Sequence[Mapping[str, object] | ComponentCell] | None = None,
+    confirm_components: bool = False,
 ) -> SpriteSheetSplitResult:
     """現在のアニメーション設定で元絵を分割する。"""
     columns, rows = config.grid_size
@@ -489,7 +493,125 @@ def _split_character_animation_source(
         max_cell_size_variance_ratio=config.max_cell_size_variance_ratio,
         require_nonempty_each_cell=config.require_nonempty_each_cell,
         remainder_policy=config.remainder_policy,
+        assignments=component_assignments,
+        cells_override=cells_override,
+        confirm_components=confirm_components,
     )
+
+
+COMPONENT_ASSIGNMENT_SCHEMA_VERSION = 1
+COMPONENT_LABEL_RULE_VERSION = 1
+
+
+def _component_assignment_settings(config: CharacterAnimationConfig) -> dict[str, object]:
+    columns, rows = config.grid_size
+    return {
+        "split_mode": config.split_mode,
+        "columns": columns,
+        "rows": rows,
+        "alpha_threshold": config.alpha_threshold,
+        "remove_isolated_components": config.remove_isolated_components,
+        "min_component_area_px": config.min_component_area_px,
+        "empty_column_threshold": config.empty_column_threshold,
+        "empty_row_threshold": config.empty_row_threshold,
+        "min_gutter_width_px": config.min_gutter_width_px,
+    }
+
+
+@dataclass(frozen=True)
+class ComponentAssignmentData:
+    assignments: dict[str, str]
+    cells: tuple[dict[str, object], ...] | None = None
+
+
+def save_component_assignments(
+    source: Path | str,
+    config: CharacterAnimationConfig,
+    assignments: Mapping[object, object],
+    output_path: Path | str,
+    *,
+    cells: Sequence[Mapping[str, object] | object] | None = None,
+) -> None:
+    source = Path(source)
+    output_path = Path(output_path)
+    with Image.open(source) as opened:
+        dimensions = list(opened.size)
+    serialized_cells = None
+    if cells is not None:
+        serialized_cells = [
+            cell.as_dict() if hasattr(cell, "as_dict") else dict(cell)  # type: ignore[arg-type]
+            for cell in cells
+        ]
+    payload = {
+        "schema_version": COMPONENT_ASSIGNMENT_SCHEMA_VERSION,
+        "label_rules_version": COMPONENT_LABEL_RULE_VERSION,
+        "source_image": {
+            "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+            "dimensions": dimensions,
+        },
+        "settings": _component_assignment_settings(config),
+        "assignments": {str(key): str(value) for key, value in assignments.items()},
+        "cells": serialized_cells,
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_component_assignment_data(
+    source: Path | str,
+    config: CharacterAnimationConfig,
+    input_path: Path | str,
+) -> ComponentAssignmentData:
+    input_path = Path(input_path)
+    try:
+        payload = json.loads(input_path.read_text(encoding="utf-8"))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(f"所属指定を読み込めません: {exc}") from exc
+    if not isinstance(payload, Mapping) or payload.get("schema_version") != COMPONENT_ASSIGNMENT_SCHEMA_VERSION:
+        raise ValueError("所属指定のschema_versionが不正です")
+    if payload.get("label_rules_version") != COMPONENT_LABEL_RULE_VERSION:
+        raise ValueError("所属指定のラベル規則版が不正です")
+    source = Path(source)
+    with Image.open(source) as opened:
+        dimensions = list(opened.size)
+    source_image = payload.get("source_image")
+    if not isinstance(source_image, Mapping):
+        raise ValueError("所属指定に元画像情報がありません")
+    if source_image.get("sha256") != hashlib.sha256(source.read_bytes()).hexdigest() or source_image.get("dimensions") != dimensions:
+        raise ValueError("元絵または分割設定が変わっています。所属を確認し直してください。")
+    if payload.get("settings") != _component_assignment_settings(config):
+        raise ValueError("元絵または分割設定が変わっています。所属を確認し直してください。")
+    assignments = payload.get("assignments")
+    if not isinstance(assignments, Mapping):
+        raise ValueError("所属指定がありません")
+    raw_cells = payload.get("cells")
+    cells = tuple(raw_cells) if isinstance(raw_cells, list) else None
+    return ComponentAssignmentData(
+        assignments={str(key): str(value) for key, value in assignments.items()},
+        cells=cells,
+    )
+
+
+def load_component_assignments(
+    source: Path | str,
+    config: CharacterAnimationConfig,
+    input_path: Path | str,
+) -> dict[str, str]:
+    return load_component_assignment_data(source, config, input_path).assignments
+
+
+def load_character_animation_report(path: Path | str) -> dict[str, object]:
+    path = Path(path)
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(f"アニメーションレポートを読み込めません: {exc}") from exc
+    if not isinstance(payload, Mapping):
+        raise ValueError("アニメーションレポートの形式が不正です")
+    version = payload.get("schema_version")
+    if version not in {3, 4}:
+        raise ValueError(f"未対応のschema_versionです: {version}")
+    return dict(payload)
 
 
 def animation_source_frame_boxes(
@@ -521,11 +643,28 @@ def map_source_point_to_frame(
     frame_boxes: tuple[tuple[int, int, int, int], ...],
     *,
     logical_origins: tuple[tuple[int, int], ...] | list[tuple[int, int]] | None = None,
+    owner_labels: np.ndarray | None = None,
+    selected_frame_index: int | None = None,
 ) -> tuple[int, tuple[int, int]]:
     """シート上のクリック座標を、フレームの論理座標へ変換する。"""
     if logical_origins is not None and len(logical_origins) != len(frame_boxes):
         raise ValueError("logical_origins must contain one pair per frame")
     x, y = int(point[0]), int(point[1])
+    if owner_labels is not None:
+        if owner_labels.ndim != 2 or not (0 <= y < owner_labels.shape[0] and 0 <= x < owner_labels.shape[1]):
+            raise ValueError("元絵の範囲内をクリックしてください")
+        owner = int(owner_labels[y, x]) - 1
+        if owner < 0:
+            if selected_frame_index is None:
+                raise ValueError("透明な位置は先に対象フレームを選択してください")
+            owner = int(selected_frame_index)
+        if not 0 <= owner < len(frame_boxes):
+            raise ValueError("選択したフレームが不正です")
+        if logical_origins is None:
+            origin = frame_boxes[owner][:2]
+        else:
+            origin = logical_origins[owner]
+        return owner, (x - int(origin[0]), y - int(origin[1]))
     for index, (left, top, right, bottom) in enumerate(frame_boxes):
         if left <= x < right and top <= y < bottom:
             origin = (
@@ -1118,18 +1257,48 @@ def prepare_character_animation_sheet(
     protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
     transform: CharacterAnimationTransform | None = None,
     split_result: SpriteSheetSplitResult | None = None,
+    component_assignments: Mapping[object, object] | None = None,
+    cells_override: Sequence[Mapping[str, object] | ComponentCell] | None = None,
+    confirm_components: bool = False,
 ) -> CharacterAnimationResult:
     """Split a regular sheet and align all frames against one layout."""
     config = config or CharacterAnimationConfig()
-    split = split_result or _split_character_animation_source(image, config)
+    split = split_result or _split_character_animation_source(
+        image,
+        config,
+        component_assignments=component_assignments,
+        cells_override=cells_override,
+        confirm_components=confirm_components,
+    )
+    if split.split_status != "resolved" or not split.frames:
+        raise ValueError(split.resolution_reason or "アニメーションの成分所属が未確定です")
     alignment_config = replace(config, frame_count=split.frame_count)
     frame_coordinate_offsets = tuple(
         cell.registration_translation or (0, 0) for cell in split.cells
     )
+    effective_protected_masks = protected_masks
+    if split.detected_mode == "row_alpha_components" and protected_masks is not None:
+        if len(protected_masks) != split.frame_count:
+            raise ValueError("protected_masks must contain one mask per animation frame")
+        if split.owner_labels is None:
+            raise ValueError("成分分割の所有ラベルがありません")
+        localized_masks: list[Image.Image | None] = []
+        for index, mask in enumerate(protected_masks):
+            if mask is None or mask.size != image.size:
+                localized_masks.append(mask)
+                continue
+            cell = split.cells[index]
+            local = mask.convert("L").crop(cell.source_box)
+            local_alpha = np.asarray(local, dtype=np.uint8)
+            left, top, right, bottom = cell.source_box
+            owner = split.owner_labels[top:bottom, left:right] == index + 1
+            local_alpha = np.where(owner, local_alpha, 0).astype(np.uint8)
+            localized_masks.append(Image.fromarray(local_alpha, mode="L"))
+        effective_protected_masks = tuple(localized_masks)
     result = align_character_frames(
         split.frames,
         alignment_config,
-        protected_masks=protected_masks,
+        protected_masks=effective_protected_masks,
         transform=transform,
         frame_coordinate_offsets=frame_coordinate_offsets,
     )
@@ -1165,12 +1334,14 @@ _MANAGED_ANIMATION_OUTPUTS = (
     "compiled_sheet_8x.png",
     "detection_overlay.png",
     "final_frames",
+    "preview.png",
+    "preview_8x.png",
 )
 
 
 def compile_character_animation_sheet(
-    source: Path,
-    output_root: Path,
+    source: Path | str,
+    output_root: Path | str,
     *,
     config: CharacterAnimationConfig | None = None,
     palette_budget: int = 24,
@@ -1181,6 +1352,9 @@ def compile_character_animation_sheet(
     shared_palette: tuple[tuple[int, int, int], ...] | None = None,
     protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
     transform: CharacterAnimationTransform | None = None,
+    component_assignments: Mapping[object, object] | None = None,
+    cells_override: Sequence[Mapping[str, object] | ComponentCell] | None = None,
+    confirm_components: bool = False,
 ) -> CharacterAnimationCompileResult:
     """Prepare and compile every animation frame with transactional output replacement."""
     source = Path(source)
@@ -1206,6 +1380,9 @@ def compile_character_animation_sheet(
             shared_palette=shared_palette,
             protected_masks=protected_masks,
             transform=transform,
+            component_assignments=component_assignments,
+            cells_override=cells_override,
+            confirm_components=confirm_components,
         )
         final_result = _relocate_compile_result(staged_result, staging_root, output_root)
         _rewrite_staged_metadata_paths(staging_root, output_root)
@@ -1242,13 +1419,22 @@ def _compile_character_animation_to_root(
     shared_palette: tuple[tuple[int, int, int], ...] | None,
     protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None,
     transform: CharacterAnimationTransform | None,
+    component_assignments: Mapping[object, object] | None = None,
+    cells_override: Sequence[Mapping[str, object] | ComponentCell] | None = None,
+    confirm_components: bool = False,
 ) -> CharacterAnimationCompileResult:
     """Write one complete animation artifact set into an empty staging root."""
     from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
     from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
 
     with Image.open(source) as opened:
-        split = _split_character_animation_source(opened, config)
+        split = _split_character_animation_source(
+            opened,
+            config,
+            component_assignments=component_assignments,
+            cells_override=cells_override,
+            confirm_components=confirm_components,
+        )
         _validate_animation_output_sheet_size(config.canvas_size, split.frame_count)
         prepared = prepare_character_animation_sheet(
             opened,
@@ -1499,15 +1685,20 @@ __all__ = [
     "CharacterAnimationFrameReport",
     "CharacterAnimationResult",
     "CharacterAnimationTransform",
+    "ComponentAssignmentData",
     "align_character_frames",
     "animation_source_frame_boxes",
     "animation_source_frame_coordinates",
     "analyze_frame_alpha",
     "compile_character_animation_sheet",
+    "load_character_animation_report",
     "load_character_animation_transform",
+    "load_component_assignment_data",
+    "load_component_assignments",
     "map_source_point_to_frame",
     "prepare_character_animation_sheet",
     "resolve_action_scale",
     "save_character_animation_transform",
+    "save_component_assignments",
     "split_horizontal_sheet",
 ]

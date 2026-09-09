@@ -53,6 +53,8 @@ from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
     CharacterAnimationTransform,
     compile_character_animation_sheet,
+    load_component_assignment_data,
+    load_component_assignments,
 )
 from pixel_tile_compiler.asset.pipeline import compile_generated_sheet, process_generated_sheet, validate_asset_package
 from pixel_tile_compiler.generation.adapter import GenerationUnavailableError, UnconfiguredImageGenerationAdapter
@@ -123,7 +125,7 @@ def compile(
 def compile_character_animation_command(
     source: Path = typer.Argument(..., exists=True, readable=True, help="キャラクターアニメーションSheet PNG"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="アニメーション出力ディレクトリ"),
-    split_mode: str = typer.Option("fixed_grid", "--split-mode", help="fixed_grid/alpha_gap_auto/row_alpha_gap/hybrid"),
+    split_mode: str = typer.Option("fixed_grid", "--split-mode", help="fixed_grid/alpha_gap_auto/row_alpha_gap/row_alpha_components/hybrid"),
     columns: int = typer.Option(4, "--cols", min=1, help="fixed_gridまたはhybridフォールバック時の列数"),
     rows: int = typer.Option(1, "--rows", min=1, help="fixed_gridまたはhybridフォールバック時の行数"),
     frames: Optional[int] = typer.Option(None, "--frames", min=1, help="後方互換: --cols N --rows 1 と同じ"),
@@ -148,16 +150,19 @@ def compile_character_animation_command(
     height: int = typer.Option(64, "--height", min=1, help="1frameの出力Canvas高さ"),
     placement_mode: str = typer.Option("legacy_foot", "--placement-mode", help="legacy_foot/preserve_motion"),
     source_origin: Optional[str] = typer.Option(None, "--source-origin", help="移動保存のソース原点 x,y"),
+
     output_origin: Optional[str] = typer.Option(None, "--output-origin", help="移動保存の出力原点 x,y"),
     scale: Optional[float] = typer.Option(None, "--scale", min=0.000001, help="移動保存の固定倍率"),
     transform_file: Optional[Path] = typer.Option(None, "--transform", exists=True, readable=True, help="保存済みtransform JSON"),
     shared_palette: Optional[bool] = typer.Option(None, "--shared-palette/--no-shared-palette", help="動作全体でpaletteを共有"),
     allow_empty: bool = typer.Option(False, "--allow-empty/--reject-empty", help="移動保存で透明frameを許可"),
+    component_assignments: Optional[Path] = typer.Option(None, "--component-assignments", exists=True, readable=True, help="成分所属指定JSON"),
+    confirm_components: bool = typer.Option(False, "--confirm-components", help="疑わしい領域があっても一括確定してコンパイルを実行"),
 ) -> None:
     """キャラクターアニメーションSheetを分割し、共通配置で64x64化します。"""
     output_dir = output or (Path("output") / f"{source.stem}_animation")
-    if split_mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "hybrid"}:
-        raise typer.BadParameter("split_modeはfixed_grid、alpha_gap_auto、row_alpha_gap、hybridのいずれかです", param_hint="--split-mode")
+    if split_mode not in {"fixed_grid", "alpha_gap_auto", "row_alpha_gap", "row_alpha_components", "hybrid"}:
+        raise typer.BadParameter("split_modeはfixed_grid、alpha_gap_auto、row_alpha_gap、row_alpha_components、hybridのいずれかです", param_hint="--split-mode")
     if frames is not None:
         if columns != 4 or rows != 1:
             raise typer.BadParameter("--framesは--cols/--rowsと併用できません", param_hint="--frames")
@@ -198,41 +203,54 @@ def compile_character_animation_command(
         raise typer.BadParameter("--transformは原点・--scaleと併用できません", param_hint="--transform")
     effective_placement_mode = "preserve_motion" if loaded_transform is not None else placement_mode
     shared_palette_enabled = True if shared_palette is None else shared_palette
+    animation_config = CharacterAnimationConfig(
+        frame_count=columns * rows,
+        split_mode=split_mode,  # type: ignore[arg-type]
+        grid_columns=columns,
+        grid_rows=rows,
+        canvas_size=(width, height),
+        fit_within=(fit_width, fit_height),
+        bottom_margin=bottom_margin,
+        alpha_threshold=alpha_threshold,
+        remove_isolated_components=remove_isolated,
+        min_component_area_px=min_component_area,
+        padding_px=padding,
+        empty_column_threshold=empty_column_threshold,
+        empty_row_threshold=empty_row_threshold,
+        min_gutter_width_px=min_gutter_width,
+        max_cell_size_variance_ratio=max_cell_variance,
+        require_nonempty_each_cell=require_nonempty,
+        remainder_policy=remainder_policy,  # type: ignore[arg-type]
+        outline_width=1 if outline != "off" else 0,
+        placement_mode=effective_placement_mode,  # type: ignore[arg-type]
+        source_origin=parsed_source_origin,
+        output_origin=parsed_output_origin,
+        scale_override=scale,
+        shared_palette_enabled=shared_palette_enabled,
+        allow_empty_frames=allow_empty,
+    )
+    loaded_assignments = None
+    cells_override = None
+    if component_assignments is not None:
+        try:
+            assignment_data = load_component_assignment_data(source, animation_config, component_assignments)
+            loaded_assignments = assignment_data.assignments
+            cells_override = assignment_data.cells
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(str(exc), param_hint="--component-assignments") from exc
     try:
         result = compile_character_animation_sheet(
             source,
             output_dir,
-            config=CharacterAnimationConfig(
-                frame_count=columns * rows,
-                split_mode=split_mode,  # type: ignore[arg-type]
-                grid_columns=columns,
-                grid_rows=rows,
-                canvas_size=(width, height),
-                fit_within=(fit_width, fit_height),
-                bottom_margin=bottom_margin,
-                alpha_threshold=alpha_threshold,
-                remove_isolated_components=remove_isolated,
-                min_component_area_px=min_component_area,
-                padding_px=padding,
-                empty_column_threshold=empty_column_threshold,
-                empty_row_threshold=empty_row_threshold,
-                min_gutter_width_px=min_gutter_width,
-                max_cell_size_variance_ratio=max_cell_variance,
-                require_nonempty_each_cell=require_nonempty,
-                remainder_policy=remainder_policy,  # type: ignore[arg-type]
-                outline_width=1 if outline != "off" else 0,
-                placement_mode=effective_placement_mode,  # type: ignore[arg-type]
-                source_origin=parsed_source_origin,
-                output_origin=parsed_output_origin,
-                scale_override=scale,
-                shared_palette_enabled=shared_palette_enabled,
-                allow_empty_frames=allow_empty,
-            ),
+            config=animation_config,
             palette_budget=palette,
             character_detail_level=character_detail,
             outline_color=outline,
             debug_enabled=debug,
             transform=loaded_transform,
+            component_assignments=loaded_assignments,
+            cells_override=cells_override,
+            confirm_components=confirm_components,
         )
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc

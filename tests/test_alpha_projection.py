@@ -54,7 +54,7 @@ def test_alpha_gap_auto_rejects_missing_gutters_and_hybrid_falls_back() -> None:
     assert result.frame_count == 4
     assert result.fallback_reason
     report = result.report_as_dict()
-    assert report["attempted_modes"] == ["alpha_gap_auto", "row_alpha_gap", "fixed_grid"]
+    assert report["attempted_modes"] == ["alpha_gap_auto", "row_alpha_gap", "row_alpha_components", "fixed_grid"]
     assert report["quality_status"] == "warning"
     assert report["confidence"] == 0.0
     assert report["warnings"]
@@ -291,7 +291,7 @@ def test_row_alpha_gap_checks_x_boundaries_over_the_full_extracted_row() -> None
         empty_row_threshold=2,
         min_gutter_width_px=2,
     )
-    assert fallback.detected_mode == "fixed_grid"
-    assert fallback.boundary_crossings
+    assert fallback.detected_mode == "row_alpha_components"
+    assert fallback.split_status == "needs_assignment"
     assert fallback.report_as_dict()["quality_status"] == "warning"
     assert fallback.report_as_dict()["warnings"]

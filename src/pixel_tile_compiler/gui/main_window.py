@@ -5,11 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable, cast
 
-from PySide6.QtCore import QThread, QTimer, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter, QPixmap
+from PySide6.QtCore import QPoint, QThread, QTimer, QSize, Qt, Signal
+from dataclasses import replace
+import numpy as np
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QFileDialog,
     QCheckBox,
+    QApplication,
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
@@ -51,7 +54,18 @@ from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationCompileResult,
     animation_source_frame_coordinates,
     compile_character_animation_sheet,
+    load_character_animation_report,
+    load_component_assignment_data,
+    load_component_assignments,
     map_source_point_to_frame,
+    save_component_assignments,
+)
+from pixel_tile_compiler.sheet.alpha_projection import split_sprite_sheet
+from pixel_tile_compiler.sheet.component_split import (
+    ComponentCell,
+    ComponentSplitResult,
+    analyze_component_split,
+    render_component_split_overlay,
 )
 CHECKER_LIGHT = QColor("#d6d9dd")
 CHECKER_DARK = QColor("#b9bec5")
@@ -86,6 +100,22 @@ class ImagePreview(QLabel):
 
     def set_image(self, path: Path | None) -> None:
         self._path = Path(path) if path is not None else None
+        self._image = None
+        self.update()
+
+    def set_pil_image(self, image: Image.Image | None) -> None:
+        self._path = None
+        if image is None:
+            self._image = None
+        else:
+            rgba = image.convert("RGBA")
+            self._image = QImage(
+                rgba.tobytes(),
+                rgba.width,
+                rgba.height,
+                rgba.width * 4,
+                QImage.Format.Format_RGBA8888,
+            ).copy()
         self.update()
 
     def set_guide_point(self, point: tuple[float, float] | None) -> None:
@@ -93,9 +123,12 @@ class ImagePreview(QLabel):
         self.update()
 
     def _display_geometry(self) -> tuple[QImage, tuple[int, int, int, int]] | None:
-        if self._path is None or not self._path.exists():
+        if hasattr(self, "_image") and self._image is not None:
+            image = self._image
+        elif self._path is not None and self._path.exists():
+            image = QImage(str(self._path)).convertToFormat(QImage.Format.Format_RGBA8888)
+        else:
             return None
-        image = QImage(str(self._path)).convertToFormat(QImage.Format.Format_RGBA8888)
         if image.isNull():
             return None
         available = QSize(max(1, self.width() - 20), max(1, self.height() - 20))
@@ -130,15 +163,35 @@ class ImagePreview(QLabel):
 
 
 class SourceImagePreview(ImagePreview):
-    """Image preview that accepts one supported local image by drag-and-drop."""
+    """Image preview that accepts one supported local image by drag-and-drop,
+    supports component click/drag-rectangle selection, and displays highlight/suspicious boxes."""
 
     image_dropped = Signal(object)
     image_point_clicked = Signal(object)
+    rect_selected = Signal(object)
 
     def __init__(self, empty_text: str) -> None:
         super().__init__(empty_text)
         self.setAcceptDrops(True)
         self.setToolTip("元絵をここへドロップできます。透明部分は市松模様で表示します")
+        self._highlight_boxes: list[tuple[int, int, int, int]] = []
+        self._suspicious_boxes: list[tuple[int, int, int, int]] = []
+        self._drag_start: QPoint | None = None
+        self._drag_current: QPoint | None = None
+        self._is_dragging: bool = False
+
+    def set_highlight_boxes(self, boxes: list[tuple[int, int, int, int]]) -> None:
+        self._highlight_boxes = list(boxes)
+        self.update()
+
+    def set_suspicious_boxes(self, boxes: list[tuple[int, int, int, int]]) -> None:
+        self._suspicious_boxes = list(boxes)
+        self.update()
+
+    def clear_boxes(self) -> None:
+        self._highlight_boxes.clear()
+        self._suspicious_boxes.clear()
+        self.update()
 
     @staticmethod
     def _path_from_event(event) -> Path | None:  # type: ignore[no-untyped-def]
@@ -165,15 +218,107 @@ class SourceImagePreview(ImagePreview):
         if event.button() == Qt.MouseButton.LeftButton:
             geometry = self._display_geometry()
             if geometry is not None:
-                image, (left, top, width, height) = geometry
-                position = event.position()
-                if left <= position.x() < left + width and top <= position.y() < top + height:
-                    x = min(image.width() - 1, max(0, int((position.x() - left) * image.width() / width)))
-                    y = min(image.height() - 1, max(0, int((position.y() - top) * image.height() / height)))
-                    self.image_point_clicked.emit((x, y))
+                _image, (left, top, width, height) = geometry
+                pos = event.position()
+                if left <= pos.x() < left + width and top <= pos.y() < top + height:
+                    self._drag_start = pos.toPoint()
+                    self._drag_current = self._drag_start
+                    self._is_dragging = False
                     event.accept()
                     return
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        if self._drag_start is not None and (event.buttons() & Qt.MouseButton.LeftButton):
+            pos = event.position().toPoint()
+            delta = (pos - self._drag_start).manhattanLength()
+            if delta > 3:
+                self._is_dragging = True
+                self._drag_current = pos
+                self.update()
+                event.accept()
+                return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        if event.button() == Qt.MouseButton.LeftButton and self._drag_start is not None:
+            geometry = self._display_geometry()
+            if geometry is not None:
+                image, (left, top, width, height) = geometry
+                if self._is_dragging and self._drag_current is not None:
+                    x0_screen = min(self._drag_start.x(), self._drag_current.x())
+                    x1_screen = max(self._drag_start.x(), self._drag_current.x())
+                    y0_screen = min(self._drag_start.y(), self._drag_current.y())
+                    y1_screen = max(self._drag_start.y(), self._drag_current.y())
+
+                    x0 = max(0, min(image.width(), int((x0_screen - left) * image.width() / max(1, width))))
+                    x1 = max(0, min(image.width(), int((x1_screen - left) * image.width() / max(1, width)) + 1))
+                    y0 = max(0, min(image.height(), int((y0_screen - top) * image.height() / max(1, height))))
+                    y1 = max(0, min(image.height(), int((y1_screen - top) * image.height() / max(1, height)) + 1))
+                    self._drag_start = None
+                    self._drag_current = None
+                    self._is_dragging = False
+                    self.update()
+                    if x1 > x0 and y1 > y0:
+                        self.rect_selected.emit((x0, y0, x1, y1))
+                    event.accept()
+                    return
+                else:
+                    pos = event.position()
+                    x = min(image.width() - 1, max(0, int((pos.x() - left) * image.width() / max(1, width))))
+                    y = min(image.height() - 1, max(0, int((pos.y() - top) * image.height() / max(1, height))))
+                    self._drag_start = None
+                    self._drag_current = None
+                    self._is_dragging = False
+                    self.image_point_clicked.emit((x, y))
+                    event.accept()
+                    return
+            self._drag_start = None
+            self._drag_current = None
+            self._is_dragging = False
+            self.update()
+        super().mouseReleaseEvent(event)
+
+    def paintEvent(self, event) -> None:  # type: ignore[no-untyped-def]
+        super().paintEvent(event)
+        geometry = self._display_geometry()
+        if geometry is None:
+            return
+        image, (left, top, width, height) = geometry
+        painter = QPainter(self)
+        try:
+            if self._suspicious_boxes:
+                pen = QPen(QColor("#ffaa00"), 2, Qt.PenStyle.DashLine)
+                painter.setPen(pen)
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                for x0, y0, x1, y1 in self._suspicious_boxes:
+                    sx0 = left + int(x0 * width / max(1, image.width()))
+                    sy0 = top + int(y0 * height / max(1, image.height()))
+                    sx1 = left + int(x1 * width / max(1, image.width()))
+                    sy1 = top + int(y1 * height / max(1, image.height()))
+                    painter.drawRect(sx0, sy0, max(1, sx1 - sx0), max(1, sy1 - sy0))
+
+            if self._highlight_boxes:
+                pen = QPen(QColor("#00ffcc"), 2, Qt.PenStyle.SolidLine)
+                painter.setPen(pen)
+                painter.setBrush(QColor(0, 255, 204, 40))
+                for x0, y0, x1, y1 in self._highlight_boxes:
+                    sx0 = left + int(x0 * width / max(1, image.width()))
+                    sy0 = top + int(y0 * height / max(1, image.height()))
+                    sx1 = left + int(x1 * width / max(1, image.width()))
+                    sy1 = top + int(y1 * height / max(1, image.height()))
+                    painter.drawRect(sx0, sy0, max(1, sx1 - sx0), max(1, sy1 - sy0))
+
+            if self._is_dragging and self._drag_start is not None and self._drag_current is not None:
+                rx = min(self._drag_start.x(), self._drag_current.x())
+                ry = min(self._drag_start.y(), self._drag_current.y())
+                rw = abs(self._drag_current.x() - self._drag_start.x())
+                rh = abs(self._drag_current.y() - self._drag_start.y())
+                painter.setPen(QPen(QColor("#4488ff"), 1, Qt.PenStyle.DashLine))
+                painter.setBrush(QColor(68, 136, 255, 60))
+                painter.drawRect(rx, ry, rw, rh)
+        finally:
+            painter.end()
 
 
 class PixelCanvas(QGraphicsView):
@@ -307,6 +452,30 @@ class _CompileWorker(QThread):
             self.failed.emit(str(exc))
 
 
+class _AnalysisWorker(QThread):
+    """Run one component split analysis away from the Qt GUI thread."""
+
+    succeeded = Signal(object, int)
+    failed = Signal(str, int)
+
+    def __init__(
+        self,
+        operation: Callable[[], ComponentSplitResult],
+        revision: int,
+        signature: tuple[object, ...] = (),
+    ) -> None:
+        super().__init__()
+        self._operation = operation
+        self._revision = revision
+        self._signature = signature
+
+    def run(self) -> None:
+        try:
+            self.succeeded.emit(self._operation(), self._revision)
+        except Exception as exc:  # pragma: no cover
+            self.failed.emit(str(exc), self._revision)
+
+
 class MainWindow(QMainWindow):
     """Character-first GUI; compiler behavior remains in the core pipeline."""
 
@@ -321,6 +490,9 @@ class MainWindow(QMainWindow):
         self._origin_pick_target: str | None = None
         self._compile_thread: _CompileWorker | None = None
         self._compile_context: dict[str, object] | None = None
+        self._analysis_thread: _AnalysisWorker | None = None
+        self._analysis_workers: set[_AnalysisWorker] = set()
+        self._close_pending: bool = False
         self._configuration_revision = 0
         self._animation_frame_paths: tuple[Path, ...] = ()
         self._animation_frame_index = 0
@@ -328,10 +500,18 @@ class MainWindow(QMainWindow):
         self._source_origin_frame_index: int | None = None
         self._source_origin_frame_logical_origin: tuple[int, int] | None = None
         self._source_origin_frame_signature: tuple[object, ...] | None = None
+        self._component_analysis: ComponentSplitResult | None = None
+        self._component_analysis_signature: tuple[object, ...] | None = None
+        self._component_assignment_confirmed: bool = False
+        self._component_assignment_overrides: dict[int, str] = {}
+        self._selected_component_ids: list[int] = []
+        self._suspicious_index: int = 0
+        self._component_assignment_combos: dict[int, QComboBox] = {}
         self.default_output_root = Path.cwd() / "output"
         self.source_preview = SourceImagePreview("元絵を読み込んでください\nまたはここにドロップ")
         self.source_preview.image_dropped.connect(self.set_source_path)
-        self.source_preview.image_point_clicked.connect(self._on_source_origin_clicked)
+        self.source_preview.image_point_clicked.connect(self._on_source_preview_clicked)
+        self.source_preview.rect_selected.connect(self._on_source_preview_rect_selected)
         self.result_preview = ImagePreview("コンパイル結果")
         self.tile_preview = ImagePreview("タイルプレビュー")
         self.canvas = PixelCanvas()
@@ -366,6 +546,43 @@ class MainWindow(QMainWindow):
         for label, mode in GUI_ANIMATION_SPLIT_OPTIONS:
             self.animation_split_mode.addItem(label, userData=mode)
         self.animation_split_mode_label = QLabel("アニメーション分割方式")
+        self.animation_component_group = QGroupBox("成分の所属確認（コマ抽出プレビュー）")
+        self.animation_component_assignment_status = QLabel("成分分割を選ぶと確認できます")
+        self.animation_component_assignment_status.setWordWrap(True)
+        self.animation_component_analyze_button = QPushButton("成分を解析・プレビュー")
+        self.animation_component_analyze_button.clicked.connect(self.analyze_component_assignments)
+        self.animation_component_confirm_button = QPushButton("全コマの所属を一括確定")
+        self.animation_component_confirm_button.setObjectName("primaryButton")
+        self.animation_component_confirm_button.clicked.connect(self.confirm_component_assignments)
+        self.animation_component_save_button = QPushButton("所属指定を保存...")
+        self.animation_component_save_button.clicked.connect(self.save_component_assignment_file)
+        self.animation_component_load_button = QPushButton("所属指定を読み込む...")
+        self.animation_component_load_button.clicked.connect(self.load_component_assignment_file)
+        self.animation_component_selected_frame = QComboBox()
+        self.animation_component_assignment_rows = QWidget()
+        QVBoxLayout(self.animation_component_assignment_rows)
+
+        # コマカード用スクロールエリア
+        self.animation_frame_cards_scroll = QScrollArea()
+        self.animation_frame_cards_scroll.setWidgetResizable(True)
+        self.animation_frame_cards_scroll.setMinimumHeight(140)
+        self.animation_frame_cards_container = QWidget()
+        self.animation_frame_cards_layout = QHBoxLayout(self.animation_frame_cards_container)
+        self.animation_frame_cards_layout.setContentsMargins(4, 4, 4, 4)
+        self.animation_frame_cards_layout.setSpacing(8)
+        self.animation_frame_cards_scroll.setWidget(self.animation_frame_cards_container)
+
+        # 選択成分の所属修正パネル
+        self.animation_component_selection_info = QLabel("元絵をクリックまたはドラッグして成分を選択できます")
+        self.animation_component_selection_info.setWordWrap(True)
+        self.animation_component_target_combo = QComboBox()
+        self.animation_component_reassign_button = QPushButton("所属を変更")
+        self.animation_component_reassign_button.clicked.connect(self.reassign_selected_components)
+        self.animation_component_next_suspicious_button = QPushButton("次の疑わしい成分へ ⚠️")
+        self.animation_component_next_suspicious_button.clicked.connect(self.focus_next_suspicious)
+        self.animation_component_reset_button = QPushButton("変更をリセット")
+        self.animation_component_reset_button.clicked.connect(self.reset_component_overrides)
+
         self.animation_columns = QSpinBox()
         self.animation_columns.setRange(1, 64)
         self.animation_columns.setValue(4)
@@ -498,9 +715,18 @@ class MainWindow(QMainWindow):
     def _connect_configuration_revision_signals(self) -> None:
         """コンパイル結果がどの設定世代のものか追跡する。"""
         for widget in (
+            self.animation_split_mode,
+        ):
+            widget.currentIndexChanged.connect(self._invalidate_component_split)
+        for widget in (
+            self.animation_columns,
+            self.animation_rows,
+        ):
+            widget.valueChanged.connect(self._invalidate_component_split)
+
+        for widget in (
             self.purpose,
             self.canvas_size,
-            self.animation_split_mode,
             self.animation_placement_mode,
             self.animation_scale_mode,
             self.animation_shared_palette,
@@ -509,8 +735,6 @@ class MainWindow(QMainWindow):
         ):
             widget.currentIndexChanged.connect(self._mark_configuration_changed)
         for widget in (
-            self.animation_columns,
-            self.animation_rows,
             self.animation_width,
             self.animation_height,
             self.animation_source_origin_x,
@@ -531,6 +755,14 @@ class MainWindow(QMainWindow):
     def _mark_configuration_changed(self, *_args: object) -> None:
         """設定変更の世代を進め、実行中の古い結果を識別できるようにする。"""
         self._configuration_revision += 1
+
+    def _invalidate_component_split(self, *_args: object) -> None:
+        """分割方式や列・行数の変更時に成分解析結果を破棄し世代を進める。"""
+        self._configuration_revision += 1
+        self._component_analysis = None
+        self._component_analysis_signature = None
+        self._component_assignment_confirmed = False
+        self._component_assignment_overrides.clear()
 
     def _apply_ui_font(self) -> None:
         """Prefer a Windows Japanese UI font so labels never fall back to tofu boxes."""
@@ -621,10 +853,48 @@ class MainWindow(QMainWindow):
         shared_palette_layout.addWidget(shared_palette_description)
         self.shared_palette_group = shared_palette_group
 
+        # animation_component_group のレイアウト
+        component_layout = QVBoxLayout(self.animation_component_group)
+        component_layout.addWidget(self.animation_component_assignment_status)
+        component_layout.addWidget(self.animation_component_analyze_button)
+
+        cards_title = QLabel("コマ抽出プレビュー (F1〜Fn)")
+        cards_title.setStyleSheet("font-weight: bold; color: #f0c674;")
+        component_layout.addWidget(cards_title)
+        component_layout.addWidget(self.animation_frame_cards_scroll)
+
+        edit_box = QGroupBox("選択成分の所属修正")
+        edit_layout = QVBoxLayout(edit_box)
+        edit_layout.addWidget(self.animation_component_selection_info)
+
+        reassign_row = QHBoxLayout()
+        reassign_row.addWidget(QLabel("所属先:"))
+        reassign_row.addWidget(self.animation_component_target_combo, 1)
+        reassign_row.addWidget(self.animation_component_reassign_button)
+        edit_layout.addLayout(reassign_row)
+
+        action_row = QHBoxLayout()
+        action_row.addWidget(self.animation_component_next_suspicious_button)
+        action_row.addWidget(self.animation_component_reset_button)
+        edit_layout.addLayout(action_row)
+        component_layout.addWidget(edit_box)
+
+        component_layout.addWidget(self.animation_component_confirm_button)
+
+        component_file_buttons = QHBoxLayout()
+        component_file_buttons.addWidget(self.animation_component_load_button)
+        component_file_buttons.addWidget(self.animation_component_save_button)
+        component_layout.addLayout(component_file_buttons)
+
+        self.animation_component_assignment_rows.setVisible(False)
+        component_layout.addWidget(self.animation_component_assignment_rows)
+        self.animation_component_group.setVisible(False)
+
         controls_content = QWidget()
         controls = QVBoxLayout(controls_content)
         controls.addWidget(source_group)
         controls.addWidget(settings_group)
+        controls.addWidget(self.animation_component_group)
         controls.addWidget(shared_palette_group)
         controls.addStretch(1)
         controls_scroll = QScrollArea()
@@ -829,7 +1099,8 @@ class MainWindow(QMainWindow):
     def _update_animation_split_controls(self) -> None:
         is_animation = self.purpose.currentData() == "character_animation"
         split_mode = self.animation_split_mode.currentData()
-        show_grid = is_animation and split_mode in {"fixed_grid", "row_alpha_gap", "hybrid"}
+        show_grid = is_animation and split_mode in {"fixed_grid", "row_alpha_gap", "row_alpha_components", "hybrid"}
+        show_components = is_animation and split_mode in {"row_alpha_components", "hybrid"}
         for widget in (self.animation_split_mode_label, self.animation_split_mode):
             widget.setVisible(is_animation)
         for widget in (
@@ -839,6 +1110,7 @@ class MainWindow(QMainWindow):
             self.animation_rows,
         ):
             widget.setVisible(show_grid)
+        self.animation_component_group.setVisible(show_components)
         self.animation_split_mode.setEnabled(is_animation)
         self.animation_columns.setEnabled(show_grid)
         self.animation_rows.setEnabled(show_grid)
@@ -852,12 +1124,585 @@ class MainWindow(QMainWindow):
             self.animation_rows.value(),
         )
 
+
+    def _refresh_component_preview_cards(self, result: ComponentSplitResult) -> None:
+        """F1〜Fnのコマ抽出プレビューカードを更新する。"""
+        layout = self.animation_frame_cards_layout
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        frame_count = self.animation_columns.value() * self.animation_rows.value()
+        self.animation_component_target_combo.clear()
+        for i in range(frame_count):
+            self.animation_component_target_combo.addItem(f"F{i + 1}", userData=f"F{i + 1}")
+
+        suspicious_cids = {area.component_id for area in result.suspicious_components}
+
+        for i in range(frame_count):
+            frame_id = f"F{i + 1}"
+            card = QFrame()
+            card.setFrameShape(QFrame.Shape.StyledPanel)
+            card.setStyleSheet(
+                "QFrame { background: #1e2228; border: 1px solid #444c56; border-radius: 6px; padding: 4px; } "
+                "QFrame:hover { border: 1px solid #77a9ff; }"
+            )
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(4, 4, 4, 4)
+            card_layout.setSpacing(2)
+
+            title = QLabel(frame_id)
+            title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            title.setStyleSheet("font-weight: bold; color: #f0c674;")
+            card_layout.addWidget(title)
+
+            thumb_label = QLabel()
+            thumb_label.setFixedSize(64, 64)
+            thumb_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            thumb_label.setStyleSheet("background: #2d333b; border-radius: 4px;")
+
+            if i < len(result.frames):
+                frame_img = result.frames[i]
+                rgba = frame_img.convert("RGBA")
+                qimg = QImage(rgba.tobytes(), rgba.width, rgba.height, rgba.width * 4, QImage.Format.Format_RGBA8888)
+                pix = QPixmap.fromImage(qimg).scaled(60, 60, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
+                thumb_label.setPixmap(pix)
+            card_layout.addWidget(thumb_label, 0, Qt.AlignmentFlag.AlignCenter)
+
+            frame_comps = [c for c in result.components if c.frame_id == frame_id]
+            px_count = sum(c.area for c in frame_comps)
+            px_label = QLabel(f"{px_count:,} px")
+            px_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            px_label.setStyleSheet("font-size: 11px; color: #adbac7;")
+            card_layout.addWidget(px_label)
+
+            has_suspicious = any(c.component_id in suspicious_cids for c in frame_comps)
+            if has_suspicious:
+                warn_label = QLabel("⚠️ 確認推奨")
+                warn_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                warn_label.setStyleSheet("font-size: 10px; color: #e3b341; font-weight: bold;")
+                card_layout.addWidget(warn_label)
+
+            card.mousePressEvent = lambda _event, fid=frame_id: self._on_frame_card_clicked(fid)
+            layout.addWidget(card)
+
+    def _on_frame_card_clicked(self, frame_id: str) -> None:
+        """コマカードがクリックされたら、そのコマに属する全成分をハイライトする。"""
+        if self._component_analysis is None:
+            return
+        cids = [c.component_id for c in self._component_analysis.components if c.frame_id == frame_id]
+        self._select_components(cids)
+        self.animation_component_target_combo.setCurrentIndex(
+            self.animation_component_target_combo.findData(frame_id)
+        )
+
+    def _on_source_preview_clicked(self, point: object) -> None:
+        """元絵プレビューがクリックされたときのハンドラ（原点指定または成分選択）。"""
+        if self._origin_pick_target == "source":
+            self._on_source_origin_clicked(point)
+            return
+
+        if self._component_analysis is None or self.source_path is None:
+            return
+
+        x, y = int(point[0]), int(point[1])
+        labels = self._component_analysis.labels
+        h, w = labels.shape
+        if not (0 <= y < h and 0 <= x < w):
+            return
+
+        label = int(labels[y, x])
+        if label == 0:
+            for r in range(1, 5):
+                y0, y1 = max(0, y - r), min(h, y + r + 1)
+                x0, x1 = max(0, x - r), min(w, x + r + 1)
+                patch = labels[y0:y1, x0:x1]
+                nonzeros = patch[patch > 0]
+                if nonzeros.size > 0:
+                    label = int(nonzeros[0])
+                    break
+
+        if label > 0:
+            self._select_components([label])
+        else:
+            self._select_components([])
+
+    def _on_source_preview_rect_selected(self, rect: object) -> None:
+        """元絵プレビューで矩形ドラッグ選択されたときのハンドラ。"""
+        if self._component_analysis is None:
+            return
+
+        x0, y0, x1, y1 = rect  # type: ignore[misc]
+        matched_cids: list[int] = []
+        for comp in self._component_analysis.components:
+            cx0, cy0, cx1, cy1 = comp.bbox
+            if not (cx1 <= x0 or cx0 >= x1 or cy1 <= y0 or cy0 >= y1):
+                matched_cids.append(comp.component_id)
+
+        self._select_components(matched_cids)
+
+    def _select_components(self, comp_ids: list[int]) -> None:
+        """指定された成分ID群を選択状態にし、ハイライトと編集パネルを更新する。"""
+        self._selected_component_ids = comp_ids
+        if not comp_ids or self._component_analysis is None:
+            self.source_preview.set_highlight_boxes([])
+            self.animation_component_selection_info.setText("元絵をクリックまたはドラッグして成分を選択できます")
+            return
+
+        comp_dict = {c.component_id: c for c in self._component_analysis.components}
+        selected_comps = [comp_dict[cid] for cid in comp_ids if cid in comp_dict]
+        boxes = [c.bbox for c in selected_comps]
+        self.source_preview.set_highlight_boxes(boxes)
+
+        total_px = sum(c.area for c in selected_comps)
+        if len(selected_comps) == 1:
+            c = selected_comps[0]
+            current_frame = self._component_assignment_overrides.get(c.component_id, c.frame_id or "未割当")
+            cand_text = "、".join(c.candidate_frame_ids) if c.candidate_frame_ids else "なし"
+            row_num = (c.row + 1) if c.row is not None else 1
+            self.animation_component_selection_info.setText(
+                f"選択中: C{c.component_id} (行{row_num}, {c.area}px, bbox={c.bbox})\n"
+                f"現在: {current_frame} (候補: {cand_text})"
+            )
+            if current_frame and current_frame != "未割当":
+                idx = self.animation_component_target_combo.findData(current_frame)
+                if idx >= 0:
+                    self.animation_component_target_combo.setCurrentIndex(idx)
+        else:
+            self.animation_component_selection_info.setText(
+                f"選択中: {len(selected_comps)}個の成分 (合計画素: {total_px:,} px)\n"
+                f"まとめて所属先Fnを変更できます"
+            )
+
+    def reassign_selected_components(self) -> None:
+        """選択されている成分の所属先を変更し、再解析プレビューする。"""
+        if not self._selected_component_ids:
+            self.status.setText("先に元絵上で成分を選択してください")
+            return
+
+        target_frame = self.animation_component_target_combo.currentData()
+        if not target_frame:
+            return
+
+        for cid in self._selected_component_ids:
+            self._component_assignment_overrides[cid] = str(target_frame)
+            if cid in self._component_assignment_combos:
+                combo = self._component_assignment_combos[cid]
+                combo.setCurrentIndex(combo.findData(target_frame))
+
+        self._component_assignment_confirmed = False
+        self.analyze_component_assignments()
+        self.status.setText(f"選択成分の所属を {target_frame} に変更しました。内容を確認後、一括確定してください。")
+
+    def reset_component_overrides(self) -> None:
+        """成分所属の手動変更をリセットする。"""
+        self._component_assignment_overrides.clear()
+        self._component_assignment_confirmed = False
+        for combo in self._component_assignment_combos.values():
+            combo.setCurrentIndex(0)
+        self.analyze_component_assignments()
+        self.status.setText("成分所属の手動変更をリセットしました")
+
+    def focus_next_suspicious(self) -> None:
+        """次の疑わしい成分にフォーカスする。"""
+        if self._component_analysis is None or not self._component_analysis.suspicious_components:
+            self.status.setText("疑わしい領域はありません")
+            return
+
+        areas = self._component_analysis.suspicious_components
+        self._suspicious_index = (self._suspicious_index) % len(areas)
+        area = areas[self._suspicious_index]
+        self._suspicious_index += 1
+
+        self._select_components([area.component_id])
+        reason = area.suspicious_reason or "境界近傍"
+        self.status.setText(f"疑わしい成分 C{area.component_id} を選択しました ({reason})")
+
+    def _set_component_assignment_rows(self, result: ComponentSplitResult) -> None:
+        """テスト互換用: _component_assignment_combos および animation_component_assignment_rows を構築する。"""
+        layout = self.animation_component_assignment_rows.layout()
+        if layout is None:
+            layout = QVBoxLayout(self.animation_component_assignment_rows)
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        self._component_assignment_combos.clear()
+        frame_count = self.animation_columns.value() * self.animation_rows.value()
+        for comp in result.components:
+            row = QWidget()
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            candidate_text = (
+                "候補: " + "、".join(comp.candidate_frame_ids)
+                if comp.candidate_frame_ids
+                else "候補なし"
+            )
+            if len(comp.candidate_frame_ids) > 1:
+                candidate_text += "（同率のため未指定）"
+            label = QLabel(f"C{comp.component_id} {comp.bbox} / {candidate_text}")
+            row_layout.addWidget(label)
+
+            combo = QComboBox()
+            combo.addItem("未指定", userData=None)
+            for f_idx in range(frame_count):
+                combo.addItem(f"F{f_idx + 1}", userData=f"F{f_idx + 1}")
+            assigned = self._component_assignment_overrides.get(comp.component_id, None)
+            if assigned is None:
+                if len(comp.candidate_frame_ids) == 1:
+                    assigned = comp.candidate_frame_ids[0]
+                elif len(comp.candidate_frame_ids) == 0:
+                    assigned = comp.frame_id
+                else:
+                    assigned = None
+            if assigned:
+                combo.setCurrentIndex(combo.findData(assigned))
+            combo.currentIndexChanged.connect(
+                lambda _idx, cid=comp.component_id, cb=combo: self._on_compat_combo_changed(cid, cb)
+            )
+            row_layout.addWidget(combo)
+            layout.addWidget(row)
+            self._component_assignment_combos[comp.component_id] = combo
+
+    def _on_compat_combo_changed(self, comp_id: int, combo: QComboBox) -> None:
+        val = combo.currentData()
+        if val is not None:
+            self._component_assignment_overrides[comp_id] = str(val)
+        else:
+            self._component_assignment_overrides.pop(comp_id, None)
+        self._mark_configuration_changed()
+        self._component_assignment_confirmed = False
+        self._source_origin_frame_box = None
+        self._source_origin_frame_index = None
+        self._source_origin_frame_logical_origin = None
+        self._source_origin_frame_signature = None
+        self.animation_source_origin_set.setChecked(False)
+
+        if self._component_analysis is not None and self.source_path is not None:
+            components = tuple(
+                replace(
+                    c,
+                    frame_id=self._component_assignment_overrides.get(c.component_id, c.frame_id),
+                )
+                for c in self._component_analysis.components
+            )
+            try:
+                with Image.open(self.source_path) as opened:
+                    overlay = render_component_split_overlay(opened, self._component_analysis.labels, components)
+            except OSError:
+                overlay = self._component_analysis.overlay.copy()
+
+            self._component_analysis = replace(
+                self._component_analysis,
+                status="needs_assignment",
+                reason="所属を変更しました。再度所属を確定してください。",
+                components=components,
+                overlay=overlay,
+            )
+            self.source_preview.set_pil_image(overlay)
+
+        self.animation_component_assignment_status.setText(
+            "所属を変更しました。再度所属を確定してください。"
+        )
+        self._update_animation_geometry_controls()
+
+    def _animation_split_signature(self) -> tuple[object, ...]:
+        return (
+            self.source_path,
+            self.animation_split_mode.currentData(),
+            self.animation_columns.value(),
+            self.animation_rows.value(),
+            tuple(sorted(self._component_assignment_overrides.items())),
+        )
+
+    def _component_assignment_config(self) -> CharacterAnimationConfig:
+        split_mode = self.animation_split_mode.currentData()
+        if split_mode not in {"row_alpha_components", "hybrid"}:
+            split_mode = "row_alpha_components"
+        return CharacterAnimationConfig(
+            frame_count=self.animation_columns.value() * self.animation_rows.value(),
+            split_mode=split_mode,
+            grid_columns=self.animation_columns.value(),
+            grid_rows=self.animation_rows.value(),
+        )
+
+    def _apply_component_analysis(self, result: ComponentSplitResult, *, confirmed: bool = False) -> None:
+        self._component_analysis = result
+        self._component_analysis_signature = self._animation_split_signature()
+        self._component_assignment_confirmed = confirmed
+        self.source_preview.set_pil_image(result.overlay)
+        self._set_component_assignment_rows(result)
+        self._refresh_component_preview_cards(result)
+        suspicious_boxes = [area.bbox for area in result.suspicious_components]
+        self.source_preview.set_suspicious_boxes(suspicious_boxes)
+        self._update_animation_split_controls()
+
+        if confirmed:
+            self.animation_component_assignment_status.setText(
+                "全コマの所属を一括確定しました。コンパイル可能です。"
+            )
+        elif self._component_assignment_overrides:
+            self.animation_component_assignment_status.setText(
+                "所属を変更しました。再度所属を確定してください。"
+            )
+        elif result.status == "resolved":
+            self.animation_component_assignment_status.setText(
+                "成分をフレームへ分けました。一括確定してコンパイル可能です。"
+            )
+        else:
+            self.animation_component_assignment_status.setText(result.reason)
+
+    def analyze_component_assignments(
+        self,
+        *,
+        cells_override: Sequence[Mapping[str, object] | ComponentCell] | None = None,
+        sync: bool = False,
+    ) -> bool:
+        if self.source_path is None:
+            self.status.setText("先に元絵を読み込んでください")
+            self._component_analysis_signature = None
+            return False
+
+        config = self._component_assignment_config()
+        source_path = self.source_path
+        overrides = dict(self._component_assignment_overrides)
+        revision = self._configuration_revision
+
+        def _do_analyze() -> ComponentSplitResult:
+            with Image.open(source_path) as opened:
+                columns = config.grid_columns or config.frame_count
+                rows = config.grid_rows or 1
+                return analyze_component_split(
+                    opened,
+                    columns=columns,
+                    rows=rows,
+                    alpha_threshold=config.alpha_threshold,
+                    remove_small_components=config.remove_isolated_components,
+                    min_component_area_px=config.min_component_area_px,
+                    empty_column_threshold=config.empty_column_threshold,
+                    empty_row_threshold=config.empty_row_threshold,
+                    min_gutter_width_px=config.min_gutter_width_px,
+                    assignments=overrides or None,
+                    cells_override=cells_override,
+                )
+
+        if sync:
+            try:
+                result = _do_analyze()
+                self._apply_component_analysis(result)
+                self.status.setText("成分を解析し、コマ抽出プレビューを更新しました")
+                return True
+            except (OSError, ValueError) as exc:
+                self._component_analysis = None
+                self._component_analysis_signature = None
+                self.status.setText(f"成分を解析できませんでした: {exc}")
+                return False
+
+        current_signature = (
+            self._animation_split_signature(),
+            tuple(
+                (
+                    c.get("index") if isinstance(c, Mapping) else getattr(c, "index", None),
+                    c.get("visible_pixel_count") if isinstance(c, Mapping) else getattr(c, "visible_pixel_count", None),
+                )
+                for c in cells_override
+            )
+            if cells_override
+            else None,
+        )
+
+        # 同一設定・同一リビジョンで既に解析が実行中なら重複起動を抑止（連打対策）
+        if (
+            self._analysis_thread is not None
+            and self._analysis_thread.isRunning()
+            and self._analysis_thread._revision == revision
+            and self._analysis_thread._signature == current_signature
+        ):
+            return True
+
+        self.compile_progress.setRange(0, 0)
+        self.compile_progress.setFormat("解析中...")
+        self.status.setText("成分を解析中...")
+
+        worker = _AnalysisWorker(_do_analyze, revision, current_signature)
+        worker.succeeded.connect(lambda res, rev, w=worker: self._on_analysis_succeeded(res, rev, w))
+        worker.failed.connect(lambda msg, rev, w=worker: self._on_analysis_failed(msg, rev, w))
+        worker.finished.connect(lambda w=worker: self._on_analysis_worker_finished(w))
+        self._analysis_workers.add(worker)
+        self._analysis_thread = worker
+        worker.start()
+        return True
+
+    def _on_analysis_succeeded(
+        self, result: ComponentSplitResult, revision: int, worker: _AnalysisWorker
+    ) -> None:
+        if worker is not self._analysis_thread or revision != self._configuration_revision:
+            return
+        self.compile_progress.setRange(0, 1)
+        self.compile_progress.setValue(1)
+        self.compile_progress.setFormat("完了")
+        self._apply_component_analysis(result)
+        self.status.setText("成分を解析し、コマ抽出プレビューを更新しました")
+
+    def _on_analysis_failed(self, message: str, revision: int, worker: _AnalysisWorker) -> None:
+        if worker is not self._analysis_thread or revision != self._configuration_revision:
+            return
+        self.compile_progress.setRange(0, 1)
+        self.compile_progress.setValue(1)
+        self.compile_progress.setFormat("失敗")
+        self._component_analysis = None
+        self._component_analysis_signature = None
+        self.status.setText(f"成分を解析できませんでした: {message}")
+
+    def _has_active_workers(self) -> bool:
+        """実行中の解析ワーカーまたはコンパイルスレッドが存在するか判定する。"""
+        if any(w.isRunning() for w in tuple(self._analysis_workers)):
+            return True
+        if self._compile_thread is not None and self._compile_thread.isRunning():
+            return True
+        return False
+
+    def _on_analysis_worker_finished(self, worker: _AnalysisWorker) -> None:
+        self._analysis_workers.discard(worker)
+        if self._analysis_thread is worker:
+            self._analysis_thread = None
+        worker.deleteLater()
+        if self._close_pending and not self._has_active_workers():
+            self.close()
+
+    def wait_for_analysis(self, timeout_ms: int = 5000) -> bool:
+        """テストや同期待機用にすべての解析ワーカーの完了を待機する。"""
+        if not self._analysis_workers and self._analysis_thread is None:
+            return True
+        app = QApplication.instance()
+        elapsed = 0
+        while (bool(self._analysis_workers) or self._analysis_thread is not None) and elapsed < timeout_ms:
+            if app is not None:
+                app.processEvents()
+            QThread.msleep(10)
+            elapsed += 10
+        return not bool(self._analysis_workers) and self._analysis_thread is None
+
+    def wait_for_close(self, timeout_ms: int = 10000) -> bool:
+        """終了保留中（_close_pending）の場合、ワーカー完了とウィンドウクローズ完了を待機する。"""
+        if not self._close_pending and not self._has_active_workers():
+            return True
+        app = QApplication.instance()
+        elapsed = 0
+        while (self._close_pending or self._has_active_workers()) and elapsed < timeout_ms:
+            if app is not None:
+                app.processEvents()
+            QThread.msleep(10)
+            elapsed += 10
+        return not self._close_pending and not self._has_active_workers()
+
+
+    def confirm_component_assignments(self) -> None:
+        if self.source_path is None:
+            self.status.setText("先に元絵を読み込んでください")
+            return
+        if (
+            self._component_analysis is not None
+            and self._component_analysis_signature == self._animation_split_signature()
+        ):
+            confirmed_result = replace(
+                self._component_analysis,
+                status="resolved",
+                is_confirmed=True,
+                assignment_status="user_confirmed",
+                assignment_source="user_confirmed",
+                reason="",
+            )
+            self._apply_component_analysis(confirmed_result, confirmed=True)
+            self.status.setText("全コマの所属を一括確定しました。コンパイルできます")
+            return
+
+        try:
+            config = self._component_assignment_config()
+            with Image.open(self.source_path) as opened:
+                columns = config.grid_columns or config.frame_count
+                rows = config.grid_rows or 1
+                result = analyze_component_split(
+                    opened,
+                    columns=columns,
+                    rows=rows,
+                    alpha_threshold=config.alpha_threshold,
+                    remove_small_components=config.remove_isolated_components,
+                    min_component_area_px=config.min_component_area_px,
+                    empty_column_threshold=config.empty_column_threshold,
+                    empty_row_threshold=config.empty_row_threshold,
+                    min_gutter_width_px=config.min_gutter_width_px,
+                    assignments=self._component_assignment_overrides or None,
+                    confirmed=True,
+                )
+            self._apply_component_analysis(result, confirmed=True)
+            self.status.setText("全コマの所属を一括確定しました。コンパイルできます")
+        except (OSError, ValueError) as exc:
+            self.status.setText(f"成分の所属を確定できませんでした: {exc}")
+
+    def _selected_component_assignments(self) -> dict[int, str]:
+        return dict(self._component_assignment_overrides)
+
+    def save_component_assignment_file(self) -> None:
+        if self.source_path is None:
+            self.status.setText("先に元絵を読み込んでください")
+            return
+        try:
+            assignments = self._selected_component_assignments()
+            path, _ = QFileDialog.getSaveFileName(self, "成分所属を保存", "component_assignments.json", "JSON (*.json)")
+            if not path:
+                return
+            cells = self._component_analysis.cells if self._component_analysis else None
+            save_component_assignments(
+                self.source_path,
+                self._component_assignment_config(),
+                assignments,
+                Path(path),
+                cells=cells,
+            )
+            self.status.setText(f"成分所属を保存しました: {Path(path).name}")
+        except (OSError, ValueError) as exc:
+            self.status.setText(f"成分所属を保存できませんでした: {exc}")
+
+    def load_component_assignment_file(self) -> None:
+        if self.source_path is None:
+            self.status.setText("先に元絵を読み込んでください")
+            return
+        path, _ = QFileDialog.getOpenFileName(self, "成分所属を読み込む", "", "JSON (*.json)")
+        if not path:
+            return
+        try:
+            config = self._component_assignment_config()
+            data = load_component_assignment_data(self.source_path, config, Path(path))
+            self._component_assignment_overrides.clear()
+            self._component_assignment_overrides.update(data.assignments)
+            self.analyze_component_assignments(cells_override=data.cells, sync=True)
+            self.confirm_component_assignments()
+            self.status.setText(f"成分所属を読み込みました: {Path(path).name}")
+        except (OSError, ValueError) as exc:
+            self.status.setText(f"成分所属を読み込めませんでした: {exc}")
+            self.status.setText(f"成分所属を読み込めませんでした: {exc}")
+
     def _source_frame_coordinates(
         self,
     ) -> tuple[tuple[tuple[int, int, int, int], tuple[int, int]], ...]:
         """現在の分割設定でsource矩形と論理原点を取得する。"""
         if self.source_path is None:
             return ()
+        if (
+            self.animation_split_mode.currentData() in {"row_alpha_components", "hybrid"}
+            and self._component_analysis is not None
+            and self._component_analysis_signature == self._animation_split_signature()
+            and self._component_analysis.status == "resolved"
+        ):
+            return tuple(
+                (cell.source_box, cell.logical_origin)
+                for cell in self._component_analysis.cells
+            )
         columns = self.animation_columns.value()
         rows = self.animation_rows.value()
         config = CharacterAnimationConfig(
@@ -957,15 +1802,41 @@ class MainWindow(QMainWindow):
     def _on_source_origin_clicked(self, point: object) -> None:
         if self._origin_pick_target != "source":
             return
+        if (
+            self.animation_split_mode.currentData() in {"row_alpha_components", "hybrid"}
+            and (
+                self._component_analysis is None
+                or self._component_analysis.status != "resolved"
+                or not self._component_assignment_confirmed
+                or self._component_analysis_signature != self._animation_split_signature()
+            )
+        ):
+            self.status.setText("成分の所属が未確定です。所属を確定してから原点を指定してください")
+            return
         x, y = point  # type: ignore[misc]
         try:
             frame_coordinates = self._source_frame_coordinates()
             frame_boxes = tuple(box for box, _origin in frame_coordinates)
             logical_origins = tuple(origin for _box, origin in frame_coordinates)
+            owner_labels = (
+                self._component_analysis.owner_labels
+                if self.animation_split_mode.currentData() in {"row_alpha_components", "hybrid"}
+                and self._component_analysis is not None
+                and self._component_analysis.status == "resolved"
+                and self._component_analysis_signature == self._animation_split_signature()
+                else None
+            )
+            selected_frame_index = (
+                int(self.animation_component_selected_frame.currentData())
+                if owner_labels is not None and self.animation_component_selected_frame.currentData() is not None
+                else None
+            )
             frame_index, logical_point = map_source_point_to_frame(
                 (int(x), int(y)),
                 frame_boxes,
                 logical_origins=logical_origins,
+                owner_labels=owner_labels,
+                selected_frame_index=selected_frame_index,
             )
         except (OSError, ValueError) as exc:
             self.status.setText(f"ソース原点を指定できませんでした: {exc}")
@@ -1125,6 +1996,13 @@ class MainWindow(QMainWindow):
         self._source_origin_frame_index = None
         self._source_origin_frame_logical_origin = None
         self._source_origin_frame_signature = None
+        self._component_analysis = None
+        self._component_analysis_signature = None
+        self._component_assignment_confirmed = False
+        self._component_assignment_overrides.clear()
+        self._selected_component_ids.clear()
+        self._component_assignment_combos.clear()
+        self.source_preview.clear_boxes()
         self._clear_stale_result()
         self.compile_button.setEnabled(True)
         self.status.setText(f"元絵を読み込みました: {source.name}")
@@ -1249,6 +2127,8 @@ class MainWindow(QMainWindow):
             worker.deleteLater()
         self._set_compile_controls_enabled(True)
         self.compile_button.setEnabled(self.source_path is not None)
+        if self._close_pending and not self._has_active_workers():
+            self.close()
 
     def _set_compile_controls_enabled(self, enabled: bool) -> None:
         """コンパイル中は入力変更を受け付けず、結果の世代を固定する。"""
@@ -1346,6 +2226,24 @@ class MainWindow(QMainWindow):
                     canvas_size=(width, height),
                     palette_token=palette_id(shared_palette) if shared_palette is not None else None,
                 )
+                component_assignments = None
+                cells_override = None
+                split_mode = self.animation_split_mode.currentData()
+                if split_mode in {"row_alpha_components", "hybrid"}:
+                    current_signature = self._animation_split_signature()
+                    if self._component_analysis_signature != current_signature:
+                        self.analyze_component_assignments(sync=True)
+                    if self._component_analysis is not None:
+                        if self._component_analysis.status != "resolved" or not self._component_assignment_confirmed:
+                            self.status.setText(
+                                "未解決の成分があります。色分けを確認して所属を確定してください。"
+                            )
+                            return
+                        component_assignments = self._selected_component_assignments() or None
+                        cells_override = self._component_analysis.cells
+                    elif split_mode == "row_alpha_components":
+                        return
+
                 config = CharacterAnimationConfig(
                     frame_count=columns * rows,
                     split_mode=self.animation_split_mode.currentData(),  # type: ignore[arg-type]
@@ -1361,6 +2259,7 @@ class MainWindow(QMainWindow):
                     shared_palette_enabled=shared_palette_enabled,
                 )
                 palette_budget = max(self.animation_palette.value(), len(shared_palette or ()))
+                confirm_comp = self._component_assignment_confirmed
                 operation = lambda: compile_character_animation_sheet(
                     source,
                     output,
@@ -1369,6 +2268,9 @@ class MainWindow(QMainWindow):
                     palette_colors=shared_palette,
                     character_detail_level="balanced",
                     debug_enabled=True,
+                    component_assignments=component_assignments,
+                    cells_override=cells_override,
+                    confirm_components=confirm_comp,
                 )
                 self._start_compile(
                     operation,
@@ -1437,8 +2339,13 @@ class MainWindow(QMainWindow):
             self._on_compile_failed(str(exc))
 
     def closeEvent(self, event) -> None:  # type: ignore[no-untyped-def]
-        if self._compile_thread is not None and self._compile_thread.isRunning():
-            self._compile_thread.wait()
+        if self._has_active_workers():
+            self._close_pending = True
+            self.setEnabled(False)
+            self.status.setText("処理の完了を待って終了しています...")
+            event.ignore()
+            return
+        self._close_pending = False
         event.accept()
 
     def open_terrain_batch(self) -> None:

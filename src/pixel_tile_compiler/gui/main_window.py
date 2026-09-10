@@ -625,6 +625,17 @@ class MainWindow(QMainWindow):
             "背景ごと1枚のアセットにしたいときに選んでください"
         )
         self.composition_mode_label = QLabel("構図")
+        self.outline_mode = NoWheelComboBox()
+        self.outline_mode.addItem("なし", userData="off")
+        self.outline_mode.addItem("黒", userData="black")
+        self.outline_mode.addItem("白", userData="white")
+        self.outline_mode_label = QLabel("輪郭")
+        self.outline_mode.setToolTip(
+            "シルエットの外側に1ドットの輪郭を足します。"
+            "元絵に輪郭が描かれている場合は二重になって太くなるため、"
+            "輪郭なしで描いた元絵に使ってください"
+        )
+        self.outline_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.composition_mode.currentIndexChanged.connect(self._update_purpose_controls)
         self.animation_split_mode = NoWheelComboBox()
         for label, mode in GUI_ANIMATION_SPLIT_OPTIONS:
@@ -816,6 +827,7 @@ class MainWindow(QMainWindow):
             self.repeat_opt,
             self.background_mode,
             self.composition_mode,
+            self.outline_mode,
         ):
             widget.currentIndexChanged.connect(self._mark_configuration_changed)
         for widget in (
@@ -1189,6 +1201,7 @@ class MainWindow(QMainWindow):
                     (self.background_mode_label, self.background_mode),
                     (self.background_color_label, self.background_color_field),
                     (self.composition_mode_label, self.composition_mode),
+                    (self.outline_mode_label, self.outline_mode),
                     (self.pixelization_mode_label, self.pixelization_mode),
                     (self.palette_label, self.palette),
                     (self.repeat_opt_label, self.repeat_opt),
@@ -1412,6 +1425,8 @@ class MainWindow(QMainWindow):
         self.background_color_field.setVisible(show_background_color)
         self.composition_mode_label.setVisible(is_character)
         self.composition_mode.setVisible(is_character)
+        self.outline_mode_label.setVisible(is_character)
+        self.outline_mode.setVisible(is_character)
         # 非正方は短辺が実効解像度を決める。画面全体構図では余白が出ないので出さない。
         self.canvas_effective_note.setVisible(
             is_character and not is_full_frame and width != height
@@ -2758,6 +2773,7 @@ class MainWindow(QMainWindow):
                         else None
                     ),
                     character_input_mode=self.composition_mode.currentData(),
+                    outline_color=self.outline_mode.currentData(),
                     debug_enabled=True,
                 )
             else:

@@ -213,10 +213,10 @@ def compiler_config_for_purpose(purpose: CompilerPurpose, **overrides: Any) -> C
                 "repeat_opt_enabled": False,
                 "dither": "off",
                 "pixelization_mode": "nearest",
-                "outline_color": "off",
                 "smoothing_enabled": False,
             }
         )
-        # 背景の扱いと構図は用途で選ぶものなので、指定があればそれを尊重する。
+        # 背景の扱い・構図・輪郭は用途で選ぶものなので、指定があればそれを尊重する。
         overrides.setdefault("background_mode", "auto")
+        overrides.setdefault("outline_color", "off")
     return CompilerConfig(**overrides)

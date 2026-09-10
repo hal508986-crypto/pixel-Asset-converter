@@ -292,17 +292,19 @@ def test_settings_pane_height_follows_the_purpose(monkeypatch):
     window.show()
     app.processEvents()
     try:
+        # 設定が最も多い用途と最も少ない用途で比べる。
+        # 単体画像は背景・構図・輪郭が並ぶため、アニメーションとの差は小さい。
         window.purpose.setCurrentIndex(window.purpose.findData("character_animation"))
         app.processEvents()
         animation_preview, animation_settings = window.workbench_splitter.sizes()
 
-        window.purpose.setCurrentIndex(window.purpose.findData("character"))
+        window.purpose.setCurrentIndex(window.purpose.findData("terrain"))
         app.processEvents()
-        character_preview, character_settings = window.workbench_splitter.sizes()
+        terrain_preview, terrain_settings = window.workbench_splitter.sizes()
 
         # 誤差ではなく体感できる差であること
-        assert animation_settings - character_settings >= 40
-        assert character_preview - animation_preview >= 40
+        assert animation_settings - terrain_settings >= 40
+        assert terrain_preview - animation_preview >= 40
     finally:
         window.close()
 
@@ -1235,5 +1237,72 @@ def test_main_window_compile_output_uses_the_selected_palette(monkeypatch, tmp_p
             app.processEvents()
 
         assert seen == ["image_128x128_24c", "image_128x128_48c"]
+    finally:
+        window.close()
+
+
+def test_main_window_exposes_the_outline_choice(monkeypatch):
+    """輪郭（なし／黒／白）を選べ、前提がツールチップに書いてある。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        values = [
+            window.outline_mode.itemData(index)
+            for index in range(window.outline_mode.count())
+        ]
+        assert values == ["off", "black", "white"]
+        assert window.outline_mode.currentData() == "off"
+        assert window.settings_tabs.isAncestorOf(window.outline_mode)
+        # 元絵に輪郭がある場合に二重になる前提を伝える
+        assert "二重" in window.outline_mode.toolTip()
+    finally:
+        window.close()
+
+
+def test_main_window_outline_choice_reaches_the_compiler(monkeypatch, tmp_path):
+    """GUIで選んだ輪郭がコンパイラ設定へ渡る。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    from PIL import Image
+
+    import pixel_tile_compiler.gui.main_window as main_window_module
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    source = tmp_path / "subject.png"
+    image = Image.new("RGBA", (96, 96), (0, 0, 0, 0))
+    for y in range(12, 84):
+        for x in range(30, 66):
+            image.putpixel((x, y), (200, 120, 90, 255))
+    image.save(source)
+    window.show()
+    app.processEvents()
+    try:
+        window.purpose.setCurrentIndex(window.purpose.findData("character"))
+        assert window.set_source_path(source)
+        window.output_root_field.setText(str(tmp_path / "out"))
+        window.outline_mode.setCurrentIndex(window.outline_mode.findData("black"))
+        app.processEvents()
+
+        captured = {}
+        real_compile = main_window_module.PixelTileCompiler.compile
+
+        def fake_compile(self, source_path, config):
+            captured["config"] = config
+            return real_compile(self, source_path, config)
+
+        monkeypatch.setattr(main_window_module.PixelTileCompiler, "compile", fake_compile)
+        monkeypatch.setattr(window, "_start_compile", lambda operation, context: operation())
+        window.compile_image()
+        app.processEvents()
+        assert captured["config"].outline_color == "black"
     finally:
         window.close()

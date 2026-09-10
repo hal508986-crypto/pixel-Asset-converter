@@ -202,3 +202,84 @@ def test_cli_rejects_an_unknown_composition(tmp_path: Path):
          "--character-input-mode", "sideways"],
     )
     assert result.exit_code != 0
+
+
+def test_character_purpose_keeps_the_caller_outline_color():
+    """呼び出し側が指定した輪郭を握り潰さない（仕様4.9節・S-19）。"""
+    config = compiler_config_for_purpose(
+        "character", canvas=CanvasSpec(128, 128), outline_color="black"
+    )
+    assert config.outline_color == "black"
+
+    default = compiler_config_for_purpose("character", canvas=CanvasSpec(128, 128))
+    assert default.outline_color == "off"
+
+
+def _left_edge_colors(path: Path) -> list[tuple[int, int, int]]:
+    """可視領域の各行で、いちばん左の画素の色を集める。"""
+    with Image.open(path) as opened:
+        array = np.array(opened.convert("RGBA"))
+    visible = array[..., 3] > 0
+    left, top, _right, bottom = _visible_bbox(path)
+    del left
+    colors = []
+    for y in range(top, bottom):
+        row = np.nonzero(visible[y])[0]
+        if row.size:
+            colors.append(tuple(int(value) for value in array[y, row.min(), :3]))
+    return colors
+
+
+def test_outline_wraps_the_silhouette_in_a_single_dot_ring(tmp_path: Path):
+    """輪郭を有効にすると、シルエットの外周1ドットが輪郭色だけになる。
+
+    add_outline は外側へ1ドット足す実装で、元絵の輪郭を置き換えない（仕様4.9節）。
+    """
+    source = _cutout_source(tmp_path / "cutout.png")
+
+    edges = {}
+    widths = {}
+    for label, outline in (("off", "off"), ("black", "black")):
+        config = compiler_config_for_purpose(
+            "character",
+            output_root=tmp_path / label,
+            canvas=CanvasSpec(128, 128),
+            palette_budget=24,
+            outline_color=outline,
+        )
+        result = PixelTileCompiler().compile(source, config)
+        edges[label] = _left_edge_colors(result.final_path)
+        box = _visible_bbox(result.final_path)
+        widths[label] = box[2] - box[0]
+
+    # 輪郭なしでは外周に被写体の色がそのまま並ぶ
+    assert len(set(edges["off"])) > 1
+    # 輪郭ありでは外周が輪郭色だけになる
+    assert set(edges["black"]) == {(0, 0, 0)}
+    # 外側へ足されるので横幅は広がる
+    assert widths["black"] > widths["off"]
+
+
+def test_outline_uses_the_requested_color(tmp_path: Path):
+    """黒と白でシルエット外周の色が変わる。"""
+    import numpy as np
+    from PIL import Image
+
+    source = _cutout_source(tmp_path / "cutout.png")
+    edges = {}
+    for outline in ("black", "white"):
+        config = compiler_config_for_purpose(
+            "character",
+            output_root=tmp_path / outline,
+            canvas=CanvasSpec(128, 128),
+            palette_budget=24,
+            outline_color=outline,
+        )
+        result = PixelTileCompiler().compile(source, config)
+        with Image.open(result.final_path) as opened:
+            array = np.array(opened.convert("RGBA"))
+        left, top, right, bottom = _visible_bbox(result.final_path)
+        # 外周1ドットの帯（左端の列）を見る
+        band = array[top:bottom, left, :3]
+        edges[outline] = float(band.mean())
+    assert edges["black"] < edges["white"]

@@ -507,6 +507,56 @@ def test_main_window_exposes_extended_canvas_presets(monkeypatch):
         window.close()
 
 
+def test_main_window_exposes_the_large_canvas_presets(monkeypatch):
+    """512×512と1280×1280（64×20）がプリセットに並ぶ（仕様4.10節・S-20）。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        sizes = [
+            window.canvas_size.itemData(index)
+            for index in range(window.canvas_size.count())
+        ]
+        assert (512, 512) in sizes
+        assert (1280, 1280) in sizes
+        # 既存の並びは動かさない
+        assert sizes[0] == (128, 128)
+        assert sizes[1] == (64, 64)
+    finally:
+        window.close()
+
+
+def test_main_window_canvas_inputs_reach_the_1280_ceiling(monkeypatch):
+    """幅・高さ・長辺の入力上限が1280になり、その値が出力Canvasへ届く（S-20）。"""
+    pytest.importorskip("PySide6")
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+
+    from pixel_tile_compiler.gui.main_window import MainWindow
+
+    app = _app()
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+    try:
+        for spin in (window.canvas_width, window.canvas_height, window.canvas_long_side):
+            assert spin.maximum() == 1280
+
+        window.canvas_size.setCurrentIndex(window.canvas_size.count() - 1)
+        app.processEvents()
+        window.canvas_width.setValue(1280)
+        window.canvas_height.setValue(853)
+        app.processEvents()
+        assert window.selected_canvas_size() == (1280, 853)
+    finally:
+        window.close()
+
+
 def test_main_window_custom_canvas_size_drives_the_profile(monkeypatch):
     """自由入力を選ぶと幅・高さの入力が現れ、その値が出力Canvasになる。"""
     pytest.importorskip("PySide6")

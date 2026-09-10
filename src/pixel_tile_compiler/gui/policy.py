@@ -39,7 +39,8 @@ class TerrainGuiProfile:
 
 
 GUI_CANVAS_MIN_SIDE = 16
-GUI_CANVAS_MAX_SIDE = 512
+# 64×20。コア側に上限は無く（config.CanvasSpec）、ここはGUIの方針（仕様4.10節）。
+GUI_CANVAS_MAX_SIDE = 1280
 
 # GUIの出力Canvasサイズプリセット。表示ラベルと実サイズの組。
 # 先頭2件の順序は既存GUIと同じ（index 0 が推奨の128、index 1 が64）にすること。
@@ -51,6 +52,8 @@ GUI_CHARACTER_CANVAS_PRESETS: tuple[tuple[str, tuple[int, int]], ...] = (
     ("128 × 256", (128, 256)),
     ("224 × 126（16:9）", (224, 126)),
     ("224 × 168（4:3）", (224, 168)),
+    ("512 × 512", (512, 512)),
+    ("1280 × 1280", (1280, 1280)),
 )
 
 GUI_CHARACTER_CANVAS_SIZES = tuple(size for _label, size in GUI_CHARACTER_CANVAS_PRESETS)

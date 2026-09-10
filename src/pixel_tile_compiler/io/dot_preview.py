@@ -27,6 +27,8 @@ _CHECKER_DARK = (185, 190, 197)
 _CHECKER_TILE = 8
 # 見せ物用で、ドットの右辺・下辺をどれだけ暗くするか
 _SHOWCASE_EDGE_SCALE = 0.72
+# 一度に処理する行数。大きいCanvasでも一時配列を一定に保つ（仕様4.10節）
+_BAND_ROWS = 512
 
 
 def resolve_dot_preview_scale(size: tuple[int, int]) -> int:
@@ -48,13 +50,67 @@ def _scaled(image: Image.Image, scale: int) -> Image.Image:
 def _checkerboard(size: tuple[int, int]) -> Image.Image:
     """透明部分を見せるための市松模様。"""
     width, height = size
-    board = np.zeros((height, width, 4), dtype=np.uint8)
+    board = np.empty((height, width, 4), dtype=np.uint8)
     ys = (np.arange(height) // _CHECKER_TILE)[:, None]
     xs = (np.arange(width) // _CHECKER_TILE)[None, :]
     light = ((ys + xs) % 2) == 0
-    board[..., :3] = np.where(light[..., None], np.array(_CHECKER_LIGHT), np.array(_CHECKER_DARK))
+    # np.whereで組むと画素数ぶんのint64が要るため、面ごとに塗り分ける
+    for channel in range(3):
+        plane = board[..., channel]
+        plane[...] = _CHECKER_DARK[channel]
+        plane[light] = _CHECKER_LIGHT[channel]
     board[..., 3] = 255
     return Image.fromarray(board, "RGBA")
+
+
+def _blend_ramp(values: np.ndarray, line: tuple[int, int, int, int]) -> np.ndarray:
+    """階調へ半透明の線色を重ねる。切り捨てはまだしない。"""
+    alpha = line[3] / 255.0
+    return values * (1 - alpha) + np.asarray(line[:3], dtype=np.float64) * alpha
+
+
+def _line_tables() -> tuple[np.ndarray, np.ndarray]:
+    """細い線だけの対応表と、その上に濃い線を重ねた対応表（256階調 × RGB）。
+
+    線色とアルファは固定なので、画素ごとに掛け算をやり直す必要がない。
+    濃い線の間隔は細い線の整数倍なので、**濃い線の位置は必ず細い線の位置でもある**。
+    交点は2回重なるため、途中で切り捨てずに2段ぶんを畳んだ表を別に用意する。
+    """
+    ramp = np.arange(256, dtype=np.float64)[:, None]
+    minor = _blend_ramp(ramp, _MINOR_LINE)
+    both = _blend_ramp(minor, _MAJOR_LINE)
+    return (
+        minor.clip(0, 255).astype(np.uint8),
+        both.clip(0, 255).astype(np.uint8),
+    )
+
+
+def _darken_table(ratio: float) -> np.ndarray:
+    """ドットの縁を暗くした結果の対応表。式は `floor(v*ratio)`。"""
+    ramp = (np.arange(256, dtype=np.float64) * ratio).clip(0, 255).astype(np.uint8)
+    return np.repeat(ramp[:, None], 3, axis=1)
+
+
+def _map_through_table(pixels: np.ndarray, mask: np.ndarray, table: np.ndarray) -> None:
+    """maskの当たるRGBを対応表で置き換える。行の帯に切って一時配列を抑える。"""
+    for start in range(0, pixels.shape[0], _BAND_ROWS):
+        band_mask = mask[start : start + _BAND_ROWS]
+        if not band_mask.any():
+            continue
+        band = pixels[start : start + _BAND_ROWS]
+        for channel in range(3):
+            plane = band[..., channel]
+            plane[band_mask] = table[plane[band_mask], channel]
+
+
+def _line_mask(shape: tuple[int, int], step: int) -> np.ndarray:
+    """step間隔の行と列に立つマスク。行ベクトルと列ベクトルの論理和で1枚だけ作る。"""
+    height, width = shape
+    rows = np.zeros(height, dtype=bool)
+    rows[::step] = True
+    columns = np.zeros(width, dtype=bool)
+    columns[::step] = True
+    return rows[:, None] | columns[None, :]
 
 
 def render_dot_inspect_preview(image: Image.Image, scale: int | None = None) -> Image.Image:
@@ -68,35 +124,17 @@ def render_dot_inspect_preview(image: Image.Image, scale: int | None = None) -> 
     canvas = _checkerboard(enlarged.size)
     canvas.alpha_composite(enlarged)
 
-    pixels = np.array(canvas).astype(float)
-    height, width = pixels.shape[:2]
+    pixels = np.array(canvas)
+    shape = (pixels.shape[0], pixels.shape[1])
 
-    def blend(mask: np.ndarray, line: tuple[int, int, int, int]) -> None:
-        alpha = line[3] / 255.0
-        pixels[mask, :3] = pixels[mask, :3] * (1 - alpha) + np.array(line[:3]) * alpha
+    minor_table, both_table = _line_tables()
+    major_mask = _line_mask(shape, factor * DOT_PREVIEW_MAJOR_INTERVAL)
+    minor_only = _line_mask(shape, factor)
+    np.logical_and(minor_only, ~major_mask, out=minor_only)
+    _map_through_table(pixels, minor_only, minor_table)
+    _map_through_table(pixels, major_mask, both_table)
 
-    columns = np.zeros(width, dtype=bool)
-    rows = np.zeros(height, dtype=bool)
-    columns[::factor] = True
-    rows[::factor] = True
-    minor_x = np.zeros((height, width), dtype=bool)
-    minor_x[:, columns] = True
-    minor_y = np.zeros((height, width), dtype=bool)
-    minor_y[rows, :] = True
-    blend(minor_x | minor_y, _MINOR_LINE)
-
-    major_step = factor * DOT_PREVIEW_MAJOR_INTERVAL
-    major_columns = np.zeros(width, dtype=bool)
-    major_rows = np.zeros(height, dtype=bool)
-    major_columns[::major_step] = True
-    major_rows[::major_step] = True
-    major_x = np.zeros((height, width), dtype=bool)
-    major_x[:, major_columns] = True
-    major_y = np.zeros((height, width), dtype=bool)
-    major_y[major_rows, :] = True
-    blend(major_x | major_y, _MAJOR_LINE)
-
-    return Image.fromarray(pixels.clip(0, 255).astype(np.uint8), "RGBA")
+    return Image.fromarray(pixels, "RGBA")
 
 
 def render_dot_showcase_preview(image: Image.Image, scale: int | None = None) -> Image.Image:
@@ -106,18 +144,18 @@ def render_dot_showcase_preview(image: Image.Image, scale: int | None = None) ->
     """
     rgba = image.convert("RGBA")
     factor = scale if scale is not None else resolve_dot_preview_scale(rgba.size)
-    enlarged = np.array(_scaled(rgba, factor)).astype(float)
-    height, width = enlarged.shape[:2]
+    pixels = np.array(_scaled(rgba, factor))
+    height, width = pixels.shape[:2]
 
     edge = np.zeros((height, width), dtype=bool)
     if factor >= 2:
         edge[:, factor - 1 :: factor] = True
         edge[factor - 1 :: factor, :] = True
     # 透明なドットには何も足さない
-    edge &= enlarged[..., 3] > 0
-    enlarged[edge, :3] *= _SHOWCASE_EDGE_SCALE
+    edge &= pixels[..., 3] > 0
+    _map_through_table(pixels, edge, _darken_table(_SHOWCASE_EDGE_SCALE))
 
-    return Image.fromarray(enlarged.clip(0, 255).astype(np.uint8), "RGBA")
+    return Image.fromarray(pixels, "RGBA")
 
 
 def write_dot_previews(final_path: Path | str, output_dir: Path | str | None = None) -> tuple[Path, ...]:

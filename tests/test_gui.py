@@ -62,12 +62,21 @@ def test_character_gui_profile_rejects_out_of_range_canvas():
         resolve_character_gui_profile((15, 64))
 
     with pytest.raises(ValueError):
-        resolve_character_gui_profile((64, 513))
+        resolve_character_gui_profile((64, 1281))
 
     with pytest.raises(ValueError):
         resolve_character_gui_profile((0, 0))
 
     assert resolve_character_gui_profile((16, 512)).canvas_size == (16, 512)
+
+
+def test_character_gui_profile_accepts_the_1280_ceiling():
+    """上限は1280（64×20）。実写を背景アセットとして通す用途のため（仕様4.10節）。"""
+    assert resolve_character_gui_profile((1280, 1280)).canvas_size == (1280, 1280)
+    assert resolve_character_gui_profile((1280, 853)).canvas_size == (1280, 853)
+
+    with pytest.raises(ValueError):
+        resolve_character_gui_profile((1281, 1280))
 
 
 def test_character_animation_gui_profile_scales_shared_layout_for_64_and_128():

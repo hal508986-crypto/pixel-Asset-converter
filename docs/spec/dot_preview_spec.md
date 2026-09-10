@@ -1,6 +1,6 @@
 ---
 title: ドット確認画像の書き出し
-version: 1.0
+version: 1.1
 date: 2026-09-10
 project: pixelart-compiler
 ---
@@ -73,6 +73,27 @@ scale = clamp(768 // max(width, height), 4, 16)
 512×512なら4倍（2048px）。**上限で頭打ちにするため、大きいCanvasでは長辺が768を超える。**
 検査には支障がないので許容する。
 
+#### 大きいCanvasでのメモリ
+
+出力Canvasの上限が1280へ上がったため（[Canvas拡張仕様](canvas_scale_and_palette_budget_spec.md) 4.10節）、
+1280×1280は倍率4で5120×5120になる。ここで画像全体を `float64` へ通すと
+1画素あたり32バイト要り、**それだけで800MB超**になる（実測ピーク1.8GB）。
+
+倍率の契約は変えず、**計算方法だけ**を変える。
+
+- 線の合成と縁の暗転を、256要素の**対応表**（uint8→uint8）で行う。線色・アルファ・暗転率は
+  固定なので、画素ごとに掛け算をやり直す必要がない。
+- 対応表の適用は行の帯（512行）に切り、一時配列をCanvasサイズによらず一定に保つ。
+- 市松模様の生成で `np.where` が `int64` の中間配列を作るのをやめ、面ごとに塗り分ける。
+
+**交点は2段ぶんを1枚の表に畳む。** 濃い線の間隔は細い線の整数倍なので、濃い線の位置は
+必ず細い線の位置でもある。書き換え前はfloatのまま2回重ねてから最後に切り捨てていたため、
+表を2枚に分けて順に当てると交点だけ1階調ずれる（実素材で確認済み）。
+細い線だけの表と、細い線の上に濃い線を重ねた表の2枚を用意し、交点には後者だけを当てる。
+
+対応表は書き換え前と同じ式（`floor(v*(1-a) + c*a)` / `floor(v*ratio)`）で作るため
+**出力は1画素も変わらない**。実測は1280×1280で 1.8GB/7.0秒 → 500MB/2.5秒。
+
 ### 4.2 検査用（`inspect`）
 
 - 元画像を `NEAREST` で整数倍へ拡大する。
@@ -128,6 +149,9 @@ scale = clamp(768 // max(width, height), 4, 16)
 | `test_write_dot_previews_creates_both_files` | 2枚が指定ディレクトリへ出る |
 | `test_main_window_dot_preview_button_needs_a_result` | 結果が無い間は無効 |
 | `test_main_window_writes_dot_previews_next_to_the_result` | 結果と同じ場所へ書き、状態表示に名前が出る |
+| `test_inspect_preview_is_unchanged_by_the_lookup_rewrite` | 対応表方式が書き換え前とバイト一致（4.1節） |
+| `test_showcase_preview_is_unchanged_by_the_lookup_rewrite` | 同上 |
+| `test_dot_previews_stay_within_a_memory_budget_for_a_large_canvas` | ピークが書き換え前の半分未満 |
 
 ## 7. 依存とライセンス
 
@@ -139,3 +163,4 @@ scale = clamp(768 // max(width, height), 4, 16)
 | 版 | 日付 | 内容 |
 |---|---|---|
 | 1.0 | 2026-09-10 | 初版 |
+| 1.1 | 2026-09-10 | Canvas上限1280に備え、線の合成と縁の暗転を対応表方式へ書き換える方針を4.1節へ追記。出力は変えない |

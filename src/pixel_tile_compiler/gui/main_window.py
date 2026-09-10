@@ -44,6 +44,7 @@ from pixel_tile_compiler.config import CanvasSpec, compiler_config_for_purpose
 from pixel_tile_compiler.gui.canvas import CanvasState, ZOOMS
 from pixel_tile_compiler.gui.input import first_supported_image_path
 from pixel_tile_compiler.analysis.source_info import describe_source
+from pixel_tile_compiler.io.dot_preview import write_dot_previews
 from pixel_tile_compiler.gui.palette_editor import PaletteEditorDialog
 from pixel_tile_compiler.gui.theme import build_stylesheet
 from pixel_tile_compiler.gui.policy import (
@@ -510,6 +511,7 @@ class MainWindow(QMainWindow):
         self._terrain_batch_window = None
         self._shared_palette_colors: tuple[tuple[int, int, int], ...] = ()
         self._output_palette_colors: tuple[tuple[int, int, int], ...] = ()
+        self._last_final_path: Path | None = None
         self._origin_pick_target: str | None = None
         self._compile_thread: _CompileWorker | None = None
         self._compile_context: dict[str, object] | None = None
@@ -1039,7 +1041,16 @@ class MainWindow(QMainWindow):
         result_page = QWidget()
         result_layout = QVBoxLayout(result_page)
         result_layout.setContentsMargins(8, 8, 8, 8)
+        result_layout.setSpacing(6)
         result_layout.addWidget(self.result_preview, 1)
+        self.dot_preview_button = QPushButton("ドット確認画像を書き出す")
+        self.dot_preview_button.setToolTip(
+            "コンパイル結果を拡大し、格子付き（検査用）とドット強調（見せ物用）の2枚を"
+            "出力フォルダへ書き出します"
+        )
+        self.dot_preview_button.setEnabled(False)
+        self.dot_preview_button.clicked.connect(self.write_dot_previews)
+        result_layout.addWidget(self.dot_preview_button)
         self.preview_tabs.addTab(result_page, "コンパイル結果")
 
         sheet_page = QWidget()
@@ -2309,6 +2320,20 @@ class MainWindow(QMainWindow):
         self._animation_frame_index = (self._animation_frame_index + 1) % len(self._animation_frame_paths)
         self._show_animation_frame()
 
+    def write_dot_previews(self) -> None:
+        """直近のコンパイル結果から、検査用と見せ物用のドット確認画像を書き出す。"""
+        final = self._last_final_path
+        if final is None or not Path(final).exists():
+            self.status.setText("先にコンパイルしてください")
+            return
+        try:
+            written = write_dot_previews(final)
+        except (OSError, ValueError) as exc:
+            self.status.setText(f"ドット確認画像を書き出せませんでした: {exc}")
+            return
+        names = " / ".join(path.name for path in written)
+        self.status.setText(f"ドット確認画像を書き出しました: {names}")
+
     def show_output_palette(self, final_paths) -> None:  # type: ignore[no-untyped-def]
         """出力PNGから実測したRGBを色見本として表示する。複数コマは和集合を取る。"""
         measured: set[tuple[int, int, int]] = set()
@@ -2319,6 +2344,9 @@ class MainWindow(QMainWindow):
                 continue
         colors = tuple(sorted(measured))
         self._output_palette_colors = colors
+        first = next(iter(final_paths), None)
+        self._last_final_path = Path(first) if first is not None else None
+        self.dot_preview_button.setEnabled(self._last_final_path is not None)
         self.output_palette_view.set_colors(colors)
         if not colors:
             self.output_palette_info.setText("コンパイルすると、使用したpaletteをここに表示します")
@@ -2357,6 +2385,8 @@ class MainWindow(QMainWindow):
         self.result_preview.set_image(None)
         self.tile_preview.set_image(None)
         self.show_output_palette(())
+        self._last_final_path = None
+        self.dot_preview_button.setEnabled(False)
         self.metrics.setText("出力設定を変更しました")
         self.status.setText("設定を変更しました。再コンパイルしてください")
 

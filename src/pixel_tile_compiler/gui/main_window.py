@@ -84,6 +84,7 @@ from pixel_tile_compiler.gui.widgets import (
     PaletteBudgetSlider,
     PaletteSwatchList,
 )
+from pixel_tile_compiler.gui.component_split_state import ComponentSplitStateManager
 from pixel_tile_compiler.sheet.component_split import (
     ComponentCell,
     ComponentSplitResult,
@@ -526,10 +527,11 @@ class MainWindow(QMainWindow):
         self._source_origin_frame_index: int | None = None
         self._source_origin_frame_logical_origin: tuple[int, int] | None = None
         self._source_origin_frame_signature: tuple[object, ...] | None = None
+        self._component_split_state = ComponentSplitStateManager()
         self._component_analysis: ComponentSplitResult | None = None
         self._component_analysis_signature: tuple[object, ...] | None = None
         self._component_assignment_confirmed: bool = False
-        self._component_assignment_overrides: dict[int, str] = {}
+        self._component_assignment_overrides: dict[int, str] = self._component_split_state.overrides
         self._selected_component_ids: list[int] = []
         self._suspicious_index: int = 0
         self._component_assignment_combos: dict[int, QComboBox] = {}
@@ -859,6 +861,7 @@ class MainWindow(QMainWindow):
     def _invalidate_component_split(self, *_args: object) -> None:
         """分割方式や列・行数の変更時にパーツ解析結果を破棄し世代を進める。"""
         self._configuration_revision += 1
+        self._component_split_state.invalidate()
         self._component_analysis = None
         self._component_analysis_signature = None
         self._component_assignment_confirmed = False
@@ -1599,7 +1602,12 @@ class MainWindow(QMainWindow):
             card_layout.addWidget(px_label)
 
             has_suspicious = any(c.component_id in suspicious_cids for c in frame_comps)
-            if has_suspicious:
+            if len(result.cells) == 0 or px_count == 0:
+                warn_label = QLabel("⚠️ 未抽出（候補不足）")
+                warn_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                warn_label.setStyleSheet("font-size: 10px; color: #f85149; font-weight: bold;")
+                card_layout.addWidget(warn_label)
+            elif has_suspicious:
                 warn_label = QLabel("⚠️ 確認推奨")
                 warn_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 warn_label.setStyleSheet("font-size: 10px; color: #e3b341; font-weight: bold;")
@@ -1708,6 +1716,7 @@ class MainWindow(QMainWindow):
 
         for cid in self._selected_component_ids:
             self._component_assignment_overrides[cid] = str(target_frame)
+            self._component_split_state.record_manual_change(cid, str(target_frame))
             if cid in self._component_assignment_combos:
                 combo = self._component_assignment_combos[cid]
                 combo.setCurrentIndex(combo.findData(target_frame))
@@ -1719,6 +1728,7 @@ class MainWindow(QMainWindow):
     def reset_component_overrides(self) -> None:
         """パーツ割り当ての手動変更をリセットする。"""
         self._component_assignment_overrides.clear()
+        self._component_split_state.reset_overrides()
         self._component_assignment_confirmed = False
         for combo in self._component_assignment_combos.values():
             combo.setCurrentIndex(0)
@@ -1792,8 +1802,10 @@ class MainWindow(QMainWindow):
         val = combo.currentData()
         if val is not None:
             self._component_assignment_overrides[comp_id] = str(val)
+            self._component_split_state.record_manual_change(comp_id, str(val))
         else:
             self._component_assignment_overrides.pop(comp_id, None)
+            self._component_split_state.record_manual_change(comp_id, None)
         self._mark_configuration_changed()
         self._component_assignment_confirmed = False
         self._source_origin_frame_box = None
@@ -1851,9 +1863,11 @@ class MainWindow(QMainWindow):
         )
 
     def _apply_component_analysis(self, result: ComponentSplitResult, *, confirmed: bool = False) -> None:
+        signature = self._animation_split_signature()
+        is_confirmed = self._component_split_state.apply_analysis(result, signature, confirmed=confirmed)
         self._component_analysis = result
-        self._component_analysis_signature = self._animation_split_signature()
-        self._component_assignment_confirmed = confirmed
+        self._component_analysis_signature = signature
+        self._component_assignment_confirmed = is_confirmed
         self.source_preview.set_pil_image(result.overlay)
         self._set_component_assignment_rows(result)
         self._refresh_component_preview_cards(result)
@@ -1861,20 +1875,8 @@ class MainWindow(QMainWindow):
         self.source_preview.set_suspicious_boxes(suspicious_boxes)
         self._update_animation_split_controls()
 
-        if confirmed:
-            self.animation_component_assignment_status.setText(
-                "全コマの割り当てを確定しました。コンパイル可能です。"
-            )
-        elif self._component_assignment_overrides:
-            self.animation_component_assignment_status.setText(
-                "割り当てを変更しました。再度割り当てを確定してください。"
-            )
-        elif result.status == "resolved":
-            self.animation_component_assignment_status.setText(
-                "パーツをコマへ分けました。確定するとコンパイルできます。"
-            )
-        else:
-            self.animation_component_assignment_status.setText(result.reason)
+        status_text = self._component_split_state.status_message(result)
+        self.animation_component_assignment_status.setText(status_text)
 
     def analyze_component_assignments(
         self,
@@ -2025,10 +2027,17 @@ class MainWindow(QMainWindow):
         if self.source_path is None:
             self.status.setText("先に元絵を読み込んでください")
             return
-        if (
-            self._component_analysis is not None
-            and self._component_analysis_signature == self._animation_split_signature()
-        ):
+        if self._component_analysis is None:
+            self.status.setText("先にパーツを解析してください")
+            return
+
+        can, reason = self._component_split_state.can_confirm(self._component_analysis)
+        if not can:
+            self.status.setText(f"確定できません: {reason}")
+            self.animation_component_assignment_status.setText(reason)
+            return
+
+        if self._component_analysis_signature == self._animation_split_signature():
             confirmed_result = replace(
                 self._component_analysis,
                 status="resolved",
@@ -2059,6 +2068,11 @@ class MainWindow(QMainWindow):
                     assignments=self._component_assignment_overrides or None,
                     confirmed=True,
                 )
+            can, reason = self._component_split_state.can_confirm(result)
+            if not can:
+                self.status.setText(f"確定できません: {reason}")
+                self.animation_component_assignment_status.setText(reason)
+                return
             self._apply_component_analysis(result, confirmed=True)
             self.status.setText("全コマの割り当てを確定しました。コンパイルできます")
         except (OSError, ValueError) as exc:

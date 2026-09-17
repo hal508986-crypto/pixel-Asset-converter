@@ -27,6 +27,13 @@
         "json": 0,
         "text": 1
       },
+      "CHANGELOG.md": {
+        "code": 0,
+        "files": 1,
+        "images": 0,
+        "json": 0,
+        "text": 1
+      },
       "LICENSE": {
         "code": 0,
         "files": 11,
@@ -57,10 +64,10 @@
       },
       "docs": {
         "code": 0,
-        "files": 48,
+        "files": 49,
         "images": 0,
         "json": 0,
-        "text": 48
+        "text": 49
       },
       "experiments": {
         "code": 0,
@@ -98,11 +105,11 @@
         "text": 2
       },
       "src": {
-        "code": 141,
-        "files": 141,
+        "code": 142,
+        "files": 142,
         "images": 0,
         "json": 0,
-        "text": 141
+        "text": 142
       },
       "start_gui.bat": {
         "code": 0,
@@ -112,11 +119,11 @@
         "text": 1
       },
       "tests": {
-        "code": 46,
-        "files": 46,
+        "code": 48,
+        "files": 48,
         "images": 0,
         "json": 0,
-        "text": 46
+        "text": 48
       }
     },
     "provenance_flags": {
@@ -124,7 +131,7 @@
       "external_path_mentions": 10,
       "image_2_mentions": 4
     },
-    "tracked_files": 276
+    "tracked_files": 281
   },
   "code_inventory": {
     "external_import_distributions": {
@@ -169,7 +176,7 @@
       "typer",
       "yaml"
     ],
-    "files": 190,
+    "files": 193,
     "import_roots": [
       "PIL",
       "PySide6",
@@ -206,6 +213,7 @@
       "subprocess",
       "sys",
       "tempfile",
+      "tests",
       "threading",
       "time",
       "tomllib",
@@ -221,11 +229,11 @@
       "tests/test_gui.py",
       "tests/test_license_audit.py"
     ],
-    "python_files": 190,
+    "python_files": 193,
     "script_python_files": 3,
-    "source_python_files": 141,
+    "source_python_files": 142,
     "syntax_errors": [],
-    "test_python_files": 46,
+    "test_python_files": 48,
     "undeclared_external_imports": []
   },
   "environment": {

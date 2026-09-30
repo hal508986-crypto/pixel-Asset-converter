@@ -74,6 +74,7 @@ pixel-tile compile-character-frames frames_dir `
 - `--background-mode auto`（既定）は、緑・青緑など鮮やかな背景色では画像内の背景色を全部消し（`global`）、白・グレーでは外周に繋がる部分だけ消します（`connected`）。
 - 縁に背景との混色が残るときは `--choke 1`（輪郭を1画素内側へ削る。画像端に接する輪郭は削りません）。
 - 色のちらつき（パレット境界で色が行き来する）は、既定で抑えます（`--stabilize-margin 12`。`0` で無効）。前フレームで使った色が今の色より元の色から見てmargin以内にしか劣らなければ、前の色を維持します。輪郭とパレットは変わりません。上げすぎると本物の色の変化も潰すので、目安は12〜20です。
+- 動画生成AIは余白を大きく取りがちで、全フレームがはみ出さない倍率だと、槍を大きく突き出すコマなどに引っ張られてキャラが小さくなります。`--fit-percentile 70` のように指定すると、その割合のフレームが収まる倍率にして、極端に伸びるコマは見切れを許します（キャラ本体が大きくなります）。見切れたコマは警告とレポート（`clipped`）に出ます。既定の `100` は従来どおり全フレームが収まります。
 - 透過済みの連番は `--no-key-background`、GIFが不要なら `--no-gif`、ループさせないなら `--play-once`。
 - 入力は自然順（`f2` の次が `f10`）で読み込み、全フレームが同サイズである必要があります。
 
@@ -201,6 +202,7 @@ pixel-tile compile-character-frames frames_dir `
 The background colour is estimated once from all frames and shared. `--background-mode auto` (default) removes every
 background-coloured pixel for vivid backgrounds (green, teal) and only border-connected ones for white/grey.
 `--choke 1` shaves one pixel off the outline to drop background-blended edges (outlines touching the image border are kept).
+`--fit-percentile 70` (default `100` = every frame fits) sizes the character so that 70% of frames fit; extreme frames (e.g. a long spear thrust) may be clipped and are reported as warnings / `clipped` in the report, which makes the character bigger when the source has large margins.
 `--stabilize-margin` (default 12, `0` disables) reduces colour flicker at palette boundaries: a pixel keeps its previous colour unless the new one is closer to the source by more than the margin. Silhouettes and the palette are unchanged.
 
 The same job is available in the GUI: with the Character or Character Animation purpose, the **連番PNG→GIF** button opens a

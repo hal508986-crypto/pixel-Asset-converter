@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `compile-character-frames --fit-percentile P` (default 100): size the character so that P% of frames fit the canvas and allow the
+  remaining extreme frames (e.g. a long spear thrust) to be clipped, which enlarges the character when the source has large
+  margins. Clipped frames are listed as warnings and as `clipped` in `bbox_report.json`. The horizontal origin becomes the median
+  of the per-frame centres so that a long weapon does not drag the character off-centre. `100` keeps the previous behaviour.
+
 - **PNG sequence → transparent GIF** (`pixel-tile compile-character-frames`):
   - Reads a numbered PNG folder in natural order, removes a flat opaque background (colour estimated once from all
     frames and shared; `auto`/`connected`/`global` modes; optional outline `--choke`), then compiles every frame with

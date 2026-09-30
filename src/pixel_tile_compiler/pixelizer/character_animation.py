@@ -257,6 +257,7 @@ class CharacterAnimationConfig:
     frame_offsets: tuple[tuple[int, int], ...] | None = None
     shared_palette_enabled: bool = True
     allow_empty_frames: bool = False
+    allow_clipping: bool = False
 
     def __post_init__(self) -> None:
         if self.frame_count < 1:
@@ -343,6 +344,7 @@ class CharacterAnimationConfig:
             "frame_offsets": [list(offset) for offset in self.frame_offsets] if self.frame_offsets is not None else None,
             "shared_palette_enabled": self.shared_palette_enabled,
             "allow_empty_frames": self.allow_empty_frames,
+            **({"allow_clipping": True} if self.allow_clipping else {}),
         }
 
 
@@ -790,7 +792,8 @@ def _resolve_preserve_transform(
             float(scale),
             offsets,
         )
-    _validate_transform_fits(reports, resolved, config.canvas_size)
+    if not config.allow_clipping:
+        _validate_transform_fits(reports, resolved, config.canvas_size)
     return resolved
 
 
@@ -839,6 +842,24 @@ def _transformed_bbox(
         output_x + transform.scale * (bbox.right - source_x) + offset_x,
         output_y + transform.scale * (bbox.bottom - source_y) + offset_y,
     )
+
+
+def _clipped_sides(
+    bbox: AlphaBoundingBox,
+    transform: CharacterAnimationTransform,
+    frame_index: int,
+    canvas_size: tuple[int, int],
+) -> dict[str, int]:
+    """変換後のbboxがCanvasからはみ出す量（px, 切り上げ）を辺ごとに返す。はみ出しが無ければ空。"""
+    width, height = canvas_size
+    left, top, right, bottom = _transformed_bbox(bbox, transform, frame_index)
+    over = {
+        "left": max(0, math.ceil(-left - _FIT_EPSILON)),
+        "top": max(0, math.ceil(-top - _FIT_EPSILON)),
+        "right": max(0, math.ceil(right - width - _FIT_EPSILON)),
+        "bottom": max(0, math.ceil(bottom - height - _FIT_EPSILON)),
+    }
+    return {side: amount for side, amount in over.items() if amount > 0}
 
 
 def _validate_transform_fits(
@@ -1162,6 +1183,14 @@ def align_character_frames(
                 frame_index=index,
                 canvas_size=config.canvas_size,
             )
+            clipped_sides = (
+                _clipped_sides(report.bbox, frame_transform, index, config.canvas_size)
+                if config.allow_clipping and report.bbox is not None
+                else {}
+            )
+            if clipped_sides:
+                detail = "・".join(f"{name}{amount}px" for name, amount in clipped_sides.items())
+                warnings.append(f"F{index + 1}: Canvasからはみ出して見切れています（{detail}）")
             protected_count = report.protected_pixel_count
             protected_lost = (
                 protected_count is not None
@@ -1180,7 +1209,7 @@ def align_character_frames(
                         if aligned.getchannel("A").getbbox() is not None
                         else None
                     ),
-                    clipped=False,
+                    clipped=bool(clipped_sides),
                     offset=resolved_transform.offset_for(index),
                     protected_pixel_lost=protected_lost if protected_count is not None else None,
                 )

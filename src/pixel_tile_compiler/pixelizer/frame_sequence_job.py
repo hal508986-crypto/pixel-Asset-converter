@@ -57,6 +57,7 @@ class FrameSequenceRequest:
     min_component_area: int = 3
     remove_isolated: bool = True
     scale: float | None = None
+    fit_percentile: float = 100.0  # 100 = 全フレームが収まる倍率。未満は極端なコマの見切れを許して本体を大きく
     outline: str = "off"
     detail: str = "balanced"
     debug: bool = False
@@ -90,6 +91,8 @@ class FrameSequenceRequest:
             raise ValueError("孤立成分の最小面積は1以上で指定してください")
         if self.scale is not None and self.scale <= 0:
             raise ValueError("固定倍率は0より大きい値で指定してください")
+        if not 0 < self.fit_percentile <= 100:
+            raise ValueError("フィットの基準（百分位）は0より大きく100以下で指定してください")
         if self.outline not in OUTLINE_CHOICES:
             raise ValueError("outlineはoff、black、whiteのいずれかです")
         if self.detail not in DETAIL_CHOICES:
@@ -176,6 +179,7 @@ def run_frame_sequence(
         gif_fps=request.fps if request.write_gif else None,
         gif_loop=None if request.play_once else request.loop,
         stabilize_margin=request.stabilize_margin if request.stabilize_margin > 0 else None,
+        fit_percentile=request.fit_percentile,
         progress=progress,
         palette_budget=request.palette_budget,
         character_detail_level=request.detail,

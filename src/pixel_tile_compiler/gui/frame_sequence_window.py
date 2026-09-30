@@ -273,6 +273,11 @@ class FrameSequenceWindow(QMainWindow):
         self.reference_frame.setValue(1)
         self.canvas_auto = QCheckBox("Canvasを自動で決める（見切れなし・余白ほぼなし。幅・高さは無視）")
         self.canvas_auto.setChecked(True)
+        self.foot_lock = QCheckBox("足元の高さを全フレームでそろえる（接地のずれを補正）")
+        self.foot_lock.setToolTip(
+            "各フレームの本体の下端を基準の足元にそろえます（縦の平行移動のみ。倍率は変わりません）。"
+            "踏み込み中などに元動画の接地線がずれて足が浮いて見える素材向け。跳躍のような本物の浮きも打ち消すので注意"
+        )
         self.write_trimmed = QCheckBox("切り詰めた画像とオフセットも出力する（ゲーム用）")
         self.write_trimmed.setChecked(True)
         self.write_trimmed.setToolTip("trimmed_frames/ と trim_manifest.json。各フレームを可視範囲に切り詰め、足元（ピボット）からの位置を記録します")
@@ -386,6 +391,7 @@ class FrameSequenceWindow(QMainWindow):
         framing_form.addRow("身長の基準", self.height_reference)
         framing_form.addRow("基準フレーム番号", self.reference_frame)
         framing_form.addRow(self.canvas_auto)
+        framing_form.addRow(self.foot_lock)
         framing_form.addRow(self.write_trimmed)
 
         bg_group = QGroupBox("背景の除去")
@@ -531,7 +537,7 @@ class FrameSequenceWindow(QMainWindow):
         is_height = mode == "height"
         self.framing_mode.setEnabled(idle)
         self.fit_percentile.setEnabled(idle and mode == "percentile")
-        for widget in (self.character_height, self.height_reference, self.canvas_auto):
+        for widget in (self.character_height, self.height_reference, self.canvas_auto, self.foot_lock):
             widget.setEnabled(idle and is_height)
         self.reference_frame.setEnabled(idle and is_height and self.height_reference.currentData() == "frame")
         auto = is_height and self.canvas_auto.isChecked()
@@ -580,6 +586,7 @@ class FrameSequenceWindow(QMainWindow):
             character_height=self.character_height.value() if mode == "height" else None,
             height_reference=reference,
             canvas_auto=mode == "height" and self.canvas_auto.isChecked(),
+            foot_lock=mode == "height" and self.foot_lock.isChecked(),
             write_trimmed=self.write_trimmed.isChecked(),
             outline=self.outline.currentData(),
             detail=self.detail.currentData(),

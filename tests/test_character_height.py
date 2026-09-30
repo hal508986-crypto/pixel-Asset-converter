@@ -223,3 +223,74 @@ def test_job_validation_and_cli(tmp_path: Path) -> None:
         "--no-gif", "--width", "64", "--height", "64", "--no-trim",
     ])
     assert no_trim.exit_code == 0 and not (tmp_path / "nt" / "trim_manifest.json").exists()
+
+
+def _drifting_frames() -> list[Image.Image]:
+    """しゃがみのコマ（4,5）は、元動画の接地線が10pxずれて全体が上に上がっている素材（踏み込みでよくある）。"""
+    frames = _frames()
+    for index in (4, 5):
+        array = np.zeros((SIZE, SIZE, 4), np.uint8)
+        array[115:160, 88:112] = (190, 50, 60, 255)  # 高さ45のまま、足元が170→160へ10px上にずれる
+        frames[index] = Image.fromarray(array, "RGBA")
+    return frames
+
+
+def test_foot_lock_moves_frames_vertically_only_and_leaves_the_scale_alone() -> None:
+    frames = tuple(_drifting_frames())
+    plain, _ = _with_character_height(_config(), frames, 35.0, "median", canvas_auto=False)
+    locked, framing = _with_character_height(_config(), frames, 35.0, "median", canvas_auto=False, foot_lock=True)
+    assert plain.frame_offsets is None and locked.scale_override == plain.scale_override  # 倍率は同じ
+    offsets = locked.frame_offsets
+    assert offsets is not None and len(offsets) == len(frames)
+    assert all(dx == 0 for dx, _ in offsets)  # 横は動かさない
+    assert [dy for _, dy in offsets] == [0, 0, 0, 0, 5, 5, 0, 0, 0]  # 10px×倍率0.5 = 5px 下げて接地線にそろえる
+    assert framing["foot_lock"] is True and framing["foot_lock_offsets_y_px"] == {"min": 0, "max": 5}
+    with pytest.raises(ValueError, match="空のフレーム"):
+        _with_character_height(_config(), (*frames, Image.new("RGBA", (SIZE, SIZE))), 35.0, "median", False, True)
+
+
+def test_pipeline_foot_lock_puts_every_frame_on_the_same_ground_line_without_changing_sizes(tmp_path: Path) -> None:
+    directory = tmp_path / "in"
+    directory.mkdir()
+    rng = np.random.default_rng(2)
+    for index, frame in enumerate(_drifting_frames()):
+        array = np.asarray(frame)
+        opaque = array[..., 3] > 0
+        background = np.clip(np.array(BG) + rng.integers(-2, 3, (SIZE, SIZE, 3)), 0, 255).astype(np.uint8)
+        out = np.dstack([background, np.full((SIZE, SIZE), 255, np.uint8)])
+        out[opaque] = array[opaque]
+        Image.fromarray(out, "RGBA").save(directory / f"f{index:03d}.png")
+    kwargs = dict(background_tolerance=45, gif_fps=None, character_height=35, canvas_auto=True, palette_budget=16)
+    plain = compile_character_frame_directory(directory, tmp_path / "plain", **kwargs)
+    locked = compile_character_frame_directory(directory, tmp_path / "locked", foot_lock=True, **kwargs)
+
+    def stats(result):
+        rows = []
+        for path in result.final_frame_paths:
+            box = measure_body(np.asarray(Image.open(path).convert("RGBA"))[..., 3])
+            rows.append((box[3], box[3] - box[1]))
+        return rows
+
+    plain_rows, locked_rows = stats(plain), stats(locked)
+    assert len({bottom for bottom, _ in plain_rows}) == 2  # ロックなし: ずれたコマは接地線から浮く
+    assert len({bottom for bottom, _ in locked_rows}) == 1  # ロックあり: 全フレームが同じ接地線
+    assert [height for _, height in plain_rows] == [height for _, height in locked_rows]  # サイズ（縦幅）は不変
+    report = json.loads(locked.report_path.read_text(encoding="utf-8"))
+    assert not any(frame.get("clipped") for frame in report["frames"])  # Canvas自動は補正後の位置でも収まる
+    assert report["framing"]["foot_lock"] is True
+
+
+def test_foot_lock_requires_a_character_height(tmp_path: Path) -> None:
+    source = _write_directory(tmp_path / "in")
+    with pytest.raises(ValueError, match="足元ロック"):
+        FrameSequenceRequest(input_dir=source, output_dir=tmp_path / "o", foot_lock=True).validate()
+    with pytest.raises(ValueError, match="足元ロック"):
+        compile_character_frame_directory(source, tmp_path / "x", foot_lock=True, gif_fps=None)
+    bad = CliRunner().invoke(app, ["compile-character-frames", str(source), "-o", str(tmp_path / "y"), "--foot-lock"])
+    assert bad.exit_code != 0 and "足元ロック" in bad.output
+    ok = CliRunner().invoke(app, [
+        "compile-character-frames", str(source), "-o", str(tmp_path / "z"), "--background-tolerance", "45", "--no-gif",
+        "--character-height", "35", "--canvas-auto", "--foot-lock",
+    ])
+    assert ok.exit_code == 0, ok.output
+    assert json.loads((tmp_path / "z" / "bbox_report.json").read_text(encoding="utf-8"))["framing"]["foot_lock"] is True

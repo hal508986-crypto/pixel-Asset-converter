@@ -61,6 +61,7 @@ class FrameSequenceRequest:
     character_height: float | None = None  # キャラ本体の高さ（出力px）。指定すると本体の高さを基準に倍率を決める
     height_reference: str = "median"  # 身長の基準: median / first / フレーム番号（1始まり）
     canvas_auto: bool = False  # character_height と併用: 全フレームが収まる最小のCanvasにする（見切れなし）
+    foot_lock: bool = False  # character_height と併用: 各フレームの本体の下端を基準の足元にそろえる（縦の平行移動のみ）
     write_trimmed: bool = True  # 切り詰めた画像とオフセット（trimmed_frames/, trim_manifest.json）も出力
     outline: str = "off"
     detail: str = "balanced"
@@ -103,6 +104,8 @@ class FrameSequenceRequest:
         if self.character_height is None:
             if self.canvas_auto:
                 raise ValueError("Canvas自動は、キャラの身長を指定したときだけ使えます")
+            if self.foot_lock:
+                raise ValueError("足元ロックは、キャラの身長を指定したときだけ使えます")
         else:
             if not 0 < self.character_height <= MAX_CANVAS_SIDE:
                 raise ValueError(f"キャラの身長は0より大きく{MAX_CANVAS_SIDE}以下で指定してください")
@@ -203,6 +206,7 @@ def run_frame_sequence(
         character_height=request.character_height,
         height_reference=request.height_reference,
         canvas_auto=request.canvas_auto,
+        foot_lock=request.foot_lock,
         write_trimmed=request.write_trimmed,
         progress=progress,
         palette_budget=request.palette_budget,

@@ -122,6 +122,7 @@ def _with_character_height(
     character_height: float,
     height_reference: str | int,
     canvas_auto: bool,
+    foot_lock: bool = False,
 ) -> tuple[CharacterAnimationConfig, dict[str, object]]:
     """キャラ本体の高さ（アルファから測定）を基準に、倍率・足元・Canvasを決める。
 
@@ -129,6 +130,9 @@ def _with_character_height(
     縦幅が変わっても、キャラのサイズはブレない。足元＝各フレームの本体下端の中央値、横位置＝本体中心の中央値。
     canvas_auto: 全フレームの張り出しが収まる最小のCanvas（四方の余白AUTO_CANVAS_MARGIN）にする（見切れなし）。
     それ以外は config のCanvas固定で、収まらない部分は見切れを許す（見切れたコマは警告とレポートに記録）。
+    foot_lock: 各フレームの本体の下端が基準の足元にそろうよう、フレームごとに**縦方向の平行移動だけ**を補正する。
+    元動画側で踏み込み中などにキャラ全体が上下へずれる（接地線が動く）素材向け。倍率は変えない。
+    跳躍のような本物の浮きも打ち消すので、既定はオフ。
     """
     if config.placement_mode != "preserve_motion":
         raise ValueError("身長指定は移動保存モード（preserve_motion）でのみ使えます")
@@ -156,6 +160,12 @@ def _with_character_height(
     scale = float(character_height) / reference
     origin_x = float(np.median([(left + right) / 2 for left, _, right, _ in bodies]))
     origin_y = float(np.median([bottom for _, _, _, bottom in bodies]))
+    frame_offsets: tuple[tuple[int, int], ...] | None = None
+    if foot_lock:
+        if len(bodies) != len(frames):
+            raise ValueError("空のフレームがあるため、足元ロックは使えません")
+        # 出力での縦移動量 = 倍率 × (基準の足元 - そのフレームの本体の下端)（整数pxに丸める）
+        frame_offsets = tuple((0, int(round(scale * (origin_y - bottom)))) for _, _, _, bottom in bodies)
     framing: dict[str, object] = {
         "mode": "character_height",
         "character_height_px": float(character_height),
@@ -165,16 +175,20 @@ def _with_character_height(
         "scale": scale,
         "source_origin": [origin_x, origin_y],
         "canvas_auto": canvas_auto,
+        "foot_lock": foot_lock,
     }
+    if frame_offsets is not None:
+        framing["foot_lock_offsets_y_px"] = {"min": min(o[1] for o in frame_offsets), "max": max(o[1] for o in frame_offsets)}
     if canvas_auto:
         margin = AUTO_CANVAS_MARGIN
-        left = max(origin_x - box.left for box in boxes)
-        right = max(box.right - origin_x for box in boxes)
-        up = max(origin_y - box.top for box in boxes)
-        down = max(0.0, max(box.bottom - origin_y for box in boxes))
-        pivot_x, pivot_y = margin + left * scale, margin + up * scale
-        width = math.ceil(pivot_x + right * scale + margin - 1e-9)
-        height = math.ceil(pivot_y + down * scale + margin - 1e-9)
+        shifts = [offset[1] for offset in frame_offsets] if frame_offsets is not None else [0] * len(boxes)
+        left = max(origin_x - box.left for box in boxes) * scale
+        right = max(box.right - origin_x for box in boxes) * scale
+        up = max((origin_y - box.top) * scale - shift for box, shift in zip(boxes, shifts))
+        down = max(0.0, max((box.bottom - origin_y) * scale + shift for box, shift in zip(boxes, shifts)))
+        pivot_x, pivot_y = margin + left, margin + up
+        width = math.ceil(pivot_x + right + margin - 1e-9)
+        height = math.ceil(pivot_y + down + margin - 1e-9)
         if max(width, height) > MAX_AUTO_CANVAS_SIDE:
             raise ValueError(
                 f"Canvas自動が{width}×{height}になり上限（{MAX_AUTO_CANVAS_SIDE}）を超えます。身長を小さくするか、Canvasを固定してください"
@@ -188,6 +202,7 @@ def _with_character_height(
             source_origin=(origin_x, origin_y),
             output_origin=(pivot_x, pivot_y),
             scale_override=scale,
+            frame_offsets=frame_offsets,
             allow_clipping=False,
         )
         framing["canvas_size"] = [width, height]
@@ -206,6 +221,7 @@ def _with_character_height(
             source_origin=(origin_x, origin_y),
             output_origin=output_origin,
             scale_override=scale,
+            frame_offsets=frame_offsets,
             allow_clipping=True,
         )
         framing["canvas_size"] = list(config.canvas_size)
@@ -231,6 +247,7 @@ def compile_character_frame_directory(
     character_height: float | None = None,
     height_reference: str | int = "median",
     canvas_auto: bool = False,
+    foot_lock: bool = False,
     write_trimmed: bool = True,
     progress: Callable[[str, int, int], None] | None = None,
     **compile_kwargs: Any,
@@ -250,6 +267,8 @@ def compile_character_frame_directory(
     character_height: キャラ本体の高さ（出力px）。アルファから測った本体の高さを基準に倍率を決める（倍率と足元は全フレーム固定）。
     height_reference: 身長の基準（median=中央値〈既定〉/ first=最初のフレーム / フレーム番号〈1始まり〉）。
     canvas_auto: character_height と併用。全フレームの張り出しが収まる最小のCanvasにする（見切れなし）。
+    foot_lock: character_height と併用。各フレームの本体の下端を基準の足元にそろえる（縦方向の平行移動のみ・倍率は不変）。
+    元動画で踏み込み中などに接地線がずれる素材向け。跳躍のような本物の浮きも打ち消すので既定はオフ。
     write_trimmed: 各フレームを切り詰めた画像とオフセット（trimmed_frames/, trim_manifest.json）も出力する。
     progress(stage, done, total): 進捗通知（load/key/compile/finalize）。ここから例外を投げると中断でき、既存の出力は壊れない。
     """
@@ -281,6 +300,8 @@ def compile_character_frame_directory(
     if character_height is None:
         if canvas_auto:
             raise ValueError("Canvas自動は、キャラの身長（character_height）を指定したときだけ使えます")
+        if foot_lock:
+            raise ValueError("足元ロックは、キャラの身長（character_height）を指定したときだけ使えます")
         resolved_config = _with_derived_origins(config or default_sequence_config(canvas_size), frames, fit_percentile)
         extras["framing"] = {"fit_percentile": fit_percentile, "clipping_allowed": resolved_config.allow_clipping}
     else:
@@ -290,7 +311,7 @@ def compile_character_frame_directory(
         if base_config.scale_override is not None:
             raise ValueError("キャラの身長の指定と固定倍率（scale）は同時に使えません")
         resolved_config, framing = _with_character_height(
-            base_config, frames, character_height, height_reference, canvas_auto
+            base_config, frames, character_height, height_reference, canvas_auto, foot_lock
         )
         extras["framing"] = {**framing, "clipping_allowed": resolved_config.allow_clipping}
     result = compile_character_animation_frames(

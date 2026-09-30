@@ -332,6 +332,12 @@ def test_framing_controls_follow_the_mode_and_map_to_the_request(qt, tmp_path: P
         assert window.build_request().height_reference == "first"
         window.write_trimmed.setChecked(False)
         assert window.build_request().write_trimmed is False
+        # 足元ロックは身長指定のときだけ使え、チェックがリクエストに反映される
+        assert window.foot_lock.isEnabled() and not window.build_request().foot_lock
+        window.foot_lock.setChecked(True)
+        assert window.build_request().foot_lock is True
+        window.framing_mode.setCurrentIndex(0)
+        assert not window.foot_lock.isEnabled() and window.build_request().foot_lock is False
     finally:
         window.close()
 

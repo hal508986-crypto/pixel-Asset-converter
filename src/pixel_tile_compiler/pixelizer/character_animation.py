@@ -1418,6 +1418,7 @@ def compile_character_animation_frames(
     protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
     transform: CharacterAnimationTransform | None = None,
     source_label: str = "<frames>",
+    report_extras: Mapping[str, object] | None = None,
 ) -> CharacterAnimationCompileResult:
     """Compile an ordered frame sequence (透過済みRGBA) without going through a sheet.
 
@@ -1452,7 +1453,8 @@ def compile_character_animation_frames(
                         hashlib.sha256(frame.convert("RGBA").tobytes()).hexdigest()
                         for frame in frames
                     ],
-                }
+                },
+                **(report_extras or {}),
             },
             config=config,
             palette_budget=palette_budget,

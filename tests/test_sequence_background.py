@@ -184,3 +184,48 @@ def test_keyed_sequence_compiles_with_tight_shared_bbox(tmp_path: Path, backgrou
     # 背景色は最終パレットに残らない
     final = {tuple(c) for c in report["final_palette"]["colors"]}
     assert all(max(abs(a - b) for a, b in zip(color, background)) > 30 for color in final)
+
+
+@pytest.mark.parametrize(
+    "background, expected",
+    [(GREEN, "global"), ((92, 156, 155), "global"), ((255, 255, 255), "connected"), ((200, 205, 200), "connected")],
+)
+def test_auto_mode_picks_global_for_vivid_backgrounds_and_connected_for_white_grey(background, expected) -> None:
+    frames, _ = _frames(background, noise=0)
+    result = remove_sequence_background(frames, mode="auto")
+    assert result.mode == expected
+    report = result.report_as_dict()
+    assert report["mode"] == expected and report["mode_requested"] == "auto"
+
+
+def test_auto_global_removes_background_enclosed_by_the_character() -> None:
+    frames, masks = _frames(GREEN, noise=0)
+    # 胴の中に背景色の穴（外周と繋がらない）
+    hole = np.asarray(frames[0]).copy()
+    hole[30:36, 42:48, :3] = GREEN
+    image = Image.fromarray(hole, "RGBA")
+    connected = remove_sequence_background((image,), mode="connected")
+    auto = remove_sequence_background((image,), mode="auto")
+    assert (np.asarray(connected.frames[0])[30:36, 42:48, 3] == 255).all()   # 残る
+    assert (np.asarray(auto.frames[0])[30:36, 42:48, 3] == 0).all()          # 消える
+
+
+def test_choke_erodes_the_outline_but_not_where_the_character_touches_the_image_edge() -> None:
+    array = np.zeros((40, 40, 4), np.uint8)
+    array[:, :, :3] = GREEN
+    array[:, :, 3] = 255
+    array[0:20, 10:30, :3] = (200, 60, 60)  # 上端に接する矩形
+    frames = (Image.fromarray(array, "RGBA"),)
+    plain = np.asarray(remove_sequence_background(frames, tolerance=20).frames[0])[:, :, 3] == 255
+    choked_result = remove_sequence_background(frames, tolerance=20, choke_px=1)
+    choked = np.asarray(choked_result.frames[0])[:, :, 3] == 255
+    assert plain[0:20, 10:30].all() and plain.sum() == 20 * 20
+    # 下・左・右の輪郭は1px削れるが、画像の上端に接する辺は削れない
+    assert choked[0:19, 11:29].all() and choked.sum() == 19 * 18
+    assert not choked[19, :].any() and not choked[:, 10].any() and not choked[:, 29].any()
+    assert choked[0, 15]
+    assert choked_result.frame_reports[0]["choked_px"] == plain.sum() - choked.sum()
+    assert choked_result.report_as_dict()["choke_px"] == 1
+    assert "choked_px" not in remove_sequence_background(frames, tolerance=20).frame_reports[0]
+    with pytest.raises(ValueError, match="choke_px"):
+        remove_sequence_background(frames, choke_px=-1)

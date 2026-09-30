@@ -29,6 +29,7 @@ from pixel_tile_compiler.sheet.alpha_projection import (
 
 
 MAX_ANIMATION_OUTPUT_SHEET_PIXELS = 16_777_216
+_FIT_EPSILON = 1e-9  # 境界判定で許す浮動小数の誤差（px）
 MAX_ANIMATION_PREVIEW_PIXELS = 8_000_000
 MAX_ANIMATION_PREVIEW_SCALE = 8
 
@@ -850,13 +851,14 @@ def _validate_transform_fits(
         if report.bbox is None:
             continue
         left, top, right, bottom = _transformed_bbox(report.bbox, transform, index)
-        if left < 0:
+        # 自動フィットの倍率は境界にちょうど載るため、浮動小数の誤差（-1e-13など）で見切れ扱いしない
+        if left < -_FIT_EPSILON:
             issues.append(f"F{index + 1}: left {math.floor(left)}px")
-        if top < 0:
+        if top < -_FIT_EPSILON:
             issues.append(f"F{index + 1}: top {math.floor(top)}px")
-        if right > width:
+        if right > width + _FIT_EPSILON:
             issues.append(f"F{index + 1}: right needs {math.ceil(right - width)}px")
-        if bottom > height:
+        if bottom > height + _FIT_EPSILON:
             issues.append(f"F{index + 1}: bottom needs {math.ceil(bottom - height)}px")
     if issues:
         raise ValueError("指定した戦闘アニメーション変換では見切れます: " + "; ".join(issues))

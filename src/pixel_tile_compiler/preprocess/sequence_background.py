@@ -16,9 +16,12 @@ from PIL import Image
 from pixel_tile_compiler.io.frame_sequence import frame_label
 from pixel_tile_compiler.preprocess.background import _parse_color
 
-KeyMode = Literal["connected", "global"]
+KeyMode = Literal["connected", "global", "auto"]
 
 DEFAULT_BACKGROUND_TOLERANCE = 30
+# auto: 背景色のチャンネル差（最大-最小）がこれ以上の鮮やかな色（緑・青緑など）は global、
+# 白・グレー系は connected。鮮やかな背景色はキャラ内部に現れにくいが、白はハイライトに現れやすい。
+AUTO_GLOBAL_MIN_SPREAD = 48
 DEFAULT_MIN_BORDER_COVERAGE = 0.5
 # 外周と繋がらず背景色に近いまま残った画素がこれ以上あるフレームに警告する
 ENCLOSED_WARNING_PIXELS = 8
@@ -30,11 +33,13 @@ class SequenceBackgroundResult:
     frames: tuple[Image.Image, ...]
     color: tuple[int, int, int]
     tolerance: int
-    mode: KeyMode
+    mode: Literal["connected", "global"]
     color_source: Literal["specified", "estimated"]
     border_coverage: float | None
     frame_reports: tuple[dict[str, object], ...]
     warnings: tuple[str, ...] = ()
+    mode_requested: str = ""
+    choke_px: int = 0
 
     def report_as_dict(self) -> dict[str, object]:
         return {
@@ -42,6 +47,8 @@ class SequenceBackgroundResult:
             "rgb": list(self.color),
             "tolerance": self.tolerance,
             "mode": self.mode,
+            "mode_requested": self.mode_requested or self.mode,
+            "choke_px": self.choke_px,
             "color_source": self.color_source,
             "border_coverage": self.border_coverage,
             "frames": [dict(report) for report in self.frame_reports],
@@ -123,18 +130,25 @@ def remove_sequence_background(
     tolerance: int = DEFAULT_BACKGROUND_TOLERANCE,
     mode: KeyMode = "connected",
     min_border_coverage: float = DEFAULT_MIN_BORDER_COVERAGE,
+    choke_px: int = 0,
 ) -> SequenceBackgroundResult:
     """連番全体に同じ背景色・許容差を適用して、単色背景を透過にする。
 
     color未指定なら全フレームの外周から1回だけ推定する。
     mode="connected": 外周と繋がる背景色近傍だけ消す（白背景でキャラ内部の白を守る）。
     mode="global": フレーム内の背景色近傍を全部消す（緑背景で腕の輪の中なども消す）。
+    mode="auto": 背景色が鮮やか（チャンネル差48以上）なら global、白・グレー系なら connected。
+    choke_px: 除去後の輪郭を8近傍でN画素内側へ削り、背景との混色（縁のにじみ）を落とす。
+    画像の端に接する輪郭は削らない（フレームの外へ続くキャラを欠けさせない）。
     出力alphaは0/255の二値で、透過画素のRGBは0にそろえる。
     """
     if tolerance < 0:
         raise ValueError("tolerance must be non-negative")
-    if mode not in {"connected", "global"}:
-        raise ValueError("mode must be connected or global")
+    if mode not in {"connected", "global", "auto"}:
+        raise ValueError("mode must be connected, global, or auto")
+    if choke_px < 0:
+        raise ValueError("choke_px must be non-negative")
+    requested_mode = mode
     arrays = _as_arrays(frames)
     coverage: float | None
     if color is None:
@@ -149,6 +163,8 @@ def remove_sequence_background(
         coverage = None
         source = "specified"
 
+    if mode == "auto":
+        mode = "global" if max(resolved) - min(resolved) >= AUTO_GLOBAL_MIN_SPREAD else "connected"
     keyed: list[Image.Image] = []
     reports: list[dict[str, object]] = []
     warnings: list[str] = []
@@ -158,6 +174,11 @@ def remove_sequence_background(
         candidate = visible & (_distance(array[:, :, :3], resolved) <= tolerance)  # type: ignore[arg-type]
         removed = candidate if mode == "global" else _border_connected(candidate)
         keep = visible & ~removed
+        choked = 0
+        if choke_px:
+            eroded = cv2.erode(keep.astype(np.uint8), np.ones((3, 3), np.uint8), iterations=choke_px) > 0
+            choked = int(np.count_nonzero(keep & ~eroded))
+            keep = eroded
         out = array.copy()
         out[:, :, 3] = np.where(keep, 255, 0)
         out[~keep, :3] = 0
@@ -170,6 +191,8 @@ def remove_sequence_background(
             "kept_px": kept,
             "enclosed_bg_like_px": enclosed,
         }
+        if choke_px:
+            report["choked_px"] = choked
         reports.append(report)
         if kept == 0:
             warnings.append(f"{name}: 背景除去後に何も残りませんでした")
@@ -181,7 +204,8 @@ def remove_sequence_background(
                 "（穴の中の背景なら mode=global を検討）"
             )
     return SequenceBackgroundResult(
-        tuple(keyed), resolved, tolerance, mode, source, coverage, tuple(reports), tuple(warnings)  # type: ignore[arg-type]
+        tuple(keyed), resolved, tolerance, mode, source, coverage, tuple(reports), tuple(warnings),  # type: ignore[arg-type]
+        requested_mode, choke_px,
     )
 
 

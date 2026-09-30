@@ -186,3 +186,34 @@ def test_512_canvas_beyond_the_sheet_limit_is_not_rejected_by_size_check() -> No
     # 512x512 を65枚 = 上限(16,777,216)超え。以前は弾かれていた組み合わせ
     assert character_animation.animation_sheet_pixels((512, 512), 64) == character_animation.MAX_ANIMATION_OUTPUT_SHEET_PIXELS
     assert character_animation.animation_sheet_pixels((512, 512), 65) > character_animation.MAX_ANIMATION_OUTPUT_SHEET_PIXELS
+
+
+def test_auto_fit_touching_the_source_edge_is_not_rejected_by_float_noise(monkeypatch) -> None:
+    """実素材（槍が元画像の上端で切れるコマ）で発生: 自動フィットの倍率が境界ちょうどに載り、
+    -1e-13 のような誤差が「1px見切れ」と誤判定されていた。"""
+    import numpy as np
+    from pixel_tile_compiler.pixelizer.character_animation import align_character_frames
+
+    frames = []
+    for index in range(3):
+        array = np.zeros((200, 200, 4), np.uint8)
+        array[0:100 + index * 7, 66:83 + index * 3] = (200, 60, 60, 255)  # 上端に接する
+        frames.append(Image.fromarray(array, "RGBA"))
+    config = CharacterAnimationConfig(
+        frame_count=3, canvas_size=(64, 64), fit_within=(62, 62), bottom_margin=1,
+        placement_mode="preserve_motion", source_origin=(100.0, 114.0), output_origin=(32.0, 63.0),
+        remove_isolated_components=False,
+    )
+    result = align_character_frames(frames, config)  # 許容ありなら通る
+    assert all(report.placed_bbox is not None and report.placed_bbox.top == 0 for report in result.frame_reports)
+    # 許容を外すと落ちる = このケースが誤差起因であることの確認
+    monkeypatch.setattr(character_animation, "_FIT_EPSILON", 0.0)
+    with pytest.raises(ValueError, match="見切れ"):
+        align_character_frames(frames, config)
+    # 本当に見切れる指定（明示倍率で1pxはみ出す）は許容があっても弾く
+    monkeypatch.setattr(character_animation, "_FIT_EPSILON", 1e-9)
+    too_big = CharacterAnimationConfig(
+        **{**config.__dict__, "scale_override": 5.0, "frame_offsets": None}
+    )
+    with pytest.raises(ValueError, match="見切れ"):
+        align_character_frames(frames, too_big)

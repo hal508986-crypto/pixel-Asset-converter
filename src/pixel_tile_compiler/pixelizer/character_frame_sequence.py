@@ -80,7 +80,8 @@ def compile_character_frame_directory(
     key_background: bool = True,
     background_color: str | tuple[int, int, int] | None = None,
     background_tolerance: int = DEFAULT_BACKGROUND_TOLERANCE,
-    background_mode: KeyMode = "connected",
+    background_mode: KeyMode = "auto",
+    background_choke_px: int = 0,
     gif_fps: float | None = DEFAULT_GIF_FPS,
     gif_loop: int | None = 0,
     **compile_kwargs: Any,
@@ -89,6 +90,8 @@ def compile_character_frame_directory(
 
     key_background=False は、すでに透過済みの連番を受けるとき。
     background_color 未指定なら、全フレームの外周から1回だけ推定して全フレームで共有する。
+    background_mode は auto（既定: 鮮やかな背景色は global、白・グレーは connected）/connected/global。
+    background_choke_px でキャラの輪郭を内側へ削り、背景との混色（縁のにじみ）を落とせる。
     config を渡した場合は canvas_size より config を優先する。
     gif_fps（既定24）で final_frames から animation.gif も出力する（None で出力しない）。
     gif_loop: 0=無限ループ、N=初回後にN回、None=1回だけ再生。
@@ -105,6 +108,7 @@ def compile_character_frame_directory(
             color=background_color,
             tolerance=background_tolerance,
             mode=background_mode,
+            choke_px=background_choke_px,
         )
         frames = keyed.frames
         archive["keyed_frames"] = list(frames)

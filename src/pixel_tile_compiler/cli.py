@@ -279,6 +279,82 @@ def compile_character_animation_command(
         typer.echo(f"フレーム: {frame_path}")
 
 
+@app.command("compile-character-frames")
+def compile_character_frames_command(
+    source: Path = typer.Argument(..., exists=True, file_okay=False, readable=True, help="PNG連番のフォルダ（例: frame_00001_.png …）"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="出力ディレクトリ"),
+    width: int = typer.Option(512, "--width", min=1, help="1frameの出力Canvas幅（64〜512以上）"),
+    height: int = typer.Option(512, "--height", min=1, help="1frameの出力Canvas高さ"),
+    palette: int = typer.Option(24, "--palette", min=4, max=64, help="動作全体で共有するパレット上限"),
+    fps: float = typer.Option(24.0, "--fps", min=0.001, max=100.0, help="GIFのfps（10ms刻みへ累積丸め）"),
+    gif: bool = typer.Option(True, "--gif/--no-gif", help="animation.gifを出力"),
+    loop: int = typer.Option(0, "--loop", min=0, help="GIFのループ回数（0=無限）"),
+    play_once: bool = typer.Option(False, "--play-once", help="GIFをループさせず1回だけ再生"),
+    key_background: bool = typer.Option(True, "--key-background/--no-key-background", help="単色背景を透過にする（透過済み連番は --no-key-background）"),
+    background_color: Optional[str] = typer.Option(None, "--background-color", help="背景色 #RRGGBB（省略時は全フレームの外周から1回だけ推定）"),
+    background_tolerance: int = typer.Option(30, "--background-tolerance", min=0, max=255, help="背景色とみなすRGB距離"),
+    background_mode: str = typer.Option("auto", "--background-mode", help="auto/connected/global（auto: 鮮やかな背景色はglobal、白・グレーはconnected）"),
+    choke: int = typer.Option(0, "--choke", min=0, help="輪郭を内側へ削る画素数（背景との混色の縁を落とす）"),
+    alpha_threshold: int = typer.Option(16, "--alpha-threshold", min=0, max=255, help="可視扱いするアルファ閾値"),
+    min_component_area: int = typer.Option(3, "--min-component-area", min=1, help="残す孤立成分の最小面積"),
+    remove_isolated: bool = typer.Option(True, "--remove-isolated/--keep-isolated", help="微小な孤立成分を除去"),
+    scale: Optional[float] = typer.Option(None, "--scale", min=0.000001, help="固定倍率（省略時は全フレームがCanvasに収まる最大）"),
+    character_detail: str = typer.Option("balanced", "--character-detail", help="sparse/balanced/detailed"),
+    outline: str = typer.Option("off", "--outline", help="off/black/white"),
+    debug: bool = typer.Option(False, "--debug/--no-debug", help="各フレームのデバッグ画像を保存"),
+) -> None:
+    """PNG連番を背景除去し、共通座標・共有パレットでコンパイルして、全段階の画像とGIFを出力します。"""
+    from dataclasses import replace as dataclass_replace
+
+    from pixel_tile_compiler.pixelizer.character_frame_sequence import (
+        compile_character_frame_directory,
+        default_sequence_config,
+    )
+
+    output_dir = output or (Path("output") / f"{source.name}_frames")
+    if background_mode not in {"auto", "connected", "global"}:
+        raise typer.BadParameter("background_modeはauto、connected、globalのいずれかです", param_hint="--background-mode")
+    if character_detail not in {"sparse", "balanced", "detailed"}:
+        raise typer.BadParameter("character_detailはsparse、balanced、detailedのいずれかです", param_hint="--character-detail")
+    if outline not in {"off", "black", "white"}:
+        raise typer.BadParameter("outlineはoff、black、whiteのいずれかです", param_hint="--outline")
+    try:
+        config = dataclass_replace(
+            default_sequence_config((width, height)),
+            alpha_threshold=alpha_threshold,
+            min_component_area_px=min_component_area,
+            remove_isolated_components=remove_isolated,
+            outline_width=1 if outline != "off" else 0,
+            scale_override=scale,
+        )
+        result = compile_character_frame_directory(
+            source,
+            output_dir,
+            config=config,
+            key_background=key_background,
+            background_color=background_color,
+            background_tolerance=background_tolerance,
+            background_mode=background_mode,  # type: ignore[arg-type]
+            background_choke_px=choke,
+            gif_fps=fps if gif else None,
+            gif_loop=None if play_once else loop,
+            palette_budget=palette,
+            character_detail_level=character_detail,
+            outline_color=outline,
+            debug_enabled=debug,
+        )
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"完了: {result.output_root}（{len(result.final_frame_paths)}フレーム）")
+    typer.echo(f"最終フレーム（正本）: {result.final_frame_paths[0].parent}")
+    typer.echo(f"整列後フレーム: {result.aligned_frame_paths[0].parent}")
+    if result.gif_path is not None:
+        typer.echo(f"GIF: {result.gif_path}")
+    typer.echo(f"レポート: {result.report_path}")
+    for warning in result.warnings:
+        typer.echo(f"警告: {warning}")
+
+
 @app.command("compile-map")
 def compile_map(
     source: Path = typer.Argument(..., exists=True, readable=True, help="入力MAP画像PNG/JPEG/WebP"),

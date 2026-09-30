@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **PNG sequence → transparent GIF** (`pixel-tile compile-character-frames`):
+  - Reads a numbered PNG folder in natural order, removes a flat opaque background (colour estimated once from all
+    frames and shared; `auto`/`connected`/`global` modes; optional outline `--choke`), then compiles every frame with
+    one shared layout (motion-preserving by default) and one shared palette.
+  - Saves every stage as separate zero-padded files (`source_frames/`, `keyed_frames/`, `aligned_frames/`,
+    `compiled/`, `final_frames/`) and writes `animation.gif` (shared palette, binary transparency, cumulative 10 ms
+    rounding so the total time is preserved), which is re-decoded and verified pixel-for-pixel by time position.
+  - 512-based by default and configurable from 64 up; the sheet/preview images are skipped instead of failing when the
+    sheet would exceed the pixel limit.
+  - Python API: `compile_character_frame_directory`, `compile_character_animation_frames`,
+    `remove_sequence_background`, `save_animated_gif`.
+
+### Fixed
+
+- Motion-preserving fit no longer rejects a frame as "cut off by 1px" when the fitted scale lands exactly on the
+  canvas boundary (floating-point noise such as -1e-13).
+
+### Changed
+
+- `CharacterAnimationResult.report_as_dict()` no longer composes the whole output sheet just to report its size
+  (values unchanged).
+
 ## [0.1.0] - 2026-09-17
 
 Initial public review release.

@@ -61,11 +61,27 @@ pixel-tile compile-character-animation character_idle_sheet.png `
   --split-mode hybrid --cols 4 --rows 1
 ```
 
+動画生成AIなどが出力したPNG連番（単色背景・不透明）を、背景除去→共通座標・共有パレットでコンパイルし、
+全段階の画像と透過GIFまで一括で出力します。
+
+```powershell
+pixel-tile compile-character-frames frames_dir `
+  --output output/action --width 128 --height 128 `
+  --background-tolerance 45 --choke 1 --fps 24
+```
+
+- 背景色は全フレームの外周から1回だけ推定して全フレームで共有します（`--background-color #RRGGBB` で指定も可）。
+- `--background-mode auto`（既定）は、緑・青緑など鮮やかな背景色では画像内の背景色を全部消し（`global`）、白・グレーでは外周に繋がる部分だけ消します（`connected`）。
+- 縁に背景との混色が残るときは `--choke 1`（輪郭を1画素内側へ削る。画像端に接する輪郭は削りません）。
+- 透過済みの連番は `--no-key-background`、GIFが不要なら `--no-gif`、ループさせないなら `--play-once`。
+- 入力は自然順（`f2` の次が `f10`）で読み込み、全フレームが同サイズである必要があります。
+
 全コマンドとオプションは次で確認できます。
 
 ```powershell
 pixel-tile --help
 pixel-tile compile --help
+pixel-tile compile-character-frames --help
 ```
 
 ## 得られる成果物
@@ -81,6 +97,19 @@ pixel-tile compile --help
 MAP・Tileset・アニメーションの各コマンドは、これに加えて比較画像、`metrics.json`、
 `manifest.json`、分割レポート、フレーム画像、64×64プレビューなどを出力します。
 出力先は `--output` で指定できます。
+
+`compile-character-frames`（PNG連番）は、段階ごとに1枚ずつ別ファイルで保存します。
+
+- `source_frames/`：入力PNGのバイト不変コピー
+- `keyed_frames/`：背景除去後（透過）
+- `aligned_frames/`：共通座標・倍率で整列した後
+- `compiled/F001/…`：各フレームのコンパイル結果
+- `final_frames/`：最終フレーム（正本。GIFはここから作る派生物）
+- `animation.gif`：全フレーム共通パレット・二値透過。書き出し後に再読込して画素一致を検証済み
+- `bbox_report.json`：各段階のパス・sha256、背景色・許容差、GIFのfps・各フレーム時間
+
+フレームIDは `F001` のようにゼロ埋めです。Sheetの総画素数が上限（16,777,216）を超える場合は、
+Sheetとプレビューだけを作らず、フレーム画像とGIFは通常どおり出力します。
 
 ## 開発者向け
 
@@ -152,6 +181,20 @@ pixel-tile compile-character-animation character_idle_sheet.png `
   --split-mode hybrid --cols 4 --rows 1
 ```
 
+For a numbered PNG sequence with a flat, opaque background (e.g. video-model output), one command removes
+the background, compiles all frames with one shared layout and palette, and writes every intermediate stage plus a
+transparent GIF:
+
+```powershell
+pixel-tile compile-character-frames frames_dir `
+  --output output/action --width 128 --height 128 `
+  --background-tolerance 45 --choke 1 --fps 24
+```
+
+The background colour is estimated once from all frames and shared. `--background-mode auto` (default) removes every
+background-coloured pixel for vivid backgrounds (green, teal) and only border-connected ones for white/grey.
+`--choke 1` shaves one pixel off the outline to drop background-blended edges (outlines touching the image border are kept).
+
 Use `pixel-tile --help` and `pixel-tile <command> --help` for all options.
 
 ### Outputs
@@ -160,6 +203,11 @@ A single-image compilation writes `final.png`, `ir.json`, `metadata.json`, two b
 and debug images under the selected output directory. MAP, tileset, and animation commands add
 comparison images, metrics, manifests, split reports, frame images, and previews as applicable.
 Input images are not modified. Use `--output` to choose the destination.
+
+`compile-character-frames` writes each stage as separate zero-padded files (`source_frames/`, `keyed_frames/`,
+`aligned_frames/`, `compiled/F001/…`, `final_frames/`) plus `animation.gif` (shared palette, binary transparency,
+re-decoded and verified pixel-for-pixel) and `bbox_report.json` with per-stage sha256 hashes. `final_frames/` is the
+master; the GIF is derived from it.
 
 ### GUI language
 

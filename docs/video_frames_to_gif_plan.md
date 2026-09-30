@@ -1,7 +1,17 @@
 # 動画（連番PNG）→ GIF 対応 計画
 
-作成日: 2026-09-30 / 状態: 計画のみ（製品コードは未変更）
+作成日: 2026-09-30 / 状態: P0・P1 完了（下記「進捗」参照）、P2以降は未着手
 参照コミット: `527b705`
+
+## 進捗
+
+- **P0 完了**: 合成Sheet（6コマ・ノイズ入り・孤立点入り）を5設定（legacy / 128px / 黒アウトライン / 共有パレットなし / preserve_motion 256×192）で Sheet経路に通し、出力全200ファイルの sha256 を記録。記録→再実行で差分0（決定論を確認）。
+- **P1 完了**: `character_animation.py` を「Sheet分割〜整列」と「整列後のコンパイル・保存（共通コア `_compile_prepared_animation_to_root`）」に分離し、フレーム列を直接受ける `compile_character_animation_frames()` を追加。
+  - ゲート: リファクタ前後で **Sheet経路の全200ファイルがバイト一致**。既存のアニメ系・CLIテストも全緑。
+  - 新テスト `tests/test_character_animation_frames.py`（7件）: Sheet経路とフレーム列経路の出力がバイト一致、決定論、不正入力、既存ファイル保護、Sheet総画素上限。
+  - 連番は現状 `F1, F2, …`（ゼロ埋めはP3）。Sheet総画素の上限も連番経路に残している（P3で外す）。背景除去は未実装で、入力は透過済みRGBAが前提（P2）。
+  - レポートは Sheet経路が `source_image`、フレーム列経路が `source_frames`（各フレームのRGBA sha256）を記録。
+- **環境メモ**: 依存をこのクラウド環境に導入して検証。次の2テストは変更前から失敗しており、本作業とは無関係（`test_canvas_spec::test_default_character_64_output_is_frozen` は固定ハッシュがライブラリ版数の差で不一致、`test_license_audit` は PySide6 未導入）。GUI系テストも PySide6 未導入のため未実行。
 
 ## 1. 目的とスコープ
 

@@ -10,7 +10,7 @@ import tempfile
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from shutil import copyfile
-from typing import Literal, Mapping
+from typing import Callable, Literal, Mapping, Sequence
 
 import numpy as np
 from PIL import Image
@@ -1339,6 +1339,29 @@ _MANAGED_ANIMATION_OUTPUTS = (
 )
 
 
+def _run_transactional_output(
+    output_root: Path,
+    build: Callable[[Path], CharacterAnimationCompileResult],
+) -> CharacterAnimationCompileResult:
+    """Build into a staging root, then replace the managed outputs atomically."""
+    output_root.parent.mkdir(parents=True, exist_ok=True)
+    staging_root = Path(
+        tempfile.mkdtemp(
+            prefix=f".{output_root.name or 'output'}.staging-",
+            dir=str(output_root.parent.resolve()),
+        )
+    )
+    try:
+        staged_result = build(staging_root)
+        final_result = _relocate_compile_result(staged_result, staging_root, output_root)
+        _rewrite_staged_metadata_paths(staging_root, output_root)
+        _replace_output_root(staging_root, output_root)
+        return final_result
+    finally:
+        if staging_root.exists():
+            shutil.rmtree(staging_root, ignore_errors=True)
+
+
 def compile_character_animation_sheet(
     source: Path | str,
     output_root: Path | str,
@@ -1360,15 +1383,9 @@ def compile_character_animation_sheet(
     source = Path(source)
     output_root = Path(output_root)
     config = config or CharacterAnimationConfig()
-    output_root.parent.mkdir(parents=True, exist_ok=True)
-    staging_root = Path(
-        tempfile.mkdtemp(
-            prefix=f".{output_root.name or 'output'}.staging-",
-            dir=str(output_root.parent.resolve()),
-        )
-    )
-    try:
-        staged_result = _compile_character_animation_to_root(
+    return _run_transactional_output(
+        output_root,
+        lambda staging_root: _compile_character_animation_to_root(
             source,
             staging_root,
             config=config,
@@ -1383,14 +1400,69 @@ def compile_character_animation_sheet(
             component_assignments=component_assignments,
             cells_override=cells_override,
             confirm_components=confirm_components,
-        )
-        final_result = _relocate_compile_result(staged_result, staging_root, output_root)
-        _rewrite_staged_metadata_paths(staging_root, output_root)
-        _replace_output_root(staging_root, output_root)
-        return final_result
-    finally:
-        if staging_root.exists():
-            shutil.rmtree(staging_root, ignore_errors=True)
+        ),
+    )
+
+
+def compile_character_animation_frames(
+    frames: Sequence[Image.Image],
+    output_root: Path | str,
+    *,
+    config: CharacterAnimationConfig | None = None,
+    palette_budget: int = 24,
+    character_detail_level: str = "balanced",
+    outline_color: str = "off",
+    debug_enabled: bool = False,
+    palette_colors: tuple[tuple[int, int, int], ...] | None = None,
+    shared_palette: tuple[tuple[int, int, int], ...] | None = None,
+    protected_masks: tuple[Image.Image | None, ...] | list[Image.Image | None] | None = None,
+    transform: CharacterAnimationTransform | None = None,
+    source_label: str = "<frames>",
+) -> CharacterAnimationCompileResult:
+    """Compile an ordered frame sequence (透過済みRGBA) without going through a sheet.
+
+    Frames must share one size and already carry alpha; background removal is
+    the caller's job. Outputs and guarantees match the sheet path.
+    """
+    frames = tuple(frames)
+    if not frames:
+        raise ValueError("at least one frame is required")
+    output_root = Path(output_root)
+    config = replace(config or CharacterAnimationConfig(), frame_count=len(frames))
+    _validate_animation_output_sheet_size(config.canvas_size, len(frames))
+    if any(frame.size != frames[0].size for frame in frames):
+        raise ValueError("all animation frames must have the same size")
+    return _run_transactional_output(
+        output_root,
+        lambda staging_root: _compile_prepared_animation_to_root(
+            align_character_frames(
+                frames,
+                config,
+                protected_masks=protected_masks,
+                transform=transform,
+            ),
+            staging_root,
+            source_name=source_label,
+            report_extras={
+                "source_frames": {
+                    "label": source_label,
+                    "frame_count": len(frames),
+                    "dimensions": list(frames[0].size),
+                    "sha256": [
+                        hashlib.sha256(frame.convert("RGBA").tobytes()).hexdigest()
+                        for frame in frames
+                    ],
+                }
+            },
+            config=config,
+            palette_budget=palette_budget,
+            character_detail_level=character_detail_level,
+            outline_color=outline_color,
+            debug_enabled=debug_enabled,
+            palette_colors=palette_colors,
+            shared_palette=shared_palette,
+        ),
+    )
 
 
 def _validate_animation_output_sheet_size(
@@ -1424,9 +1496,6 @@ def _compile_character_animation_to_root(
     confirm_components: bool = False,
 ) -> CharacterAnimationCompileResult:
     """Write one complete animation artifact set into an empty staging root."""
-    from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
-    from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
-
     with Image.open(source) as opened:
         split = _split_character_animation_source(
             opened,
@@ -1443,6 +1512,47 @@ def _compile_character_animation_to_root(
             transform=transform,
             split_result=split,
         )
+    with Image.open(source) as opened:
+        source_dimensions = list(opened.size)
+    return _compile_prepared_animation_to_root(
+        prepared,
+        output_root,
+        source_name=str(source),
+        report_extras={
+            "source_image": {
+                "path": str(source),
+                "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+                "dimensions": source_dimensions,
+            }
+        },
+        config=config,
+        palette_budget=palette_budget,
+        character_detail_level=character_detail_level,
+        outline_color=outline_color,
+        debug_enabled=debug_enabled,
+        palette_colors=palette_colors,
+        shared_palette=shared_palette,
+    )
+
+
+def _compile_prepared_animation_to_root(
+    prepared: CharacterAnimationResult,
+    output_root: Path,
+    *,
+    source_name: str,
+    report_extras: Mapping[str, object],
+    config: CharacterAnimationConfig,
+    palette_budget: int,
+    character_detail_level: str,
+    outline_color: str,
+    debug_enabled: bool,
+    palette_colors: tuple[tuple[int, int, int], ...] | None,
+    shared_palette: tuple[tuple[int, int, int], ...] | None,
+) -> CharacterAnimationCompileResult:
+    """整列済みフレーム群を共有パレットでコンパイルし、成果物一式を書き出す（入力形式に依存しない共通部）。"""
+    from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
+    from pixel_tile_compiler.pipeline.compiler import PixelTileCompiler
+
     if not 4 <= palette_budget <= 64:
         raise ValueError("palette_budget must be between 4 and 64")
     if palette_colors is not None and shared_palette is not None:
@@ -1490,7 +1600,7 @@ def _compile_character_animation_to_root(
             smoothing_enabled=False,
             debug_enabled=debug_enabled,
         )
-        compiled = compiler.compile_image(frame, compiler_config, source_name=f"{source}::F{index + 1}")
+        compiled = compiler.compile_image(frame, compiler_config, source_name=f"{source_name}::F{index + 1}")
         frame_paths.append(compiled.final_path)
     final_frames_root = output_root / "final_frames"
     final_frames_root.mkdir(parents=True, exist_ok=True)
@@ -1518,11 +1628,7 @@ def _compile_character_animation_to_root(
     if resolved_shared_palette is not None and not set(final_palette).issubset(set(resolved_shared_palette)):
         raise RuntimeError("最終frame群の色が共有paletteの外へ出ました")
     report_payload = prepared.report_as_dict()
-    report_payload["source_image"] = {
-        "path": str(source),
-        "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
-        "dimensions": list(Image.open(source).size),
-    }
+    report_payload.update(report_extras)
     report_payload["final_frames"] = [
         {
             "frame_id": f"F{index + 1}",
@@ -1690,6 +1796,7 @@ __all__ = [
     "animation_source_frame_boxes",
     "animation_source_frame_coordinates",
     "analyze_frame_alpha",
+    "compile_character_animation_frames",
     "compile_character_animation_sheet",
     "load_character_animation_report",
     "load_character_animation_transform",

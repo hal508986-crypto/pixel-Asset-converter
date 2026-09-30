@@ -15,8 +15,12 @@ All notable changes to this project will be documented in this file.
     rounding so the total time is preserved), which is re-decoded and verified pixel-for-pixel by time position.
   - 512-based by default and configurable from 64 up; the sheet/preview images are skipped instead of failing when the
     sheet would exceed the pixel limit.
+  - Optional temporal colour stabilisation (`--stabilize-margin`, off by default): palette hysteresis that suppresses
+    colour flicker at palette boundaries without changing silhouettes or the palette. `compiled/` keeps the raw output.
+  - `scripts/evaluate_frame_sequence.py` measures temporal stability per stage (silhouette change, A→B→A toggle rate,
+    near-static pixel flip rate).
   - Python API: `compile_character_frame_directory`, `compile_character_animation_frames`,
-    `remove_sequence_background`, `save_animated_gif`.
+    `remove_sequence_background`, `save_animated_gif`, `stabilize_palette_flicker`.
 
 ### Fixed
 

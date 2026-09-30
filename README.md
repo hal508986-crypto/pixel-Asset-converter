@@ -73,6 +73,7 @@ pixel-tile compile-character-frames frames_dir `
 - 背景色は全フレームの外周から1回だけ推定して全フレームで共有します（`--background-color #RRGGBB` で指定も可）。
 - `--background-mode auto`（既定）は、緑・青緑など鮮やかな背景色では画像内の背景色を全部消し（`global`）、白・グレーでは外周に繋がる部分だけ消します（`connected`）。
 - 縁に背景との混色が残るときは `--choke 1`（輪郭を1画素内側へ削る。画像端に接する輪郭は削りません）。
+- 色のちらつき（パレット境界で色が行き来する）は `--stabilize-margin 12` で抑えられます（既定はオフ）。前フレームで使った色が今の色より元の色から見てmargin以内にしか劣らなければ、前の色を維持します。輪郭とパレットは変わりません。
 - 透過済みの連番は `--no-key-background`、GIFが不要なら `--no-gif`、ループさせないなら `--play-once`。
 - 入力は自然順（`f2` の次が `f10`）で読み込み、全フレームが同サイズである必要があります。
 
@@ -194,6 +195,7 @@ pixel-tile compile-character-frames frames_dir `
 The background colour is estimated once from all frames and shared. `--background-mode auto` (default) removes every
 background-coloured pixel for vivid backgrounds (green, teal) and only border-connected ones for white/grey.
 `--choke 1` shaves one pixel off the outline to drop background-blended edges (outlines touching the image border are kept).
+`--stabilize-margin 12` (off by default) reduces colour flicker at palette boundaries: a pixel keeps its previous colour unless the new one is closer to the source by more than the margin. Silhouettes and the palette are unchanged.
 
 Use `pixel-tile --help` and `pixel-tile <command> --help` for all options.
 

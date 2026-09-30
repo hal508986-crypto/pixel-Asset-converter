@@ -20,6 +20,7 @@ from pixel_tile_compiler.io.exporter import save_json, save_png
 from pixel_tile_compiler.io.frame_sequence import frame_label
 from pixel_tile_compiler.io.gif_export import save_animated_gif
 from pixel_tile_compiler.pixelizer.palette import extract_palette
+from pixel_tile_compiler.pixelizer.temporal_stabilize import stabilize_palette_flicker
 from pixel_tile_compiler.sheet.alpha_projection import (
     SplitMode,
     SpriteSheetSplitResult,
@@ -1448,6 +1449,7 @@ def compile_character_animation_frames(
     archive_frames: Mapping[str, Sequence[Image.Image | Path]] | None = None,
     gif_fps: float | None = None,
     gif_loop: int | None = 0,
+    stabilize_margin: float | None = None,
 ) -> CharacterAnimationCompileResult:
     """Compile an ordered frame sequence (透過済みRGBA) without going through a sheet.
 
@@ -1457,6 +1459,8 @@ def compile_character_animation_frames(
     compiled/, final_frames/, plus any archive_frames stages (source_frames/,
     keyed_frames/). With gif_fps, final_frames are also written as animation.gif
     (shared palette, binary transparency, read back and verified pixel-for-pixel).
+    With stabilize_margin, colours are stabilised over time (palette hysteresis) when
+    writing final_frames; compiled/ keeps the raw compiler output.
     The sheet/preview images are written only while they stay
     within MAX_ANIMATION_OUTPUT_SHEET_PIXELS; the per-frame PNGs are the master.
     """
@@ -1520,6 +1524,7 @@ def compile_character_animation_frames(
             archive_frames=archive_frames,
             gif_fps=gif_fps,
             gif_loop=gif_loop,
+            stabilize_margin=stabilize_margin,
         )
 
     return _run_transactional_output(output_root, build)
@@ -1614,6 +1619,7 @@ def _compile_prepared_animation_to_root(
     archive_frames: Mapping[str, Sequence[Image.Image | Path]] | None = None,
     gif_fps: float | None = None,
     gif_loop: int | None = 0,
+    stabilize_margin: float | None = None,
 ) -> CharacterAnimationCompileResult:
     """整列済みフレーム群を共有パレットでコンパイルし、成果物一式を書き出す（入力形式に依存しない共通部）。"""
     from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
@@ -1692,8 +1698,25 @@ def _compile_prepared_animation_to_root(
         final_frames_root / f"{label(index)}.png"
         for index in range(len(frame_paths))
     )
-    for frame_path, final_frame_path in zip(frame_paths, final_frame_paths):
-        copyfile(frame_path, final_frame_path)
+    stabilization_report: dict[str, object] | None = None
+    if stabilize_margin is None:
+        for frame_path, final_frame_path in zip(frame_paths, final_frame_paths):
+            copyfile(frame_path, final_frame_path)
+    else:
+        compiled_images = []
+        for frame_path in frame_paths:
+            with Image.open(frame_path) as opened:
+                compiled_images.append(opened.convert("RGBA"))
+        outline_rgb = _outline_rgb(outline_color)
+        stabilized = stabilize_palette_flicker(
+            prepared.aligned_frames,
+            compiled_images,
+            margin=stabilize_margin,
+            protect_colors=(outline_rgb,) if outline_rgb is not None else (),
+        )
+        for image, final_frame_path in zip(stabilized.frames, final_frame_paths):
+            save_png(image, final_frame_path)
+        stabilization_report = stabilized.report_as_dict()
     frame_palettes = [_image_palette_colors(path) for path in final_frame_paths]
     final_palette = sorted(
         {tuple(color) for frame_palette in frame_palettes for color in frame_palette}
@@ -1727,6 +1750,8 @@ def _compile_prepared_animation_to_root(
     report_payload.update(report_extras)
     if gif_report is not None:
         report_payload["animation"] = {"gif": gif_report}
+    if stabilization_report is not None:
+        report_payload["stabilization"] = stabilization_report
     report_payload["final_frames"] = [
         {
             "frame_id": label(index),
@@ -1762,7 +1787,7 @@ def _compile_prepared_animation_to_root(
             compiled_sheet_size,
             (0, 0, 0, 0),
         )
-        for index, frame_path in enumerate(frame_paths):
+        for index, frame_path in enumerate(final_frame_paths):
             with Image.open(frame_path) as opened:
                 compiled_sheet.alpha_composite(opened.convert("RGBA"), (index * config.canvas_size[0], 0))
         compiled_sheet_path = save_png(compiled_sheet, output_root / "compiled_sheet.png")

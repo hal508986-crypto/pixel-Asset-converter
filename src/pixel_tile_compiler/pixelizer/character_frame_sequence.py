@@ -84,6 +84,7 @@ def compile_character_frame_directory(
     background_choke_px: int = 0,
     gif_fps: float | None = DEFAULT_GIF_FPS,
     gif_loop: int | None = 0,
+    stabilize_margin: float | None = None,
     **compile_kwargs: Any,
 ) -> CharacterAnimationCompileResult:
     """PNG連番フォルダを読み、背景除去（任意）→コンパイルして、全段階を個別ファイルで保存する。
@@ -95,6 +96,7 @@ def compile_character_frame_directory(
     config を渡した場合は canvas_size より config を優先する。
     gif_fps（既定24）で final_frames から animation.gif も出力する（None で出力しない）。
     gif_loop: 0=無限ループ、N=初回後にN回、None=1回だけ再生。
+    stabilize_margin: 指定すると final_frames の色を時間方向に安定させる（パレット境界でのちらつき抑制。目安12）。
     """
     input_dir = Path(input_dir)
     paths, source_frames = load_frame_directory(input_dir)
@@ -126,6 +128,7 @@ def compile_character_frame_directory(
         archive_frames=archive,
         gif_fps=gif_fps,
         gif_loop=gif_loop,
+        stabilize_margin=stabilize_margin,
         **compile_kwargs,
     )
     if key_background and keyed.warnings:

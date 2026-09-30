@@ -510,6 +510,7 @@ class MainWindow(QMainWindow):
         self.source_path: Path | None = None
         self._compiled_canvas_size: tuple[int, int] | None = None
         self._terrain_batch_window = None
+        self._frame_sequence_window = None
         self._shared_palette_colors: tuple[tuple[int, int, int], ...] = ()
         self._output_palette_colors: tuple[tuple[int, int, int], ...] = ()
         self._last_final_path: Path | None = None
@@ -896,6 +897,9 @@ class MainWindow(QMainWindow):
         self.compile_button.setEnabled(False)
         self.terrain_batch_button = QPushButton("地形をまとめてコンパイル")
         self.terrain_batch_button.clicked.connect(self.open_terrain_batch)
+        self.frame_sequence_button = QPushButton("連番PNG→GIF")
+        self.frame_sequence_button.setToolTip("動画生成AIなどのPNG連番から、背景除去・共通パレットのコンパイル・透過GIFまで一括で作ります")
+        self.frame_sequence_button.clicked.connect(self.open_frame_sequence)
 
         self.workbench_splitter = QSplitter(Qt.Orientation.Vertical)
         self.workbench_splitter.setObjectName("workbenchSplitter")
@@ -1359,6 +1363,7 @@ class MainWindow(QMainWindow):
         row.addWidget(self.animation_play_button)
         row.addWidget(self.animation_playback_label)
         row.addWidget(self.terrain_batch_button)
+        row.addWidget(self.frame_sequence_button)
         layout.addLayout(row)
         layout.addWidget(self.metrics)
         layout.addWidget(self.status)
@@ -1397,6 +1402,7 @@ class MainWindow(QMainWindow):
         self.repeat_opt_label.setVisible(not is_character)
         self.repeat_opt.setVisible(not is_character)
         self.terrain_batch_button.setVisible(not is_character)
+        self.frame_sequence_button.setVisible(is_character)
         self.shared_palette_group.setVisible(is_character)
         self.animation_play_button.setVisible(is_animation)
         self.animation_playback_label.setVisible(is_animation)
@@ -2881,6 +2887,21 @@ class MainWindow(QMainWindow):
         self._terrain_batch_window.show()
         self._terrain_batch_window.raise_()
         self._terrain_batch_window.activateWindow()
+
+    def open_frame_sequence(self) -> None:
+        """PNG連番→GIFの別ウィンドウを開く。単体画像・Sheetの処理には影響しない。"""
+        try:
+            output_root = self._selected_output_root()
+        except ValueError as exc:
+            self.status.setText(f"連番PNG→GIFを開けませんでした: {exc}")
+            return
+        if self._frame_sequence_window is None:
+            from pixel_tile_compiler.gui.frame_sequence_window import FrameSequenceWindow
+
+            self._frame_sequence_window = FrameSequenceWindow(output_root=output_root)
+        self._frame_sequence_window.show()
+        self._frame_sequence_window.raise_()
+        self._frame_sequence_window.activateWindow()
 
     def _on_terrain_palette_changed(self, colors: object) -> None:
         """地形ウィンドウで選択した可視RGB paletteを転送する。"""

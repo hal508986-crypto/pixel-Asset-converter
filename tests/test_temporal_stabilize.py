@@ -103,7 +103,7 @@ def _noisy_sequence(directory: Path, count: int = 8) -> None:
 def test_pipeline_option_reduces_toggles_without_touching_alpha_or_palette(tmp_path: Path) -> None:
     _noisy_sequence(tmp_path / "in")
     kwargs = dict(canvas_size=(64, 64), background_tolerance=45, palette_budget=6, gif_fps=None)
-    plain = compile_character_frame_directory(tmp_path / "in", tmp_path / "plain", **kwargs)
+    plain = compile_character_frame_directory(tmp_path / "in", tmp_path / "plain", stabilize_margin=None, **kwargs)
     steady = compile_character_frame_directory(tmp_path / "in", tmp_path / "steady", stabilize_margin=12, **kwargs)
 
     def load(result):
@@ -145,7 +145,13 @@ def test_cli_stabilize_margin_flag(tmp_path: Path) -> None:
     assert report["stabilization"]["margin"] == 12.0
     off = CliRunner().invoke(app, [
         "compile-character-frames", str(tmp_path / "in"), "-o", str(tmp_path / "off"),
-        "--width", "64", "--height", "64", "--background-tolerance", "45", "--no-gif",
+        "--width", "64", "--height", "64", "--background-tolerance", "45", "--no-gif", "--stabilize-margin", "0",
     ])
     assert off.exit_code == 0
     assert "stabilization" not in json.loads((tmp_path / "off" / "bbox_report.json").read_text(encoding="utf-8"))
+    default = CliRunner().invoke(app, [
+        "compile-character-frames", str(tmp_path / "in"), "-o", str(tmp_path / "default"),
+        "--width", "64", "--height", "64", "--background-tolerance", "45", "--no-gif",
+    ])
+    assert default.exit_code == 0
+    assert json.loads((tmp_path / "default" / "bbox_report.json").read_text(encoding="utf-8"))["stabilization"]["margin"] == 12.0

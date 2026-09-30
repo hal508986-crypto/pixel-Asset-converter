@@ -73,9 +73,15 @@ pixel-tile compile-character-frames frames_dir `
 - 背景色は全フレームの外周から1回だけ推定して全フレームで共有します（`--background-color #RRGGBB` で指定も可）。
 - `--background-mode auto`（既定）は、緑・青緑など鮮やかな背景色では画像内の背景色を全部消し（`global`）、白・グレーでは外周に繋がる部分だけ消します（`connected`）。
 - 縁に背景との混色が残るときは `--choke 1`（輪郭を1画素内側へ削る。画像端に接する輪郭は削りません）。
-- 色のちらつき（パレット境界で色が行き来する）は `--stabilize-margin 12` で抑えられます（既定はオフ）。前フレームで使った色が今の色より元の色から見てmargin以内にしか劣らなければ、前の色を維持します。輪郭とパレットは変わりません。
+- 色のちらつき（パレット境界で色が行き来する）は、既定で抑えます（`--stabilize-margin 12`。`0` で無効）。前フレームで使った色が今の色より元の色から見てmargin以内にしか劣らなければ、前の色を維持します。輪郭とパレットは変わりません。上げすぎると本物の色の変化も潰すので、目安は12〜20です。
 - 透過済みの連番は `--no-key-background`、GIFが不要なら `--no-gif`、ループさせないなら `--play-once`。
 - 入力は自然順（`f2` の次が `f10`）で読み込み、全フレームが同サイズである必要があります。
+
+GUIからも同じ処理を使えます。GUIを起動し、用途を「キャラクター」または「コマ割りアニメーション」にすると出る
+**「連番PNG→GIF」ボタン**から専用ウィンドウを開き、フォルダを選ぶだけで、背景色の推定結果（枚数・サイズ・外周の一致率）を確認してから、
+設定（出力サイズ・パレット・背景の消し方・許容差・輪郭削り・ちらつき対策・fps・ループ）を選んで実行できます。処理中は進捗が出て、
+**中止しても既存の出力は壊れません**。結果は透過の市松の上でGIFと同じ速度で再生して確認できます。
+CLIとGUIは同じ処理（`frame_sequence_job`）を通るので、同じ設定なら同じ結果になります。
 
 全コマンドとオプションは次で確認できます。
 
@@ -195,7 +201,12 @@ pixel-tile compile-character-frames frames_dir `
 The background colour is estimated once from all frames and shared. `--background-mode auto` (default) removes every
 background-coloured pixel for vivid backgrounds (green, teal) and only border-connected ones for white/grey.
 `--choke 1` shaves one pixel off the outline to drop background-blended edges (outlines touching the image border are kept).
-`--stabilize-margin 12` (off by default) reduces colour flicker at palette boundaries: a pixel keeps its previous colour unless the new one is closer to the source by more than the margin. Silhouettes and the palette are unchanged.
+`--stabilize-margin` (default 12, `0` disables) reduces colour flicker at palette boundaries: a pixel keeps its previous colour unless the new one is closer to the source by more than the margin. Silhouettes and the palette are unchanged.
+
+The same job is available in the GUI: with the Character or Character Animation purpose, the **連番PNG→GIF** button opens a
+dedicated window (folder pick with an estimated-background preview, all the settings above, progress, cancel that never
+corrupts an existing output, and a playback preview on a checkerboard). CLI and GUI share one job layer, so identical
+settings give identical results.
 
 Use `pixel-tile --help` and `pixel-tile <command> --help` for all options.
 

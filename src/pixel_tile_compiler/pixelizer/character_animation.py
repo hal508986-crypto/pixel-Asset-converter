@@ -1450,6 +1450,7 @@ def compile_character_animation_frames(
     gif_fps: float | None = None,
     gif_loop: int | None = 0,
     stabilize_margin: float | None = None,
+    progress: Callable[[str, int, int], None] | None = None,
 ) -> CharacterAnimationCompileResult:
     """Compile an ordered frame sequence (透過済みRGBA) without going through a sheet.
 
@@ -1461,6 +1462,9 @@ def compile_character_animation_frames(
     (shared palette, binary transparency, read back and verified pixel-for-pixel).
     With stabilize_margin, colours are stabilised over time (palette hysteresis) when
     writing final_frames; compiled/ keeps the raw compiler output.
+    progress(stage, done, total) is called after each compiled frame ("compile") and
+    before the final write ("finalize"); an exception raised from it aborts the run and
+    leaves any existing output untouched.
     The sheet/preview images are written only while they stay
     within MAX_ANIMATION_OUTPUT_SHEET_PIXELS; the per-frame PNGs are the master.
     """
@@ -1525,6 +1529,7 @@ def compile_character_animation_frames(
             gif_fps=gif_fps,
             gif_loop=gif_loop,
             stabilize_margin=stabilize_margin,
+            progress=progress,
         )
 
     return _run_transactional_output(output_root, build)
@@ -1620,6 +1625,7 @@ def _compile_prepared_animation_to_root(
     gif_fps: float | None = None,
     gif_loop: int | None = 0,
     stabilize_margin: float | None = None,
+    progress: Callable[[str, int, int], None] | None = None,
 ) -> CharacterAnimationCompileResult:
     """整列済みフレーム群を共有パレットでコンパイルし、成果物一式を書き出す（入力形式に依存しない共通部）。"""
     from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
@@ -1692,6 +1698,10 @@ def _compile_prepared_animation_to_root(
         )
         compiled = compiler.compile_image(frame, compiler_config, source_name=f"{source_name}::{label(index)}")
         frame_paths.append(compiled.final_path)
+        if progress is not None:
+            progress("compile", index + 1, frame_count)
+    if progress is not None:
+        progress("finalize", 0, 1)
     final_frames_root = output_root / "final_frames"
     final_frames_root.mkdir(parents=True, exist_ok=True)
     final_frame_paths = tuple(

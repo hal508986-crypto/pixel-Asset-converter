@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from pixel_tile_compiler.io.frame_sequence import load_frame_directory
 from pixel_tile_compiler.pixelizer.character_animation import (
@@ -25,6 +25,7 @@ from pixel_tile_compiler.preprocess.sequence_background import (
 
 DEFAULT_SEQUENCE_CANVAS = (512, 512)
 DEFAULT_GIF_FPS = 24.0
+DEFAULT_STABILIZE_MARGIN = 12.0  # 実素材で輪郭・パレットを変えずにちらつきを大きく減らせた値
 
 
 def default_sequence_config(canvas_size: tuple[int, int] = DEFAULT_SEQUENCE_CANVAS) -> CharacterAnimationConfig:
@@ -84,7 +85,8 @@ def compile_character_frame_directory(
     background_choke_px: int = 0,
     gif_fps: float | None = DEFAULT_GIF_FPS,
     gif_loop: int | None = 0,
-    stabilize_margin: float | None = None,
+    stabilize_margin: float | None = DEFAULT_STABILIZE_MARGIN,
+    progress: Callable[[str, int, int], None] | None = None,
     **compile_kwargs: Any,
 ) -> CharacterAnimationCompileResult:
     """PNG連番フォルダを読み、背景除去（任意）→コンパイルして、全段階を個別ファイルで保存する。
@@ -96,15 +98,20 @@ def compile_character_frame_directory(
     config を渡した場合は canvas_size より config を優先する。
     gif_fps（既定24）で final_frames から animation.gif も出力する（None で出力しない）。
     gif_loop: 0=無限ループ、N=初回後にN回、None=1回だけ再生。
-    stabilize_margin: 指定すると final_frames の色を時間方向に安定させる（パレット境界でのちらつき抑制。目安12）。
+    stabilize_margin: final_frames の色を時間方向に安定させる（既定12。パレット境界でのちらつき抑制。None でしない）。
+    progress(stage, done, total): 進捗通知（load/key/compile/finalize）。ここから例外を投げると中断でき、既存の出力は壊れない。
     """
     input_dir = Path(input_dir)
+    if progress is not None:
+        progress("load", 0, 1)
     paths, source_frames = load_frame_directory(input_dir)
     archive: dict[str, Any] = {"source_frames": list(paths)}
     extras: dict[str, object] = {
         "source_directory": {"path": str(input_dir), "files": [path.name for path in paths]},
     }
     if key_background:
+        if progress is not None:
+            progress("key", 0, 1)
         keyed = remove_sequence_background(
             source_frames,
             color=background_color,
@@ -129,6 +136,7 @@ def compile_character_frame_directory(
         gif_fps=gif_fps,
         gif_loop=gif_loop,
         stabilize_margin=stabilize_margin,
+        progress=progress,
         **compile_kwargs,
     )
     if key_background and keyed.warnings:

@@ -299,61 +299,48 @@ def compile_character_frames_command(
     min_component_area: int = typer.Option(3, "--min-component-area", min=1, help="残す孤立成分の最小面積"),
     remove_isolated: bool = typer.Option(True, "--remove-isolated/--keep-isolated", help="微小な孤立成分を除去"),
     scale: Optional[float] = typer.Option(None, "--scale", min=0.000001, help="固定倍率（省略時は全フレームがCanvasに収まる最大）"),
-    stabilize_margin: float = typer.Option(0.0, "--stabilize-margin", min=0.0, help="色の時間方向の安定化（0=しない。目安12。パレット境界でのちらつきを抑える）"),
+    stabilize_margin: float = typer.Option(12.0, "--stabilize-margin", min=0.0, help="色の時間方向の安定化（既定12、0=しない。パレット境界でのちらつきを抑える。上げすぎると本物の色変化も潰す）"),
     character_detail: str = typer.Option("balanced", "--character-detail", help="sparse/balanced/detailed"),
     outline: str = typer.Option("off", "--outline", help="off/black/white"),
     debug: bool = typer.Option(False, "--debug/--no-debug", help="各フレームのデバッグ画像を保存"),
 ) -> None:
     """PNG連番を背景除去し、共通座標・共有パレットでコンパイルして、全段階の画像とGIFを出力します。"""
-    from dataclasses import replace as dataclass_replace
+    from pixel_tile_compiler.pixelizer.frame_sequence_job import FrameSequenceRequest, run_frame_sequence
 
-    from pixel_tile_compiler.pixelizer.character_frame_sequence import (
-        compile_character_frame_directory,
-        default_sequence_config,
+    request = FrameSequenceRequest(
+        input_dir=source,
+        output_dir=output or (Path("output") / f"{source.name}_frames"),
+        canvas_size=(width, height),
+        palette_budget=palette,
+        fps=fps,
+        write_gif=gif,
+        play_once=play_once,
+        loop=loop,
+        key_background=key_background,
+        background_color=background_color,
+        background_mode=background_mode,
+        background_tolerance=background_tolerance,
+        choke_px=choke,
+        stabilize_margin=stabilize_margin,
+        alpha_threshold=alpha_threshold,
+        min_component_area=min_component_area,
+        remove_isolated=remove_isolated,
+        scale=scale,
+        outline=outline,
+        detail=character_detail,
+        debug=debug,
     )
-
-    output_dir = output or (Path("output") / f"{source.name}_frames")
-    if background_mode not in {"auto", "connected", "global"}:
-        raise typer.BadParameter("background_modeはauto、connected、globalのいずれかです", param_hint="--background-mode")
-    if character_detail not in {"sparse", "balanced", "detailed"}:
-        raise typer.BadParameter("character_detailはsparse、balanced、detailedのいずれかです", param_hint="--character-detail")
-    if outline not in {"off", "black", "white"}:
-        raise typer.BadParameter("outlineはoff、black、whiteのいずれかです", param_hint="--outline")
     try:
-        config = dataclass_replace(
-            default_sequence_config((width, height)),
-            alpha_threshold=alpha_threshold,
-            min_component_area_px=min_component_area,
-            remove_isolated_components=remove_isolated,
-            outline_width=1 if outline != "off" else 0,
-            scale_override=scale,
-        )
-        result = compile_character_frame_directory(
-            source,
-            output_dir,
-            config=config,
-            key_background=key_background,
-            background_color=background_color,
-            background_tolerance=background_tolerance,
-            background_mode=background_mode,  # type: ignore[arg-type]
-            background_choke_px=choke,
-            gif_fps=fps if gif else None,
-            gif_loop=None if play_once else loop,
-            stabilize_margin=stabilize_margin if stabilize_margin > 0 else None,
-            palette_budget=palette,
-            character_detail_level=character_detail,
-            outline_color=outline,
-            debug_enabled=debug,
-        )
+        summary = run_frame_sequence(request)
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    typer.echo(f"完了: {result.output_root}（{len(result.final_frame_paths)}フレーム）")
-    typer.echo(f"最終フレーム（正本）: {result.final_frame_paths[0].parent}")
-    typer.echo(f"整列後フレーム: {result.aligned_frame_paths[0].parent}")
-    if result.gif_path is not None:
-        typer.echo(f"GIF: {result.gif_path}")
-    typer.echo(f"レポート: {result.report_path}")
-    for warning in result.warnings:
+    typer.echo(f"完了: {summary.output_root}（{summary.frame_count}フレーム）")
+    typer.echo(f"最終フレーム（正本）: {summary.final_dir}")
+    typer.echo(f"整列後フレーム: {summary.output_root / 'aligned_frames'}")
+    if summary.gif_path is not None:
+        typer.echo(f"GIF: {summary.gif_path}")
+    typer.echo(f"レポート: {summary.report_path}")
+    for warning in summary.warnings:
         typer.echo(f"警告: {warning}")
 
 

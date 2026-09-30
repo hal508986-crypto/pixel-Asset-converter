@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import hashlib
 import math
+import re
 import shutil
 import tempfile
 from dataclasses import dataclass, field, replace
@@ -16,6 +17,7 @@ import numpy as np
 from PIL import Image
 
 from pixel_tile_compiler.io.exporter import save_json, save_png
+from pixel_tile_compiler.io.frame_sequence import frame_label
 from pixel_tile_compiler.pixelizer.palette import extract_palette
 from pixel_tile_compiler.sheet.alpha_projection import (
     SplitMode,
@@ -429,7 +431,10 @@ class CharacterAnimationResult:
             "common_scale": self.scale,
             "common_anchor": common_anchor,
             "output_frame_size": list(self.config.canvas_size),
-            "output_sheet_size": [self.output_sheet.width, self.output_sheet.height],
+            "output_sheet_size": [
+                self.config.canvas_size[0] * len(self.aligned_frames),
+                self.config.canvas_size[1],
+            ],
             "normalized_sheet_size": list(self.normalized_sheet_size),
             "crop_box": list(self.crop_box),
             "union_bbox": self.union_bbox.as_dict() if self.union_bbox else None,
@@ -1315,18 +1320,20 @@ def prepare_character_animation_sheet(
 @dataclass(frozen=True)
 class CharacterAnimationCompileResult:
     output_root: Path
-    aligned_sheet_path: Path
+    aligned_sheet_path: Path | None
     report_path: Path
     frame_paths: tuple[Path, ...]
     final_frame_paths: tuple[Path, ...]
-    compiled_sheet_path: Path
-    preview_8x_path: Path
+    compiled_sheet_path: Path | None
+    preview_8x_path: Path | None
     detection_overlay_path: Path | None
     preview_scale: int = MAX_ANIMATION_PREVIEW_SCALE
     warnings: tuple[str, ...] = ()
+    aligned_frame_paths: tuple[Path, ...] = ()
 
 
 _MANAGED_ANIMATION_OUTPUTS = (
+    "aligned_frames",
     "aligned_sheet.png",
     "bbox_report.json",
     "compiled",
@@ -1334,9 +1341,23 @@ _MANAGED_ANIMATION_OUTPUTS = (
     "compiled_sheet_8x.png",
     "detection_overlay.png",
     "final_frames",
+    "keyed_frames",
     "preview.png",
     "preview_8x.png",
+    "source_frames",
 )
+
+# 連番経路が入力側の段階として保存できるフォルダ名（_MANAGED_ANIMATION_OUTPUTSの部分集合）
+ARCHIVE_FRAME_DIRECTORIES = ("source_frames", "keyed_frames")
+
+
+def _sheet_frame_label(index: int) -> str:
+    """Sheet経路のフレームID（既存出力との互換のためゼロ埋めしない）。"""
+    return f"F{index + 1}"
+
+
+def animation_sheet_pixels(canvas_size: tuple[int, int], frame_count: int) -> int:
+    return canvas_size[0] * frame_count * canvas_size[1]
 
 
 def _run_transactional_output(
@@ -1419,35 +1440,56 @@ def compile_character_animation_frames(
     transform: CharacterAnimationTransform | None = None,
     source_label: str = "<frames>",
     report_extras: Mapping[str, object] | None = None,
+    archive_frames: Mapping[str, Sequence[Image.Image | Path]] | None = None,
 ) -> CharacterAnimationCompileResult:
     """Compile an ordered frame sequence (透過済みRGBA) without going through a sheet.
 
     Frames must share one size and already carry alpha; background removal is
-    the caller's job. Outputs and guarantees match the sheet path.
+    the caller's job (see preprocess.sequence_background).
+    Outputs are per-frame files with zero-padded ids (F001…): aligned_frames/,
+    compiled/, final_frames/, plus any archive_frames stages (source_frames/,
+    keyed_frames/). The sheet/preview images are written only while they stay
+    within MAX_ANIMATION_OUTPUT_SHEET_PIXELS; the per-frame PNGs are the master.
     """
     frames = tuple(frames)
     if not frames:
         raise ValueError("at least one frame is required")
     output_root = Path(output_root)
     config = replace(config or CharacterAnimationConfig(), frame_count=len(frames))
-    _validate_animation_output_sheet_size(config.canvas_size, len(frames))
     if any(frame.size != frames[0].size for frame in frames):
         raise ValueError("all animation frames must have the same size")
-    return _run_transactional_output(
-        output_root,
-        lambda staging_root: _compile_prepared_animation_to_root(
-            align_character_frames(
-                frames,
-                config,
-                protected_masks=protected_masks,
-                transform=transform,
+    count = len(frames)
+    write_sheets = animation_sheet_pixels(config.canvas_size, count) <= MAX_ANIMATION_OUTPUT_SHEET_PIXELS
+
+    def label(index: int) -> str:
+        return frame_label(index, count)
+
+    def build(staging_root: Path) -> CharacterAnimationCompileResult:
+        aligned = align_character_frames(
+            frames,
+            config,
+            protected_masks=protected_masks,
+            transform=transform,
+        )
+        aligned = replace(
+            aligned,
+            frame_reports=tuple(
+                replace(report, frame_id=label(index))
+                for index, report in enumerate(aligned.frame_reports)
             ),
+            warnings=tuple(
+                re.sub(r"^F(\d+):", lambda m: f"{label(int(m.group(1)) - 1)}:", warning)
+                for warning in aligned.warnings
+            ),
+        )
+        return _compile_prepared_animation_to_root(
+            aligned,
             staging_root,
             source_name=source_label,
             report_extras={
                 "source_frames": {
                     "label": source_label,
-                    "frame_count": len(frames),
+                    "frame_count": count,
                     "dimensions": list(frames[0].size),
                     "sha256": [
                         hashlib.sha256(frame.convert("RGBA").tobytes()).hexdigest()
@@ -1463,8 +1505,13 @@ def compile_character_animation_frames(
             debug_enabled=debug_enabled,
             palette_colors=palette_colors,
             shared_palette=shared_palette,
-        ),
-    )
+            label=label,
+            write_sheets=write_sheets,
+            write_aligned_frames=True,
+            archive_frames=archive_frames,
+        )
+
+    return _run_transactional_output(output_root, build)
 
 
 def _validate_animation_output_sheet_size(
@@ -1472,7 +1519,7 @@ def _validate_animation_output_sheet_size(
     frame_count: int,
 ) -> None:
     """出力Canvas確保前にSheetの総画素数を検証する。"""
-    compiled_sheet_pixels = canvas_size[0] * frame_count * canvas_size[1]
+    compiled_sheet_pixels = animation_sheet_pixels(canvas_size, frame_count)
     if compiled_sheet_pixels > MAX_ANIMATION_OUTPUT_SHEET_PIXELS:
         raise ValueError(
             "アニメーションSheetの総画素数が上限を超えています: "
@@ -1550,6 +1597,10 @@ def _compile_prepared_animation_to_root(
     debug_enabled: bool,
     palette_colors: tuple[tuple[int, int, int], ...] | None,
     shared_palette: tuple[tuple[int, int, int], ...] | None,
+    label: Callable[[int], str] = _sheet_frame_label,
+    write_sheets: bool = True,
+    write_aligned_frames: bool = False,
+    archive_frames: Mapping[str, Sequence[Image.Image | Path]] | None = None,
 ) -> CharacterAnimationCompileResult:
     """整列済みフレーム群を共有パレットでコンパイルし、成果物一式を書き出す（入力形式に依存しない共通部）。"""
     from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
@@ -1568,8 +1619,26 @@ def _compile_prepared_animation_to_root(
     ) if config.shared_palette_enabled or requested_shared_palette is not None else None
     prepared = replace(prepared, shared_palette=resolved_shared_palette)
     output_root.mkdir(parents=True, exist_ok=True)
-    aligned_sheet_path = save_png(prepared.output_sheet, output_root / "aligned_sheet.png")
+    frame_count = len(prepared.aligned_frames)
+    aligned_sheet_path = (
+        save_png(prepared.output_sheet, output_root / "aligned_sheet.png") if write_sheets else None
+    )
     report_path = save_json(prepared.report_as_dict(), output_root / "bbox_report.json")
+    stage_records: dict[str, list[dict[str, object]]] = {}
+    for directory, items in (archive_frames or {}).items():
+        if directory not in ARCHIVE_FRAME_DIRECTORIES:
+            raise ValueError(f"保存できない段階フォルダです: {directory}")
+        if len(items) != frame_count:
+            raise ValueError(f"{directory} の枚数がフレーム数と一致しません")
+        stage_records[directory] = _write_stage_frames(output_root / directory, items, label)
+    aligned_frame_paths: tuple[Path, ...] = ()
+    if write_aligned_frames:
+        aligned_root = output_root / "aligned_frames"
+        aligned_root.mkdir(parents=True, exist_ok=True)
+        aligned_frame_paths = tuple(
+            save_png(frame, aligned_root / f"{label(index)}.png")
+            for index, frame in enumerate(prepared.aligned_frames)
+        )
     detection_overlay_path = None
     if debug_enabled and prepared.detection_overlay is not None:
         detection_overlay_path = save_png(prepared.detection_overlay, output_root / "detection_overlay.png")
@@ -1579,7 +1648,7 @@ def _compile_prepared_animation_to_root(
     frame_paths: list[Path] = []
     compiler = PixelTileCompiler()
     for index, frame in enumerate(prepared.aligned_frames):
-        frame_root = output_root / "compiled" / f"F{index + 1}"
+        frame_root = output_root / "compiled" / label(index)
         compiler_config = CompilerConfig(
             output_root=frame_root,
             canvas=CanvasSpec(*config.canvas_size),
@@ -1602,12 +1671,12 @@ def _compile_prepared_animation_to_root(
             smoothing_enabled=False,
             debug_enabled=debug_enabled,
         )
-        compiled = compiler.compile_image(frame, compiler_config, source_name=f"{source_name}::F{index + 1}")
+        compiled = compiler.compile_image(frame, compiler_config, source_name=f"{source_name}::{label(index)}")
         frame_paths.append(compiled.final_path)
     final_frames_root = output_root / "final_frames"
     final_frames_root.mkdir(parents=True, exist_ok=True)
     final_frame_paths = tuple(
-        final_frames_root / f"F{index + 1}.png"
+        final_frames_root / f"{label(index)}.png"
         for index in range(len(frame_paths))
     )
     for frame_path, final_frame_path in zip(frame_paths, final_frame_paths):
@@ -1633,7 +1702,7 @@ def _compile_prepared_animation_to_root(
     report_payload.update(report_extras)
     report_payload["final_frames"] = [
         {
-            "frame_id": f"F{index + 1}",
+            "frame_id": label(index),
             "path": str(final_frame_path),
             "sha256": hashlib.sha256(final_frame_path.read_bytes()).hexdigest(),
             "size": list(Image.open(final_frame_path).size),
@@ -1651,29 +1720,47 @@ def _compile_prepared_animation_to_root(
         "within_budget": within_palette_budget,
         "alpha_policy": "binary",
     }
+    if write_aligned_frames:
+        stage_records["aligned_frames"] = [
+            _stage_record(label(index), path) for index, path in enumerate(aligned_frame_paths)
+        ]
+    if stage_records:
+        report_payload["stages"] = stage_records
+    compiled_sheet_path: Path | None = None
+    preview_8x_path: Path | None = None
+    preview_scale = MAX_ANIMATION_PREVIEW_SCALE
+    if write_sheets:
+        compiled_sheet = Image.new(
+            "RGBA",
+            compiled_sheet_size,
+            (0, 0, 0, 0),
+        )
+        for index, frame_path in enumerate(frame_paths):
+            with Image.open(frame_path) as opened:
+                compiled_sheet.alpha_composite(opened.convert("RGBA"), (index * config.canvas_size[0], 0))
+        compiled_sheet_path = save_png(compiled_sheet, output_root / "compiled_sheet.png")
+        preview_scale = _resolve_animation_preview_scale(compiled_sheet.size)
+        preview_8x_path = save_png(
+            compiled_sheet.resize(
+                (compiled_sheet.width * preview_scale, compiled_sheet.height * preview_scale),
+                Image.Resampling.NEAREST,
+            ),
+            output_root / "compiled_sheet_8x.png",
+        )
+        report_payload["preview"] = {
+            "scale": preview_scale,
+            "size": [compiled_sheet.width * preview_scale, compiled_sheet.height * preview_scale],
+            "max_pixels": MAX_ANIMATION_PREVIEW_PIXELS,
+        }
+    else:
+        sheet_note = (
+            "出力Sheetの総画素数が上限を超えるため、Sheetとプレビューは作成していません"
+            f"（{animation_sheet_pixels(config.canvas_size, frame_count)} > {MAX_ANIMATION_OUTPUT_SHEET_PIXELS}）。"
+            "フレームは final_frames/ と aligned_frames/ に個別保存されています"
+        )
+        report_payload["sheets"] = {"written": False, "reason": sheet_note}
+        report_payload["warnings"] = [*report_payload.get("warnings", []), sheet_note]
     warnings = tuple(str(item) for item in report_payload.get("warnings", ()))
-    compiled_sheet = Image.new(
-        "RGBA",
-        compiled_sheet_size,
-        (0, 0, 0, 0),
-    )
-    for index, frame_path in enumerate(frame_paths):
-        with Image.open(frame_path) as opened:
-            compiled_sheet.alpha_composite(opened.convert("RGBA"), (index * config.canvas_size[0], 0))
-    compiled_sheet_path = save_png(compiled_sheet, output_root / "compiled_sheet.png")
-    preview_scale = _resolve_animation_preview_scale(compiled_sheet.size)
-    preview_8x_path = save_png(
-        compiled_sheet.resize(
-            (compiled_sheet.width * preview_scale, compiled_sheet.height * preview_scale),
-            Image.Resampling.NEAREST,
-        ),
-        output_root / "compiled_sheet_8x.png",
-    )
-    report_payload["preview"] = {
-        "scale": preview_scale,
-        "size": [compiled_sheet.width * preview_scale, compiled_sheet.height * preview_scale],
-        "max_pixels": MAX_ANIMATION_PREVIEW_PIXELS,
-    }
     save_json(report_payload, report_path)
     return CharacterAnimationCompileResult(
         output_root,
@@ -1686,7 +1773,40 @@ def _compile_prepared_animation_to_root(
         detection_overlay_path,
         preview_scale,
         warnings,
+        aligned_frame_paths,
     )
+
+
+def _stage_record(frame_id: str, path: Path) -> dict[str, object]:
+    with Image.open(path) as opened:
+        size = list(opened.size)
+    return {
+        "frame_id": frame_id,
+        "path": str(path),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "size": size,
+    }
+
+
+def _write_stage_frames(
+    directory: Path,
+    items: Sequence[Image.Image | Path],
+    label: Callable[[int], str],
+) -> list[dict[str, object]]:
+    """入力側の段階（元フレーム・背景除去後）を1枚ずつ保存する。Pathはバイトを不変のままコピーする。"""
+    directory.mkdir(parents=True, exist_ok=True)
+    records: list[dict[str, object]] = []
+    for index, item in enumerate(items):
+        destination = directory / f"{label(index)}.png"
+        if isinstance(item, Path):
+            copyfile(item, destination)
+        else:
+            save_png(item, destination)
+        record = _stage_record(label(index), destination)
+        if isinstance(item, Path):
+            record["original_path"] = str(item)
+        records.append(record)
+    return records
 
 
 def _replace_staged_value(value: object, old_prefix: str, new_prefix: str) -> object:
@@ -1783,6 +1903,7 @@ def _relocate_compile_result(
         compiled_sheet_path=relocate(result.compiled_sheet_path),
         preview_8x_path=relocate(result.preview_8x_path),
         detection_overlay_path=relocate(result.detection_overlay_path),
+        aligned_frame_paths=tuple(relocate(path) for path in result.aligned_frame_paths),
     )
 
 
@@ -1800,6 +1921,7 @@ __all__ = [
     "analyze_frame_alpha",
     "compile_character_animation_frames",
     "compile_character_animation_sheet",
+    "frame_label",
     "load_character_animation_report",
     "load_character_animation_transform",
     "load_component_assignment_data",

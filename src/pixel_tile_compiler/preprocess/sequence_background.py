@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
+from pixel_tile_compiler.io.frame_sequence import frame_label
 from pixel_tile_compiler.preprocess.background import _parse_color
 
 KeyMode = Literal["connected", "global"]
@@ -152,6 +153,7 @@ def remove_sequence_background(
     reports: list[dict[str, object]] = []
     warnings: list[str] = []
     for index, array in enumerate(arrays):
+        name = frame_label(index, len(arrays))
         visible = array[:, :, 3] >= _VISIBLE_ALPHA
         candidate = visible & (_distance(array[:, :, :3], resolved) <= tolerance)  # type: ignore[arg-type]
         removed = candidate if mode == "global" else _border_connected(candidate)
@@ -163,19 +165,19 @@ def remove_sequence_background(
         enclosed = int(np.count_nonzero(candidate & ~removed))
         kept = int(np.count_nonzero(keep))
         report = {
-            "frame_id": f"F{index + 1}",
+            "frame_id": name,
             "removed_px": int(np.count_nonzero(visible & removed)),
             "kept_px": kept,
             "enclosed_bg_like_px": enclosed,
         }
         reports.append(report)
         if kept == 0:
-            warnings.append(f"F{index + 1}: 背景除去後に何も残りませんでした")
+            warnings.append(f"{name}: 背景除去後に何も残りませんでした")
         elif report["removed_px"] == 0:
-            warnings.append(f"F{index + 1}: 背景色に近い画素が外周にありません（背景が除去されていません）")
+            warnings.append(f"{name}: 背景色に近い画素が外周にありません（背景が除去されていません）")
         if enclosed >= ENCLOSED_WARNING_PIXELS:
             warnings.append(
-                f"F{index + 1}: 背景色に近い領域が内側に{enclosed}画素残っています"
+                f"{name}: 背景色に近い領域が内側に{enclosed}画素残っています"
                 "（穴の中の背景なら mode=global を検討）"
             )
     return SequenceBackgroundResult(

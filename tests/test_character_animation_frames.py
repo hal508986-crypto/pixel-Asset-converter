@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
+from pixel_tile_compiler.io.frame_sequence import frame_label
+from pixel_tile_compiler.pixelizer import character_animation
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationConfig,
     compile_character_animation_frames,
@@ -46,7 +48,8 @@ def _png_bytes(root: Path) -> dict[str, bytes]:
 
 
 @pytest.mark.parametrize("placement", ["legacy_foot", "preserve_motion"])
-def test_frame_sequence_matches_sheet_path_byte_for_byte(tmp_path: Path, placement: str) -> None:
+def test_frame_sequence_matches_sheet_path_pixel_for_pixel(tmp_path: Path, placement: str) -> None:
+    """名前（F1 / F001）以外、Sheet経路と連番経路の画像出力は同一バイト。"""
     frames = _frames()
     extra = (
         dict(source_origin=(32, 56), output_origin=(32, 58), scale_override=1.0)
@@ -60,7 +63,13 @@ def test_frame_sequence_matches_sheet_path_byte_for_byte(tmp_path: Path, placeme
     compile_character_animation_sheet(sheet_path, tmp_path / "from_sheet", config=config)
     compile_character_animation_frames(split_frames, tmp_path / "from_frames", config=config)
 
-    assert _png_bytes(tmp_path / "from_sheet") == _png_bytes(tmp_path / "from_frames")
+    a, b = tmp_path / "from_sheet", tmp_path / "from_frames"
+    for name in ("aligned_sheet.png", "compiled_sheet.png", "compiled_sheet_8x.png"):
+        assert (a / name).read_bytes() == (b / name).read_bytes(), name
+    for index in range(4):
+        assert (a / "final_frames" / f"F{index + 1}.png").read_bytes() == (
+            b / "final_frames" / f"F{index + 1:03d}.png"
+        ).read_bytes()
 
 
 def test_frame_sequence_report_records_source_frames_and_uses_len_as_frame_count(tmp_path: Path) -> None:
@@ -105,8 +114,75 @@ def test_frame_sequence_keeps_unrelated_files_and_replaces_managed_outputs(tmp_p
     assert len(list((out / "final_frames").glob("*.png"))) == 2
 
 
-def test_frame_sequence_applies_output_sheet_pixel_limit(tmp_path: Path) -> None:
-    config = CharacterAnimationConfig(canvas_size=(512, 512), fit_within=(500, 500))
-    frames = tuple(Image.new("RGBA", (8, 8), (0, 0, 0, 0)) for _ in range(65))
-    with pytest.raises(ValueError, match="総画素数"):
-        compile_character_animation_frames(frames, tmp_path / "out", config=config)
+def test_frame_sequence_writes_every_stage_as_separate_zero_padded_files(tmp_path: Path) -> None:
+    frames = _frames(3)
+    result = compile_character_animation_frames(frames, tmp_path / "out")
+    root = tmp_path / "out"
+    assert [p.name for p in result.final_frame_paths] == ["F001.png", "F002.png", "F003.png"]
+    assert [p.name for p in result.aligned_frame_paths] == ["F001.png", "F002.png", "F003.png"]
+    assert sorted(p.name for p in (root / "compiled").iterdir()) == ["F001", "F002", "F003"]
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert [f["frame_id"] for f in report["frames"]] == ["F001", "F002", "F003"]
+    assert [f["frame_id"] for f in report["final_frames"]] == ["F001", "F002", "F003"]
+    aligned_records = report["stages"]["aligned_frames"]
+    assert [r["frame_id"] for r in aligned_records] == ["F001", "F002", "F003"]
+    import hashlib
+    assert aligned_records[0]["sha256"] == hashlib.sha256(
+        (root / "aligned_frames" / "F001.png").read_bytes()
+    ).hexdigest()
+
+
+def test_frame_ids_stay_sortable_beyond_999_frames() -> None:
+    assert frame_label(0, 12) == "F001"
+    assert frame_label(998, 999) == "F999"
+    assert frame_label(0, 1000) == "F0001"
+    assert sorted(frame_label(i, 1200) for i in range(1200)) == [frame_label(i, 1200) for i in range(1200)]
+
+
+def test_archive_frames_are_copied_byte_for_byte_and_recorded(tmp_path: Path) -> None:
+    frames = _frames(2)
+    originals = []
+    for index in range(2):
+        path = tmp_path / f"in_{index}.png"
+        frames[index].save(path, optimize=True)
+        originals.append(path)
+    result = compile_character_animation_frames(
+        frames, tmp_path / "out",
+        archive_frames={"source_frames": originals, "keyed_frames": list(frames)},
+    )
+    root = tmp_path / "out"
+    for index, original in enumerate(originals):
+        assert (root / "source_frames" / f"F{index + 1:03d}.png").read_bytes() == original.read_bytes()
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert report["stages"]["source_frames"][0]["original_path"] == str(originals[0])
+    assert len(report["stages"]["keyed_frames"]) == 2
+    with pytest.raises(ValueError, match="保存できない段階フォルダ"):
+        compile_character_animation_frames(frames, tmp_path / "bad", archive_frames={"final_frames": list(frames)})
+    with pytest.raises(ValueError, match="枚数"):
+        compile_character_animation_frames(frames, tmp_path / "bad2", archive_frames={"source_frames": originals[:1]})
+
+
+def test_sheets_are_skipped_not_fatal_when_over_the_pixel_limit(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(character_animation, "MAX_ANIMATION_OUTPUT_SHEET_PIXELS", 64 * 64 * 3)
+    frames = _frames(4)
+    result = compile_character_animation_frames(frames, tmp_path / "out")
+    root = tmp_path / "out"
+    assert result.aligned_sheet_path is None and result.compiled_sheet_path is None
+    assert result.preview_8x_path is None
+    assert not (root / "aligned_sheet.png").exists() and not (root / "compiled_sheet.png").exists()
+    assert len(list((root / "final_frames").glob("*.png"))) == 4
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    assert report["sheets"]["written"] is False
+    assert any("Sheet" in warning for warning in result.warnings)
+    # 上限内ならSheetも作る
+    monkeypatch.setattr(character_animation, "MAX_ANIMATION_OUTPUT_SHEET_PIXELS", 64 * 64 * 4)
+    within = compile_character_animation_frames(frames, tmp_path / "out2")
+    assert within.compiled_sheet_path is not None and "sheets" not in json.loads(
+        within.report_path.read_text(encoding="utf-8")
+    )
+
+
+def test_512_canvas_beyond_the_sheet_limit_is_not_rejected_by_size_check() -> None:
+    # 512x512 を65枚 = 上限(16,777,216)超え。以前は弾かれていた組み合わせ
+    assert character_animation.animation_sheet_pixels((512, 512), 64) == character_animation.MAX_ANIMATION_OUTPUT_SHEET_PIXELS
+    assert character_animation.animation_sheet_pixels((512, 512), 65) > character_animation.MAX_ANIMATION_OUTPUT_SHEET_PIXELS

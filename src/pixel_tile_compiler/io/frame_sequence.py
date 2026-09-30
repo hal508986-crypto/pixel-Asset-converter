@@ -10,6 +10,11 @@ from PIL import Image
 _NUMBER = re.compile(r"(\d+)")
 
 
+def frame_label(index: int, count: int) -> str:
+    """連番経路のフレームID。ソート順が崩れないよう最低3桁でゼロ埋めする（F001…）。"""
+    return f"F{index + 1:0{max(3, len(str(count)))}d}"
+
+
 def _natural_key(path: Path) -> tuple[tuple[tuple[int, int, str], ...], str]:
     """f2 < f10 になる自然順。同順位は名前で確定させて決定論を保つ。"""
     parts = tuple(
@@ -47,4 +52,4 @@ def load_frame_directory(directory: Path | str) -> tuple[tuple[Path, ...], tuple
     return files, tuple(frames)
 
 
-__all__ = ["list_frame_files", "load_frame_directory"]
+__all__ = ["frame_label", "list_frame_files", "load_frame_directory"]

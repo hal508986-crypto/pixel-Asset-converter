@@ -131,3 +131,41 @@ def test_directory_pipeline_is_deterministic(tmp_path: Path) -> None:
         assert [_sha(p) for p in sorted((tmp_path / "a" / directory).glob("*.png"))] == [
             _sha(p) for p in sorted((tmp_path / "b" / directory).glob("*.png"))
         ]
+
+
+def test_directory_pipeline_writes_verified_gif_matching_final_frames(tmp_path: Path) -> None:
+    import numpy as np
+    from PIL import ImageSequence
+
+    _write_sequence(tmp_path / "in")
+    result = compile_character_frame_directory(tmp_path / "in", tmp_path / "out", canvas_size=(64, 64))
+    assert result.gif_path == tmp_path / "out" / "animation.gif" and result.gif_path.exists()
+    report = json.loads(result.report_path.read_text(encoding="utf-8"))
+    gif = report["animation"]["gif"]
+    assert gif["fps"] == 24.0 and gif["frame_count"] == 6 and gif["verified"] is True
+    assert gif["path"] == str(result.gif_path) and gif["sha256"] == _sha(result.gif_path)
+    assert gif["total_ms"] == 250  # 6枚@24fps = 250ms（40,40,50,40,40,40）
+    # GIFを別経路で読み戻し、final_framesの可視RGB・アルファと一致
+    with Image.open(result.gif_path) as opened:
+        shown = [np.asarray(f.convert("RGBA")).copy() for f in ImageSequence.Iterator(opened)]
+    finals = [np.asarray(Image.open(p).convert("RGBA")) for p in result.final_frame_paths]
+    assert len(shown) == len(finals)
+    for got, want in zip(shown, finals):
+        visible = want[:, :, 3] > 0
+        assert np.array_equal(got[:, :, 3] > 0, visible)
+        assert np.array_equal(got[visible][:, :3], want[visible][:, :3])
+
+
+def test_gif_can_be_disabled_and_fps_and_loop_are_passed_through(tmp_path: Path) -> None:
+    _write_sequence(tmp_path / "in")
+    off = compile_character_frame_directory(tmp_path / "in", tmp_path / "off", canvas_size=(64, 64), gif_fps=None)
+    assert off.gif_path is None and not (tmp_path / "off" / "animation.gif").exists()
+    assert "animation" not in json.loads(off.report_path.read_text(encoding="utf-8"))
+    on = compile_character_frame_directory(
+        tmp_path / "in", tmp_path / "on", canvas_size=(64, 64), gif_fps=12, gif_loop=None
+    )
+    gif = json.loads(on.report_path.read_text(encoding="utf-8"))["animation"]["gif"]
+    assert gif["fps"] == 12.0 and gif["loop"] is None and set(gif["durations_ms"]) <= {80, 90}
+    with pytest.raises(ValueError, match="fps"):
+        compile_character_frame_directory(tmp_path / "in", tmp_path / "bad", canvas_size=(64, 64), gif_fps=500)
+    assert not (tmp_path / "bad").exists()  # 失敗時は出力を作らない（トランザクション）

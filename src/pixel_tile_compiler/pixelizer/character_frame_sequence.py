@@ -24,6 +24,7 @@ from pixel_tile_compiler.preprocess.sequence_background import (
 )
 
 DEFAULT_SEQUENCE_CANVAS = (512, 512)
+DEFAULT_GIF_FPS = 24.0
 
 
 def default_sequence_config(canvas_size: tuple[int, int] = DEFAULT_SEQUENCE_CANVAS) -> CharacterAnimationConfig:
@@ -80,6 +81,8 @@ def compile_character_frame_directory(
     background_color: str | tuple[int, int, int] | None = None,
     background_tolerance: int = DEFAULT_BACKGROUND_TOLERANCE,
     background_mode: KeyMode = "connected",
+    gif_fps: float | None = DEFAULT_GIF_FPS,
+    gif_loop: int | None = 0,
     **compile_kwargs: Any,
 ) -> CharacterAnimationCompileResult:
     """PNG連番フォルダを読み、背景除去（任意）→コンパイルして、全段階を個別ファイルで保存する。
@@ -87,6 +90,8 @@ def compile_character_frame_directory(
     key_background=False は、すでに透過済みの連番を受けるとき。
     background_color 未指定なら、全フレームの外周から1回だけ推定して全フレームで共有する。
     config を渡した場合は canvas_size より config を優先する。
+    gif_fps（既定24）で final_frames から animation.gif も出力する（None で出力しない）。
+    gif_loop: 0=無限ループ、N=初回後にN回、None=1回だけ再生。
     """
     input_dir = Path(input_dir)
     paths, source_frames = load_frame_directory(input_dir)
@@ -115,6 +120,8 @@ def compile_character_frame_directory(
         source_label=str(input_dir),
         report_extras=extras,
         archive_frames=archive,
+        gif_fps=gif_fps,
+        gif_loop=gif_loop,
         **compile_kwargs,
     )
     if key_background and keyed.warnings:

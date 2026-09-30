@@ -18,6 +18,7 @@ from PIL import Image
 
 from pixel_tile_compiler.io.exporter import save_json, save_png
 from pixel_tile_compiler.io.frame_sequence import frame_label
+from pixel_tile_compiler.io.gif_export import save_animated_gif
 from pixel_tile_compiler.pixelizer.palette import extract_palette
 from pixel_tile_compiler.sheet.alpha_projection import (
     SplitMode,
@@ -1330,11 +1331,13 @@ class CharacterAnimationCompileResult:
     preview_scale: int = MAX_ANIMATION_PREVIEW_SCALE
     warnings: tuple[str, ...] = ()
     aligned_frame_paths: tuple[Path, ...] = ()
+    gif_path: Path | None = None
 
 
 _MANAGED_ANIMATION_OUTPUTS = (
     "aligned_frames",
     "aligned_sheet.png",
+    "animation.gif",
     "bbox_report.json",
     "compiled",
     "compiled_sheet.png",
@@ -1441,6 +1444,8 @@ def compile_character_animation_frames(
     source_label: str = "<frames>",
     report_extras: Mapping[str, object] | None = None,
     archive_frames: Mapping[str, Sequence[Image.Image | Path]] | None = None,
+    gif_fps: float | None = None,
+    gif_loop: int | None = 0,
 ) -> CharacterAnimationCompileResult:
     """Compile an ordered frame sequence (透過済みRGBA) without going through a sheet.
 
@@ -1448,7 +1453,9 @@ def compile_character_animation_frames(
     the caller's job (see preprocess.sequence_background).
     Outputs are per-frame files with zero-padded ids (F001…): aligned_frames/,
     compiled/, final_frames/, plus any archive_frames stages (source_frames/,
-    keyed_frames/). The sheet/preview images are written only while they stay
+    keyed_frames/). With gif_fps, final_frames are also written as animation.gif
+    (shared palette, binary transparency, read back and verified pixel-for-pixel).
+    The sheet/preview images are written only while they stay
     within MAX_ANIMATION_OUTPUT_SHEET_PIXELS; the per-frame PNGs are the master.
     """
     frames = tuple(frames)
@@ -1509,6 +1516,8 @@ def compile_character_animation_frames(
             write_sheets=write_sheets,
             write_aligned_frames=True,
             archive_frames=archive_frames,
+            gif_fps=gif_fps,
+            gif_loop=gif_loop,
         )
 
     return _run_transactional_output(output_root, build)
@@ -1601,6 +1610,8 @@ def _compile_prepared_animation_to_root(
     write_sheets: bool = True,
     write_aligned_frames: bool = False,
     archive_frames: Mapping[str, Sequence[Image.Image | Path]] | None = None,
+    gif_fps: float | None = None,
+    gif_loop: int | None = 0,
 ) -> CharacterAnimationCompileResult:
     """整列済みフレーム群を共有パレットでコンパイルし、成果物一式を書き出す（入力形式に依存しない共通部）。"""
     from pixel_tile_compiler.config import CanvasSpec, CompilerConfig
@@ -1698,8 +1709,22 @@ def _compile_prepared_animation_to_root(
         raise RuntimeError("最終frameの実paletteが上限を超えました")
     if resolved_shared_palette is not None and not set(final_palette).issubset(set(resolved_shared_palette)):
         raise RuntimeError("最終frame群の色が共有paletteの外へ出ました")
+    gif_path: Path | None = None
+    gif_report: dict[str, object] | None = None
+    if gif_fps is not None:
+        final_images = []
+        for final_frame_path in final_frame_paths:
+            with Image.open(final_frame_path) as opened:
+                final_images.append(opened.convert("RGBA"))
+        gif_result = save_animated_gif(
+            final_images, output_root / "animation.gif", fps=gif_fps, loop=gif_loop
+        )
+        gif_path = gif_result.path
+        gif_report = gif_result.report_as_dict()
     report_payload = prepared.report_as_dict()
     report_payload.update(report_extras)
+    if gif_report is not None:
+        report_payload["animation"] = {"gif": gif_report}
     report_payload["final_frames"] = [
         {
             "frame_id": label(index),
@@ -1774,6 +1799,7 @@ def _compile_prepared_animation_to_root(
         preview_scale,
         warnings,
         aligned_frame_paths,
+        gif_path,
     )
 
 
@@ -1904,6 +1930,7 @@ def _relocate_compile_result(
         preview_8x_path=relocate(result.preview_8x_path),
         detection_overlay_path=relocate(result.detection_overlay_path),
         aligned_frame_paths=tuple(relocate(path) for path in result.aligned_frame_paths),
+        gif_path=relocate(result.gif_path),
     )
 
 

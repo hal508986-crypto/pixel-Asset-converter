@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `compile-character-frames --character-height PX` (with `--height-reference median|first|N`): measures the character body from the
+  alpha channel (thin parts such as spears are removed by a morphological opening before taking the largest component) and
+  sets the scale so the body is PX tall. Scale and feet are fixed for every frame, so pose changes never alter the character's
+  size, and one value keeps different actions of a character at the same size.
+- `--canvas-auto`: the tightest canvas (2 px margin) that holds every frame at that scale — no clipping, minimal margins.
+- `trimmed_frames/` + `trim_manifest.json` (`--no-trim` disables): each final frame cropped to its visible box with offsets from the
+  pivot (frame top-left = pivot + `offset_from_pivot`); reproduces the canvas frames pixel-for-pixel.
+- GUI: a "キャラの大きさ（フレーミング）" group (whole-frame fit / top-N% fit / character height with automatic canvas) and the
+  trimmed-output option.
+
 - `compile-character-frames --fit-percentile P` (default 100): size the character so that P% of frames fit the canvas and allow the
   remaining extreme frames (e.g. a long spear thrust) to be clipped, which enlarges the character when the source has large
   margins. Clipped frames are listed as warnings and as `clipped` in `bbox_report.json`. The horizontal origin becomes the median

@@ -6,6 +6,7 @@ compiled / final_frames）。正本は final_frames のPNG連番で、GIFなど�
 
 from __future__ import annotations
 
+import math
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Callable
@@ -13,6 +14,7 @@ from typing import Any, Callable
 import numpy as np
 
 from pixel_tile_compiler.io.frame_sequence import load_frame_directory
+from pixel_tile_compiler.pixelizer.character_body import measure_body, reference_body_height
 from pixel_tile_compiler.pixelizer.character_animation import (
     CharacterAnimationCompileResult,
     CharacterAnimationConfig,
@@ -27,6 +29,8 @@ from pixel_tile_compiler.preprocess.sequence_background import (
 
 DEFAULT_SEQUENCE_CANVAS = (512, 512)
 DEFAULT_GIF_FPS = 24.0
+AUTO_CANVAS_MARGIN = 2  # Canvas自動のときの四方の余白(px)
+MAX_AUTO_CANVAS_SIDE = 4096
 DEFAULT_STABILIZE_MARGIN = 12.0  # 実素材で輪郭・パレットを変えずにちらつきを大きく減らせた値
 
 
@@ -106,6 +110,109 @@ def _with_derived_origins(
     )
 
 
+def _parse_height_reference(reference: str | int) -> str | int:
+    if isinstance(reference, str) and reference.strip().isdigit():
+        return int(reference.strip())
+    return reference
+
+
+def _with_character_height(
+    config: CharacterAnimationConfig,
+    frames: tuple[Any, ...],
+    character_height: float,
+    height_reference: str | int,
+    canvas_auto: bool,
+) -> tuple[CharacterAnimationConfig, dict[str, object]]:
+    """キャラ本体の高さ（アルファから測定）を基準に、倍率・足元・Canvasを決める。
+
+    倍率 = 指定の身長(出力px) ÷ 基準の本体高さ(元絵px)。倍率と足元は全フレームで固定なので、踏み込みや跳躍で
+    縦幅が変わっても、キャラのサイズはブレない。足元＝各フレームの本体下端の中央値、横位置＝本体中心の中央値。
+    canvas_auto: 全フレームの張り出しが収まる最小のCanvas（四方の余白AUTO_CANVAS_MARGIN）にする（見切れなし）。
+    それ以外は config のCanvas固定で、収まらない部分は見切れを許す（見切れたコマは警告とレポートに記録）。
+    """
+    if config.placement_mode != "preserve_motion":
+        raise ValueError("身長指定は移動保存モード（preserve_motion）でのみ使えます")
+    if not character_height > 0:
+        raise ValueError("character_height must be positive")
+    bodies: list[tuple[int, int, int, int]] = []
+    boxes = []
+    for frame in frames:
+        cleaned, bbox = analyze_frame_alpha(
+            frame,
+            alpha_threshold=config.alpha_threshold,
+            remove_isolated_components=config.remove_isolated_components,
+            min_component_area_px=config.min_component_area_px,
+        )
+        body = measure_body(np.asarray(cleaned.getchannel("A"))) if bbox is not None else None
+        if body is not None and bbox is not None:
+            bodies.append(body)
+            boxes.append(bbox)
+    if not bodies:
+        raise ValueError("可視画素のあるフレームがありません（背景除去の設定を確認してください）")
+    heights = [float(bottom - top) for _, top, _, bottom in bodies]
+    if isinstance(height_reference, int) and len(bodies) != len(frames):
+        raise ValueError("空のフレームがあるため、フレーム番号での基準指定はできません（median か first を使ってください）")
+    reference = reference_body_height(heights, height_reference)
+    scale = float(character_height) / reference
+    origin_x = float(np.median([(left + right) / 2 for left, _, right, _ in bodies]))
+    origin_y = float(np.median([bottom for _, _, _, bottom in bodies]))
+    framing: dict[str, object] = {
+        "mode": "character_height",
+        "character_height_px": float(character_height),
+        "height_reference": height_reference,
+        "reference_body_height_src_px": reference,
+        "body_height_src_px": {"min": min(heights), "max": max(heights), "median": float(np.median(heights))},
+        "scale": scale,
+        "source_origin": [origin_x, origin_y],
+        "canvas_auto": canvas_auto,
+    }
+    if canvas_auto:
+        margin = AUTO_CANVAS_MARGIN
+        left = max(origin_x - box.left for box in boxes)
+        right = max(box.right - origin_x for box in boxes)
+        up = max(origin_y - box.top for box in boxes)
+        down = max(0.0, max(box.bottom - origin_y for box in boxes))
+        pivot_x, pivot_y = margin + left * scale, margin + up * scale
+        width = math.ceil(pivot_x + right * scale + margin - 1e-9)
+        height = math.ceil(pivot_y + down * scale + margin - 1e-9)
+        if max(width, height) > MAX_AUTO_CANVAS_SIDE:
+            raise ValueError(
+                f"Canvas自動が{width}×{height}になり上限（{MAX_AUTO_CANVAS_SIDE}）を超えます。身長を小さくするか、Canvasを固定してください"
+            )
+        outline = config.outline_width
+        config = replace(
+            config,
+            canvas_size=(width, height),
+            fit_within=(width - 2 * margin - 2 * outline, height - 2 * margin - 2 * outline),
+            bottom_margin=margin,
+            source_origin=(origin_x, origin_y),
+            output_origin=(pivot_x, pivot_y),
+            scale_override=scale,
+            allow_clipping=False,
+        )
+        framing["canvas_size"] = [width, height]
+        framing["pivot"] = [pivot_x, pivot_y]
+    else:
+        width, height = config.canvas_size
+        output_origin = config.output_origin or (width / 2, float(height - config.bottom_margin))
+        available = output_origin[1] - config.bottom_margin
+        if character_height > available:
+            raise ValueError(
+                f"キャラの身長{character_height:g}pxがCanvas（高さ{height}px）に収まりません。"
+                f"{available:g}px以下にするか、Canvasを大きくするか、Canvas自動にしてください"
+            )
+        config = replace(
+            config,
+            source_origin=(origin_x, origin_y),
+            output_origin=output_origin,
+            scale_override=scale,
+            allow_clipping=True,
+        )
+        framing["canvas_size"] = list(config.canvas_size)
+        framing["pivot"] = list(output_origin)
+    return config, framing
+
+
 def compile_character_frame_directory(
     input_dir: Path | str,
     output_root: Path | str,
@@ -121,6 +228,10 @@ def compile_character_frame_directory(
     gif_loop: int | None = 0,
     stabilize_margin: float | None = DEFAULT_STABILIZE_MARGIN,
     fit_percentile: float = 100.0,
+    character_height: float | None = None,
+    height_reference: str | int = "median",
+    canvas_auto: bool = False,
+    write_trimmed: bool = True,
     progress: Callable[[str, int, int], None] | None = None,
     **compile_kwargs: Any,
 ) -> CharacterAnimationCompileResult:
@@ -136,6 +247,10 @@ def compile_character_frame_directory(
     stabilize_margin: final_frames の色を時間方向に安定させる（既定12。パレット境界でのちらつき抑制。None でしない）。
     fit_percentile: 100（既定）は全フレームがCanvasに収まる倍率。100未満は、その割合のフレームが収まる倍率にして、
     はみ出す極端なコマ（槍の突き出しなど）は見切れを許す（見切れたコマは警告とレポートに記録）。
+    character_height: キャラ本体の高さ（出力px）。アルファから測った本体の高さを基準に倍率を決める（倍率と足元は全フレーム固定）。
+    height_reference: 身長の基準（median=中央値〈既定〉/ first=最初のフレーム / フレーム番号〈1始まり〉）。
+    canvas_auto: character_height と併用。全フレームの張り出しが収まる最小のCanvasにする（見切れなし）。
+    write_trimmed: 各フレームを切り詰めた画像とオフセット（trimmed_frames/, trim_manifest.json）も出力する。
     progress(stage, done, total): 進捗通知（load/key/compile/finalize）。ここから例外を投げると中断でき、既存の出力は壊れない。
     """
     input_dir = Path(input_dir)
@@ -162,8 +277,22 @@ def compile_character_frame_directory(
     else:
         frames = source_frames
         extras["background_key"] = None
-    resolved_config = _with_derived_origins(config or default_sequence_config(canvas_size), frames, fit_percentile)
-    extras["framing"] = {"fit_percentile": fit_percentile, "clipping_allowed": resolved_config.allow_clipping}
+    height_reference = _parse_height_reference(height_reference)
+    if character_height is None:
+        if canvas_auto:
+            raise ValueError("Canvas自動は、キャラの身長（character_height）を指定したときだけ使えます")
+        resolved_config = _with_derived_origins(config or default_sequence_config(canvas_size), frames, fit_percentile)
+        extras["framing"] = {"fit_percentile": fit_percentile, "clipping_allowed": resolved_config.allow_clipping}
+    else:
+        if fit_percentile < 100:
+            raise ValueError("キャラの身長の指定と fit_percentile（100未満）は同時に使えません")
+        base_config = config or default_sequence_config(canvas_size)
+        if base_config.scale_override is not None:
+            raise ValueError("キャラの身長の指定と固定倍率（scale）は同時に使えません")
+        resolved_config, framing = _with_character_height(
+            base_config, frames, character_height, height_reference, canvas_auto
+        )
+        extras["framing"] = {**framing, "clipping_allowed": resolved_config.allow_clipping}
     result = compile_character_animation_frames(
         frames,
         output_root,
@@ -174,6 +303,7 @@ def compile_character_frame_directory(
         gif_fps=gif_fps,
         gif_loop=gif_loop,
         stabilize_margin=stabilize_margin,
+        write_trimmed=write_trimmed,
         progress=progress,
         **compile_kwargs,
     )

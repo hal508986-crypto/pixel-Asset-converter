@@ -58,6 +58,10 @@ class FrameSequenceRequest:
     remove_isolated: bool = True
     scale: float | None = None
     fit_percentile: float = 100.0  # 100 = 全フレームが収まる倍率。未満は極端なコマの見切れを許して本体を大きく
+    character_height: float | None = None  # キャラ本体の高さ（出力px）。指定すると本体の高さを基準に倍率を決める
+    height_reference: str = "median"  # 身長の基準: median / first / フレーム番号（1始まり）
+    canvas_auto: bool = False  # character_height と併用: 全フレームが収まる最小のCanvasにする（見切れなし）
+    write_trimmed: bool = True  # 切り詰めた画像とオフセット（trimmed_frames/, trim_manifest.json）も出力
     outline: str = "off"
     detail: str = "balanced"
     debug: bool = False
@@ -93,6 +97,19 @@ class FrameSequenceRequest:
             raise ValueError("固定倍率は0より大きい値で指定してください")
         if not 0 < self.fit_percentile <= 100:
             raise ValueError("フィットの基準（百分位）は0より大きく100以下で指定してください")
+        reference = str(self.height_reference).strip()
+        if reference not in {"median", "first"} and not (reference.isdigit() and int(reference) >= 1):
+            raise ValueError("身長の基準は median / first / フレーム番号（1以上の整数）のいずれかです")
+        if self.character_height is None:
+            if self.canvas_auto:
+                raise ValueError("Canvas自動は、キャラの身長を指定したときだけ使えます")
+        else:
+            if not 0 < self.character_height <= MAX_CANVAS_SIDE:
+                raise ValueError(f"キャラの身長は0より大きく{MAX_CANVAS_SIDE}以下で指定してください")
+            if self.fit_percentile < 100:
+                raise ValueError("キャラの身長の指定と、フィットの基準（百分位・100未満）は同時に使えません")
+            if self.scale is not None:
+                raise ValueError("キャラの身長の指定と、固定倍率は同時に使えません")
         if self.outline not in OUTLINE_CHOICES:
             raise ValueError("outlineはoff、black、whiteのいずれかです")
         if self.detail not in DETAIL_CHOICES:
@@ -159,6 +176,9 @@ class FrameSequenceSummary:
     swapped_px: int | None
     sheets_written: bool
     warnings: tuple[str, ...] = field(default_factory=tuple)
+    canvas_size: tuple[int, int] = (0, 0)
+    scale: float = 0.0
+    trimmed: bool = False
 
 
 def run_frame_sequence(
@@ -180,6 +200,10 @@ def run_frame_sequence(
         gif_loop=None if request.play_once else request.loop,
         stabilize_margin=request.stabilize_margin if request.stabilize_margin > 0 else None,
         fit_percentile=request.fit_percentile,
+        character_height=request.character_height,
+        height_reference=request.height_reference,
+        canvas_auto=request.canvas_auto,
+        write_trimmed=request.write_trimmed,
         progress=progress,
         palette_budget=request.palette_budget,
         character_detail_level=request.detail,
@@ -205,6 +229,9 @@ def run_frame_sequence(
         swapped_px=stabilization["total_swapped_px"] if stabilization else None,
         sheets_written=result.compiled_sheet_path is not None,
         warnings=result.warnings,
+        canvas_size=(int(report["output_frame_size"][0]), int(report["output_frame_size"][1])),
+        scale=float(report["common_scale"]),
+        trimmed=bool(report.get("trimmed")),
     )
 
 

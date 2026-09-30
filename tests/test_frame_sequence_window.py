@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 
@@ -292,5 +293,66 @@ def test_main_window_offers_the_frame_sequence_window_for_character_purposes_onl
         window.open_frame_sequence()
         assert window._frame_sequence_window is first  # 使い回す
         first.close()
+    finally:
+        window.close()
+
+
+def test_framing_controls_follow_the_mode_and_map_to_the_request(qt, tmp_path: Path) -> None:
+    window = _window(qt, tmp_path)
+    try:
+        window.set_input_dir(_write_sequence(tmp_path / "in"))
+        # 既定は従来どおり（全フレームが収まる）
+        request = window.build_request()
+        assert request.fit_percentile == 100.0 and request.character_height is None and not request.canvas_auto
+        assert not window.fit_percentile.isEnabled() and not window.character_height.isEnabled()
+        assert window.canvas_width.isEnabled() and window.write_trimmed.isChecked()
+        # 上位N%
+        window.framing_mode.setCurrentIndex(1)
+        assert window.fit_percentile.isEnabled() and not window.character_height.isEnabled()
+        window.fit_percentile.setValue(70)
+        assert window.build_request().fit_percentile == 70.0
+        # 身長指定 + Canvas自動: 幅・高さは無効になる
+        window.framing_mode.setCurrentIndex(2)
+        assert window.character_height.isEnabled() and window.height_reference.isEnabled()
+        assert not window.fit_percentile.isEnabled() and not window.reference_frame.isEnabled()
+        assert window.canvas_auto.isChecked() and not window.canvas_width.isEnabled() and not window.canvas_preset.isEnabled()
+        window.character_height.setValue(150)
+        request = window.build_request()
+        assert request.character_height == 150.0 and request.canvas_auto and request.height_reference == "median"
+        assert request.fit_percentile == 100.0
+        # Canvas固定に戻すと幅・高さが使える
+        window.canvas_auto.setChecked(False)
+        assert window.canvas_width.isEnabled() and not window.build_request().canvas_auto
+        # 基準はフレーム番号でも指定できる
+        window.height_reference.setCurrentIndex(2)
+        assert window.reference_frame.isEnabled()
+        window.reference_frame.setValue(3)
+        assert window.build_request().height_reference == "3"
+        window.height_reference.setCurrentIndex(1)
+        assert window.build_request().height_reference == "first"
+        window.write_trimmed.setChecked(False)
+        assert window.build_request().write_trimmed is False
+    finally:
+        window.close()
+
+
+def test_run_with_character_height_and_auto_canvas_reports_the_output_size(qt, tmp_path: Path) -> None:
+    window = _window(qt, tmp_path)
+    try:
+        window.set_input_dir(_write_sequence(tmp_path / "in"))
+        window.framing_mode.setCurrentIndex(2)
+        window.character_height.setValue(40)
+        window.tolerance.setValue(45)
+        window.start_run()
+        assert not window.framing_mode.isEnabled() and not window.character_height.isEnabled()  # 実行中は触れない
+        _wait_until_idle(qt, window)
+        out = tmp_path / "output" / "in_frames"
+        report = json.loads((out / "bbox_report.json").read_text(encoding="utf-8"))
+        width, height = report["output_frame_size"]
+        assert f"{width}×{height}px" in window.summary.text() and "倍率" in window.summary.text()
+        assert "切り詰め画像＋オフセット" in window.summary.text()
+        assert (out / "trim_manifest.json").exists() and len(list((out / "trimmed_frames").glob("*.png"))) == 5
+        assert window.framing_mode.isEnabled() and window.character_height.isEnabled()
+        assert report["framing"]["mode"] == "character_height" and report["framing"]["canvas_auto"] is True
     finally:
         window.close()

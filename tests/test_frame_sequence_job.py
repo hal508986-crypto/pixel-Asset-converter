@@ -141,7 +141,7 @@ def test_cancelling_midway_leaves_existing_output_untouched(tmp_path: Path) -> N
     assert not (tmp_path / "fresh").exists()
 
 
-def test_run_rejects_invalid_requests_before_touching_anything(tmp_path: Path) -> None:
+def test_run_rejects_invalid_settings_before_touching_anything(tmp_path: Path) -> None:
     _write_sequence(tmp_path / "in")
     with pytest.raises(ValueError, match="パレット上限"):
         run_frame_sequence(_request(tmp_path, palette_budget=99))

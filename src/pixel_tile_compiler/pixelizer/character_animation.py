@@ -18,7 +18,7 @@ from PIL import Image
 
 from pixel_tile_compiler.io.exporter import save_json, save_png
 from pixel_tile_compiler.io.frame_sequence import frame_label
-from pixel_tile_compiler.io.gif_export import save_animated_gif
+from pixel_tile_compiler.io.gif_export import gif_durations_ms, save_animated_gif
 from pixel_tile_compiler.pixelizer.palette import extract_palette
 from pixel_tile_compiler.pixelizer.temporal_stabilize import stabilize_palette_flicker
 from pixel_tile_compiler.sheet.alpha_projection import (
@@ -257,6 +257,7 @@ class CharacterAnimationConfig:
     frame_offsets: tuple[tuple[int, int], ...] | None = None
     shared_palette_enabled: bool = True
     allow_empty_frames: bool = False
+    allow_clipping: bool = False
 
     def __post_init__(self) -> None:
         if self.frame_count < 1:
@@ -343,6 +344,7 @@ class CharacterAnimationConfig:
             "frame_offsets": [list(offset) for offset in self.frame_offsets] if self.frame_offsets is not None else None,
             "shared_palette_enabled": self.shared_palette_enabled,
             "allow_empty_frames": self.allow_empty_frames,
+            **({"allow_clipping": True} if self.allow_clipping else {}),
         }
 
 
@@ -790,7 +792,8 @@ def _resolve_preserve_transform(
             float(scale),
             offsets,
         )
-    _validate_transform_fits(reports, resolved, config.canvas_size)
+    if not config.allow_clipping:
+        _validate_transform_fits(reports, resolved, config.canvas_size)
     return resolved
 
 
@@ -839,6 +842,24 @@ def _transformed_bbox(
         output_x + transform.scale * (bbox.right - source_x) + offset_x,
         output_y + transform.scale * (bbox.bottom - source_y) + offset_y,
     )
+
+
+def _clipped_sides(
+    bbox: AlphaBoundingBox,
+    transform: CharacterAnimationTransform,
+    frame_index: int,
+    canvas_size: tuple[int, int],
+) -> dict[str, int]:
+    """変換後のbboxがCanvasからはみ出す量（px, 切り上げ）を辺ごとに返す。はみ出しが無ければ空。"""
+    width, height = canvas_size
+    left, top, right, bottom = _transformed_bbox(bbox, transform, frame_index)
+    over = {
+        "left": max(0, math.ceil(-left - _FIT_EPSILON)),
+        "top": max(0, math.ceil(-top - _FIT_EPSILON)),
+        "right": max(0, math.ceil(right - width - _FIT_EPSILON)),
+        "bottom": max(0, math.ceil(bottom - height - _FIT_EPSILON)),
+    }
+    return {side: amount for side, amount in over.items() if amount > 0}
 
 
 def _validate_transform_fits(
@@ -1162,6 +1183,14 @@ def align_character_frames(
                 frame_index=index,
                 canvas_size=config.canvas_size,
             )
+            clipped_sides = (
+                _clipped_sides(report.bbox, frame_transform, index, config.canvas_size)
+                if config.allow_clipping and report.bbox is not None
+                else {}
+            )
+            if clipped_sides:
+                detail = "・".join(f"{name}{amount}px" for name, amount in clipped_sides.items())
+                warnings.append(f"F{index + 1}: Canvasからはみ出して見切れています（{detail}）")
             protected_count = report.protected_pixel_count
             protected_lost = (
                 protected_count is not None
@@ -1180,7 +1209,7 @@ def align_character_frames(
                         if aligned.getchannel("A").getbbox() is not None
                         else None
                     ),
-                    clipped=False,
+                    clipped=bool(clipped_sides),
                     offset=resolved_transform.offset_for(index),
                     protected_pixel_lost=protected_lost if protected_count is not None else None,
                 )
@@ -1351,6 +1380,8 @@ _MANAGED_ANIMATION_OUTPUTS = (
     "preview.png",
     "preview_8x.png",
     "source_frames",
+    "trim_manifest.json",
+    "trimmed_frames",
 )
 
 # 連番経路が入力側の段階として保存できるフォルダ名（_MANAGED_ANIMATION_OUTPUTSの部分集合）
@@ -1450,6 +1481,7 @@ def compile_character_animation_frames(
     gif_fps: float | None = None,
     gif_loop: int | None = 0,
     stabilize_margin: float | None = None,
+    write_trimmed: bool = False,
     progress: Callable[[str, int, int], None] | None = None,
 ) -> CharacterAnimationCompileResult:
     """Compile an ordered frame sequence (透過済みRGBA) without going through a sheet.
@@ -1462,6 +1494,8 @@ def compile_character_animation_frames(
     (shared palette, binary transparency, read back and verified pixel-for-pixel).
     With stabilize_margin, colours are stabilised over time (palette hysteresis) when
     writing final_frames; compiled/ keeps the raw compiler output.
+    write_trimmed also writes each final frame cropped to its visible box plus a manifest of
+    pivot-relative offsets (trimmed_frames/, trim_manifest.json).
     progress(stage, done, total) is called after each compiled frame ("compile") and
     before the final write ("finalize"); an exception raised from it aborts the run and
     leaves any existing output untouched.
@@ -1529,6 +1563,7 @@ def compile_character_animation_frames(
             gif_fps=gif_fps,
             gif_loop=gif_loop,
             stabilize_margin=stabilize_margin,
+            write_trimmed=write_trimmed,
             progress=progress,
         )
 
@@ -1625,6 +1660,7 @@ def _compile_prepared_animation_to_root(
     gif_fps: float | None = None,
     gif_loop: int | None = 0,
     stabilize_margin: float | None = None,
+    write_trimmed: bool = False,
     progress: Callable[[str, int, int], None] | None = None,
 ) -> CharacterAnimationCompileResult:
     """整列済みフレーム群を共有パレットでコンパイルし、成果物一式を書き出す（入力形式に依存しない共通部）。"""
@@ -1744,6 +1780,11 @@ def _compile_prepared_animation_to_root(
         raise RuntimeError("最終frameの実paletteが上限を超えました")
     if resolved_shared_palette is not None and not set(final_palette).issubset(set(resolved_shared_palette)):
         raise RuntimeError("最終frame群の色が共有paletteの外へ出ました")
+    trim_report: dict[str, object] | None = None
+    if write_trimmed:
+        trim_report = _write_trimmed_frames(
+            output_root, final_frame_paths, label, config.canvas_size, prepared, gif_fps
+        )
     gif_path: Path | None = None
     gif_report: dict[str, object] | None = None
     if gif_fps is not None:
@@ -1762,6 +1803,8 @@ def _compile_prepared_animation_to_root(
         report_payload["animation"] = {"gif": gif_report}
     if stabilization_report is not None:
         report_payload["stabilization"] = stabilization_report
+    if trim_report is not None:
+        report_payload["trimmed"] = trim_report
     report_payload["final_frames"] = [
         {
             "frame_id": label(index),
@@ -1838,6 +1881,64 @@ def _compile_prepared_animation_to_root(
         aligned_frame_paths,
         gif_path,
     )
+
+
+def _write_trimmed_frames(
+    output_root: Path,
+    final_frame_paths: Sequence[Path],
+    label: Callable[[int], str],
+    canvas_size: tuple[int, int],
+    prepared: CharacterAnimationResult,
+    fps: float | None,
+) -> dict[str, object]:
+    """各最終フレームを可視範囲に切り詰めて保存し、ピボットからのオフセットをマニフェストに書く。
+
+    切り詰め画像の左上は「ピボット + offset_from_pivot」に置けば、元のCanvasの位置に完全に戻る
+    （ピクセル一致）。ピボット＝足元の基準点（全フレーム共通）なので、エンジン側は足元を固定して描ける。
+    """
+    trimmed_root = output_root / "trimmed_frames"
+    trimmed_root.mkdir(parents=True, exist_ok=True)
+    pivot = (
+        [float(prepared.transform.output_origin[0]), float(prepared.transform.output_origin[1])]
+        if prepared.transform is not None
+        else None
+    )
+    frames: list[dict[str, object]] = []
+    for index, path in enumerate(final_frame_paths):
+        with Image.open(path) as opened:
+            image = opened.convert("RGBA")
+        box = image.getchannel("A").getbbox()
+        entry: dict[str, object] = {"frame_id": label(index)}
+        if box is None:
+            entry.update({"file": None, "empty": True})
+        else:
+            save_png(image.crop(box), trimmed_root / f"{label(index)}.png")
+            entry.update(
+                {
+                    "file": f"trimmed_frames/{label(index)}.png",
+                    "empty": False,
+                    "x": box[0],
+                    "y": box[1],
+                    "width": box[2] - box[0],
+                    "height": box[3] - box[1],
+                }
+            )
+            if pivot is not None:
+                entry["offset_from_pivot"] = [box[0] - pivot[0], box[1] - pivot[1]]
+        frames.append(entry)
+    manifest: dict[str, object] = {
+        "schema_version": 1,
+        "description": "各frameの左上は canvas の (x, y)。ピボットからの位置は offset_from_pivot（frame左上 = pivot + offset_from_pivot）。",
+        "canvas_size": list(canvas_size),
+        "pivot": pivot,
+        "scale": prepared.scale,
+        "frame_count": len(frames),
+        "fps": fps,
+        "durations_ms": list(gif_durations_ms(len(frames), fps)) if fps is not None and fps > 0 else None,
+        "frames": frames,
+    }
+    save_json(manifest, output_root / "trim_manifest.json")
+    return {"manifest": "trim_manifest.json", "directory": "trimmed_frames", "frames": len(frames)}
 
 
 def _stage_record(frame_id: str, path: Path) -> dict[str, object]:

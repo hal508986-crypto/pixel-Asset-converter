@@ -74,6 +74,12 @@ pixel-tile compile-character-frames frames_dir `
 - `--background-mode auto`（既定）は、緑・青緑など鮮やかな背景色では画像内の背景色を全部消し（`global`）、白・グレーでは外周に繋がる部分だけ消します（`connected`）。
 - 縁に背景との混色が残るときは `--choke 1`（輪郭を1画素内側へ削る。画像端に接する輪郭は削りません）。
 - 色のちらつき（パレット境界で色が行き来する）は、既定で抑えます（`--stabilize-margin 12`。`0` で無効）。前フレームで使った色が今の色より元の色から見てmargin以内にしか劣らなければ、前の色を維持します。輪郭とパレットは変わりません。上げすぎると本物の色の変化も潰すので、目安は12〜20です。
+- 動画生成AIは余白を大きく取りがちで、全フレームがはみ出さない倍率（既定）だと、槍を大きく突き出すコマなどに引っ張られてキャラが小さくなります。大きさの決め方は3つあります。
+  - **`--character-height 200`（推奨）**: アルファから測った**キャラ本体の高さ**（細い槍などは除きます）を基準に、本体の高さが指定のpxになる倍率にします。**倍率と足元は全フレーム固定**なので、踏み込みや跳躍で縦幅が変わってもキャラのサイズはブレず、同じキャラの別の動作でも同じ値にすればサイズが揃います。基準は `--height-reference median`（中央値・既定）/ `first`（最初のフレーム）/ フレーム番号（1始まり）。動画の中でカメラが寄る・大きく屈むなど元動画側でサイズが変わる素材では、基準を選ぶか手動で確認してください。
+  - **`--canvas-auto`**（`--character-height` と併用）: その倍率で全フレームの張り出しが収まる**最小のCanvas**（四方2px）にします。見切れなし・余白ほぼなしで、全フレーム同サイズのままなのでAsepriteなどでの手直しに向きます（`--width/--height` は無視）。Canvasを固定した場合、収まらない部分は見切れます（警告とレポートの `clipped` に出ます）。
+  - **`--foot-lock`**（`--character-height` と併用）: 元動画によっては、踏み込み中などにキャラ全体が上下へずれて（接地線が動いて）足が浮いて見えます。各フレームの本体の下端を基準の足元にそろえる**縦方向の平行移動だけ**を補正します（倍率・姿勢の縦幅の変化はそのまま）。跳躍のような本物の浮きも打ち消すので、既定はオフです。
+  - `--fit-percentile 70`: その割合のフレームが収まる倍率にして、極端に伸びるコマの見切れを許します（身長指定とは同時に使えません）。
+- ゲームエンジン向けに、各フレームを可視範囲へ切り詰めた画像と、足元（ピボット）からのオフセットも出力します（`trimmed_frames/` と `trim_manifest.json`。`--no-trim` で無効）。切り詰め画像の左上を「ピボット + `offset_from_pivot`」に置けば、Canvas上の位置にピクセル一致で戻ります。
 - 透過済みの連番は `--no-key-background`、GIFが不要なら `--no-gif`、ループさせないなら `--play-once`。
 - 入力は自然順（`f2` の次が `f10`）で読み込み、全フレームが同サイズである必要があります。
 
@@ -201,6 +207,7 @@ pixel-tile compile-character-frames frames_dir `
 The background colour is estimated once from all frames and shared. `--background-mode auto` (default) removes every
 background-coloured pixel for vivid backgrounds (green, teal) and only border-connected ones for white/grey.
 `--choke 1` shaves one pixel off the outline to drop background-blended edges (outlines touching the image border are kept).
+Sizing: `--character-height 200` (recommended) measures the character body from the alpha channel (thin weapons are ignored) and picks the scale so the body is 200 px tall; scale and feet are fixed across frames, so crouches, lunges and jumps do not change the character's size, and the same value keeps different actions of one character at the same size (`--height-reference median|first|<frame number>`). `--foot-lock` additionally moves each frame vertically only so that the body bottom sits on the reference ground line (for sources whose ground line drifts, e.g. during a lunge; it also cancels real jumps, so it is off by default). `--canvas-auto` sizes the canvas to the tightest box that holds every frame at that scale (no clipping, minimal margins, same size for every frame). `--fit-percentile 70` instead fits 70% of frames and lets extreme ones clip. `trimmed_frames/` + `trim_manifest.json` (disable with `--no-trim`) hold each frame cropped to its visible box with offsets from the pivot (frame top-left = pivot + `offset_from_pivot`) for game engines.
 `--stabilize-margin` (default 12, `0` disables) reduces colour flicker at palette boundaries: a pixel keeps its previous colour unless the new one is closer to the source by more than the margin. Silhouettes and the palette are unchanged.
 
 The same job is available in the GUI: with the Character or Character Animation purpose, the **連番PNG→GIF** button opens a

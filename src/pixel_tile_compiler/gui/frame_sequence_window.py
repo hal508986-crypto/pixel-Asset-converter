@@ -56,6 +56,19 @@ BACKGROUND_MODE_LABELS = (
 )
 OUTLINE_LABELS = (("なし", "off"), ("黒", "black"), ("白", "white"))
 DETAIL_LABELS = (("少なめ", "sparse"), ("標準", "balanced"), ("多め", "detailed"))
+FRAMING_MODES = (
+    ("全フレームが収まる倍率（従来）", "union",
+     "Canvasにすべてのフレームがはみ出さず収まる最大の倍率にします。槍を大きく突き出すコマなどがあると、キャラ本体が小さくなります"),
+    ("上位N%のフレームが収まる倍率（極端なコマは見切れる）", "percentile",
+     "指定した割合のフレームが収まる倍率にして、はみ出す極端なコマ（槍の突き出しなど）は見切れを許します。キャラ本体が大きくなります"),
+    ("キャラの身長を指定（倍率と足元を全フレーム固定）", "height",
+     "アルファから測ったキャラ本体の高さを基準に倍率を決めます。踏み込み・跳躍で縦幅が変わってもサイズはブレず、同じキャラの別動作でも同じ身長にすればサイズが揃います"),
+)
+HEIGHT_REFERENCE_LABELS = (
+    ("中央値（既定）", "median", "本体の高さの中央値。一部のコマだけ踏み込み・しゃがみでも影響を受けにくい"),
+    ("最初のフレーム", "first", "立ちポーズから始まる素材向け"),
+    ("フレーム番号を指定", "frame", "基準にしたいポーズのコマの番号（1始まり）"),
+)
 STAGE_LABELS = {
     "load": "PNG連番を読み込み中…",
     "key": "背景を除去中…",
@@ -236,6 +249,44 @@ class FrameSequenceWindow(QMainWindow):
         self.palette.setRange(4, 64)
         self.palette.setValue(24)
 
+        self.framing_mode = NoWheelComboBox()
+        for index, (label, value, tip) in enumerate(FRAMING_MODES):
+            self.framing_mode.addItem(label, userData=value)
+            self.framing_mode.setItemData(index, tip, Qt.ItemDataRole.ToolTipRole)
+        self.fit_percentile = NoWheelDoubleSpinBox()
+        self.fit_percentile.setRange(1.0, 100.0)
+        self.fit_percentile.setDecimals(0)
+        self.fit_percentile.setValue(70.0)
+        self.fit_percentile.setSuffix(" %")
+        self.character_height = NoWheelDoubleSpinBox()
+        self.character_height.setRange(8.0, 4096.0)
+        self.character_height.setDecimals(0)
+        self.character_height.setValue(200.0)
+        self.character_height.setSuffix(" px")
+        self.character_height.setToolTip("出力でのキャラ本体（頭〜足）の高さ")
+        self.height_reference = NoWheelComboBox()
+        for index, (label, value, tip) in enumerate(HEIGHT_REFERENCE_LABELS):
+            self.height_reference.addItem(label, userData=value)
+            self.height_reference.setItemData(index, tip, Qt.ItemDataRole.ToolTipRole)
+        self.reference_frame = NoWheelSpinBox()
+        self.reference_frame.setRange(1, 9999)
+        self.reference_frame.setValue(1)
+        self.canvas_auto = QCheckBox("Canvasを自動で決める（見切れなし・余白ほぼなし。幅・高さは無視）")
+        self.canvas_auto.setChecked(True)
+        self.foot_lock = QCheckBox("足元の高さを全フレームでそろえる（接地のずれを補正）")
+        self.foot_lock.setToolTip(
+            "各フレームの本体の下端を基準の足元にそろえます（縦の平行移動のみ。倍率は変わりません）。"
+            "踏み込み中などに元動画の接地線がずれて足が浮いて見える素材向け。跳躍のような本物の浮きも打ち消すので注意"
+        )
+        self.write_trimmed = QCheckBox("切り詰めた画像とオフセットも出力する（ゲーム用）")
+        self.write_trimmed.setChecked(True)
+        self.write_trimmed.setToolTip("trimmed_frames/ と trim_manifest.json。各フレームを可視範囲に切り詰め、足元（ピボット）からの位置を記録します")
+        for widget in (self.framing_mode, self.height_reference, self.canvas_auto):
+            if isinstance(widget, QCheckBox):
+                widget.toggled.connect(self._update_enabled_states)
+            else:
+                widget.currentIndexChanged.connect(self._update_enabled_states)
+
         self.key_background = QCheckBox("単色背景を透過にする（透過済みの連番ならオフ）")
         self.key_background.setChecked(True)
         self.background_mode = NoWheelComboBox()
@@ -332,6 +383,17 @@ class FrameSequenceWindow(QMainWindow):
         size_form.addRow("幅 × 高さ", row(self.canvas_width, QLabel("×"), self.canvas_height))
         size_form.addRow("パレット色数", self.palette)
 
+        framing_group = QGroupBox("キャラの大きさ（フレーミング）")
+        framing_form = QFormLayout(framing_group)
+        framing_form.addRow("決め方", self.framing_mode)
+        framing_form.addRow("収める割合", self.fit_percentile)
+        framing_form.addRow("キャラの身長", self.character_height)
+        framing_form.addRow("身長の基準", self.height_reference)
+        framing_form.addRow("基準フレーム番号", self.reference_frame)
+        framing_form.addRow(self.canvas_auto)
+        framing_form.addRow(self.foot_lock)
+        framing_form.addRow(self.write_trimmed)
+
         bg_group = QGroupBox("背景の除去")
         bg_form = QFormLayout(bg_group)
         bg_form.addRow(self.key_background)
@@ -358,7 +420,7 @@ class FrameSequenceWindow(QMainWindow):
         misc_form.addRow("アウトライン", self.outline)
         misc_form.addRow("ディテール量", self.detail)
 
-        for form in (io_form, size_form, bg_form, stab_form, gif_form, misc_form):
+        for form in (io_form, size_form, framing_form, bg_form, stab_form, gif_form, misc_form):
             form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
             form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         for combo in self.findChildren(QComboBox):
@@ -366,7 +428,7 @@ class FrameSequenceWindow(QMainWindow):
             combo.setMinimumContentsLength(10)
         settings = QWidget()
         settings_layout = QVBoxLayout(settings)
-        for group in (io_group, size_group, bg_group, stab_group, gif_group, misc_group):
+        for group in (io_group, size_group, framing_group, bg_group, stab_group, gif_group, misc_group):
             settings_layout.addWidget(group)
         settings_layout.addStretch(1)
         scroll = QScrollArea()
@@ -470,6 +532,18 @@ class FrameSequenceWindow(QMainWindow):
         self.canvas_preset.blockSignals(False)
 
     def _update_enabled_states(self) -> None:
+        idle = not self.is_running()
+        mode = self.framing_mode.currentData()
+        is_height = mode == "height"
+        self.framing_mode.setEnabled(idle)
+        self.fit_percentile.setEnabled(idle and mode == "percentile")
+        for widget in (self.character_height, self.height_reference, self.canvas_auto, self.foot_lock):
+            widget.setEnabled(idle and is_height)
+        self.reference_frame.setEnabled(idle and is_height and self.height_reference.currentData() == "frame")
+        auto = is_height and self.canvas_auto.isChecked()
+        for widget in (self.canvas_preset, self.canvas_width, self.canvas_height):
+            widget.setEnabled(idle and not auto)
+        self.write_trimmed.setEnabled(idle)
         keyed = self.key_background.isChecked()
         for widget in (self.background_mode, self.background_color_auto, self.tolerance, self.choke):
             widget.setEnabled(keyed and not self.is_running())
@@ -489,6 +563,10 @@ class FrameSequenceWindow(QMainWindow):
             color = self.background_color.text().strip() or None
             if color is None:
                 raise ValueError("背景色を #RRGGBB で入力するか、自動推定にしてください")
+        mode = self.framing_mode.currentData()
+        reference: str = self.height_reference.currentData()
+        if reference == "frame":
+            reference = str(self.reference_frame.value())
         request = FrameSequenceRequest(
             input_dir=Path(self.input_field.text()),
             output_dir=Path(self.output_field.text().strip()),
@@ -504,6 +582,12 @@ class FrameSequenceWindow(QMainWindow):
             choke_px=self.choke.value(),
             stabilize_margin=self.stabilize_margin.value() if self.stabilize.isChecked() else 0.0,
             remove_isolated=self.remove_isolated.isChecked(),
+            fit_percentile=self.fit_percentile.value() if mode == "percentile" else 100.0,
+            character_height=self.character_height.value() if mode == "height" else None,
+            height_reference=reference,
+            canvas_auto=mode == "height" and self.canvas_auto.isChecked(),
+            foot_lock=mode == "height" and self.foot_lock.isChecked(),
+            write_trimmed=self.write_trimmed.isChecked(),
             outline=self.outline.currentData(),
             detail=self.detail.currentData(),
         )
@@ -589,11 +673,16 @@ class FrameSequenceWindow(QMainWindow):
         self._summary = summary
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
-        lines = [f"{summary.frame_count}フレーム / パレット{summary.palette_colors}色"]
+        lines = [
+            f"{summary.frame_count}フレーム / {summary.canvas_size[0]}×{summary.canvas_size[1]}px"
+            f"（元絵に対する倍率 {summary.scale:.3f}）/ パレット{summary.palette_colors}色"
+        ]
         if summary.gif_path is not None and summary.gif_bytes is not None:
             lines.append(f"GIF {summary.gif_bytes / 1024:.0f}KB / {(summary.gif_total_ms or 0) / 1000:.2f}秒（書き出し後に再読込して画素一致を検証済み）")
         if summary.background_color:
             lines.append(f"背景色 {summary.background_color}（{summary.background_mode}）")
+        if summary.trimmed:
+            lines.append("切り詰め画像＋オフセット: trimmed_frames/ と trim_manifest.json を出力")
         if summary.swapped_px is not None:
             lines.append(f"色の安定化: {summary.swapped_px:,}画素を前フレームの色に揃えた")
         lines.extend(f"⚠ {warning}" for warning in summary.warnings)

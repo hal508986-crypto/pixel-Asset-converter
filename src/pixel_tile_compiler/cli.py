@@ -299,6 +299,12 @@ def compile_character_frames_command(
     min_component_area: int = typer.Option(3, "--min-component-area", min=1, help="残す孤立成分の最小面積"),
     remove_isolated: bool = typer.Option(True, "--remove-isolated/--keep-isolated", help="微小な孤立成分を除去"),
     scale: Optional[float] = typer.Option(None, "--scale", min=0.000001, help="固定倍率（省略時は全フレームがCanvasに収まる最大）"),
+    fit_percentile: float = typer.Option(100.0, "--fit-percentile", min=0.001, max=100.0, help="倍率の基準（100=全フレームが収まる最大。例えば80だと8割のフレームが収まる倍率にして、極端に伸びるコマ＝槍の突き出しなどは見切れる。キャラを大きくしたいとき）"),
+    character_height: Optional[float] = typer.Option(None, "--character-height", min=0.001, help="キャラ本体の高さ（出力px）。アルファから測った本体の高さを基準に倍率を決める（倍率と足元は全フレーム固定。踏み込み等で縦幅が変わってもサイズはブレない）。動作が違っても同じキャラなら同じ値にするとサイズが揃う"),
+    height_reference: str = typer.Option("median", "--height-reference", help="身長の基準: median（中央値）/ first（最初のフレーム）/ フレーム番号（1始まり）"),
+    canvas_auto: bool = typer.Option(False, "--canvas-auto/--canvas-fixed", help="--character-height と併用: 全フレームが収まる最小のCanvasにする（見切れなし。--width/--height は無視）"),
+    foot_lock: bool = typer.Option(False, "--foot-lock/--no-foot-lock", help="--character-height と併用: 各フレームの本体の下端を基準の足元にそろえる（縦の平行移動のみ・倍率は不変）。踏み込み中などに元動画の接地線がずれる素材向け。跳躍のような本物の浮きも打ち消すので注意"),
+    trim: bool = typer.Option(True, "--trim/--no-trim", help="切り詰めた画像とピボットからのオフセット（trimmed_frames/, trim_manifest.json）も出力"),
     stabilize_margin: float = typer.Option(12.0, "--stabilize-margin", min=0.0, help="色の時間方向の安定化（既定12、0=しない。パレット境界でのちらつきを抑える。上げすぎると本物の色変化も潰す）"),
     character_detail: str = typer.Option("balanced", "--character-detail", help="sparse/balanced/detailed"),
     outline: str = typer.Option("off", "--outline", help="off/black/white"),
@@ -326,6 +332,12 @@ def compile_character_frames_command(
         min_component_area=min_component_area,
         remove_isolated=remove_isolated,
         scale=scale,
+        fit_percentile=fit_percentile,
+        character_height=character_height,
+        height_reference=height_reference,
+        canvas_auto=canvas_auto,
+        foot_lock=foot_lock,
+        write_trimmed=trim,
         outline=outline,
         detail=character_detail,
         debug=debug,
@@ -337,6 +349,9 @@ def compile_character_frames_command(
     typer.echo(f"完了: {summary.output_root}（{summary.frame_count}フレーム）")
     typer.echo(f"最終フレーム（正本）: {summary.final_dir}")
     typer.echo(f"整列後フレーム: {summary.output_root / 'aligned_frames'}")
+    typer.echo(f"出力サイズ: {summary.canvas_size[0]}×{summary.canvas_size[1]}px（元絵に対する倍率 {summary.scale:.3f}）")
+    if summary.trimmed:
+        typer.echo(f"切り詰め画像+オフセット: {summary.output_root / 'trim_manifest.json'}")
     if summary.gif_path is not None:
         typer.echo(f"GIF: {summary.gif_path}")
     typer.echo(f"レポート: {summary.report_path}")
